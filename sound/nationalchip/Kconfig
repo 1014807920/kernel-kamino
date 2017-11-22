@@ -1,0 +1,10 @@
+#
+# nationalchip audio configuration
+#
+
+config NATIONALCHIP_GXALSA
+	tristate "ALSA For Nationalchip"
+	select SND_PCM
+	default	n
+	help
+	  Use nationalchip gxalsa to achieve media player

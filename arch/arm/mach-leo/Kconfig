@@ -1,0 +1,15 @@
+menuconfig ARCH_LEO
+	bool "Nationalchip leo family" if ARCH_MULTI_V7
+	select HAVE_ARM_ARCH_TIMER
+	select NATIONALCHIP_TIMER
+	select ARM_AMBA
+	select ARM_NATIONALCHIP
+	select PINCTRL
+
+if ARCH_LEO
+config LEO_SUSPEND
+	bool "Suspend to RAM on LEO"
+	help
+	  Select this if you want to enable Suspend-to-RAM on LEO
+	  platforms.
+endif

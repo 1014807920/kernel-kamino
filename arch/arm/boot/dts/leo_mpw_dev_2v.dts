@@ -1,0 +1,105 @@
+/*
+ *  Copyright (C) 2013 Steffen Trumtrar <s.trumtrar@pengutronix.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/dts-v1/;
+/* First 4KB has trampoline code for secondary cores. */
+/* /memreserve/ 0x00000000 0x0001000; */
+
+#include "leo_mpw.dtsi"
+
+/ {
+	model = "nationalchip leo_mpw_dev_2v SoC";
+	compatible = "nationalchip,leo_mpw_dev_2v", "nationalchip,leo";
+
+	chosen {
+		bootargs = "earlyprintk";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory {
+		name = "memory";
+		device_type = "memory";
+		reg = <0x10000000 0x8000000>;
+	};
+
+	aliases {
+		/* this allow the ethaddr uboot environmnet variable contents
+		 * to be added to the gmac1 device tree blob.
+		 */
+	};
+
+	regulator_3_3v: vcc3p3-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "VCC3P3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	a7_key:a7_key@0x2305008{
+		compatible = "nationalchip,LEO-keypad";
+		reg = <0x2305008 0x90>;
+		autorepeat;
+
+		key1:key1{
+			key_code  = <KEY_VOLUMEUP>;
+			key_gpio = <0>;
+		};
+	};
+
+	csky_key:csky_key@0x305004{
+		compatible = "nationalchip,LEO-keypad";
+		reg = <0x305004 0x90>;
+		autorepeat;
+
+        key5:key2{
+			key_code  = <KEY_VOLUMEDOWN>;
+			key_gpio = <12>;
+		};
+        key6:key3{
+			key_code  = <KEY_MUTE>;
+			key_gpio = <13>;
+		};
+        key7:key4{
+			key_code  = <KEY_HOME>;
+			key_gpio = <14>;
+		};
+	};
+};
+
+&spi1{
+	status = "okay";
+	spinand0: GD5F1G@0 {
+		compatible        = "spi-nand";
+		spi-max-frequency = <25000000>;
+		cs-reg            = <0x30a168>;
+		dma-reg           = <0x800000>;
+		reg               = <0>;
+		status            = "okay";
+	};
+};
+
+&spi0{
+	status = "okay";
+	spinand1: TC58CVG053HRA1G@0 {
+		compatible        = "spi-nand";
+		spi-max-frequency = <37125000>;  // A7 总线频率14850000/37125000 = 4; 实际频率CK总线频率99M/4 = 25M
+		cs-reg            = <0x30a168>;
+		dma-reg           = <0x800000>;
+		reg               = <0>;
+		status            = "okay";
+	};
+};

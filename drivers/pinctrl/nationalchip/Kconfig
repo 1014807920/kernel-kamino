@@ -1,0 +1,9 @@
+#
+# leo Pin control drivers
+#
+config PINCTRL_NATIONALCHIP
+	bool "nationalchip LEO_A7 pinctrl driver"
+	select PINMUX
+	select PINCONF
+	select GPIOLIB_IRQCHIP
+

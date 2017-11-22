@@ -1,0 +1,7 @@
+menuconfig MTD_SPI_NAND
+	tristate "SPI-NAND device support"
+	depends on MTD
+	help
+	  This is the framework for the SPI NOR which can be used by the SPI
+	  device drivers and the SPI-NOR device driver.
+

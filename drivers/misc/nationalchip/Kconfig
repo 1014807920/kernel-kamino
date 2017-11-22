@@ -1,0 +1,129 @@
+config NATIONALCHIP_COUNTER
+	tristate "nationalchip counter"
+	default	n
+	help
+	  Use nationalchip counter to achieve precise time management
+
+config NATIONALCHIP_NPU
+	tristate "nationalchip NPU"
+	default	n
+	help
+	  This driver allows you to use NPU module to execute neural network.
+
+menuconfig NATIONALCHIP_GXAVDEV
+	tristate "nationalchip gxavdev modules select"
+	default	n
+	help
+	  Use nationalchip gxavdev to achieve meida player
+
+if NATIONALCHIP_GXAVDEV
+
+if ARCH_LEO
+config NATIONALCHIP_AUDIO_IN
+	bool "nationalchip audio in"
+	default	y
+
+config NATIONALCHIP_AUDIO_PLAY
+	bool "nationalchip audio play"
+	default	y
+	depends on NATIONALCHIP_GXALSA=n
+
+config NATIONALCHIP_AUDIO_DECODE
+	bool "nationalchip audio decode"
+	default	y
+
+config NATIONALCHIP_JPEG
+	bool "nationalchip jpeg decode/encode"
+	default	y
+
+config NATIONALCHIP_CAMERA
+	bool "nationalchip camera"
+	default	y
+endif
+
+if ARCH_SIRIUS
+
+config NATIONALCHIP_DECODER_VIDEO_NDS
+	bool "Enabled NDS Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && GXAV_NDS
+
+config NATIONALCHIP_DECODER_AUDIO_NDS
+	bool "Enabled NDS Audio Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && GXAV_NDS
+
+config NATIONALCHIP_DECODER_AUDIO_MPEG
+	bool "Enabled Mpeg1/2 Audio Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+
+config NATIONALCHIP_DECODER_AUDIO_AAC
+	bool "Enabled Mpeg4 AAC Audio Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS && NATIONALCHIP_DECODER_AUDIO_MPEG
+
+config NATIONALCHIP_DECODER_AUDIO_DRA
+	bool "Enabled DRA Audio Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+
+config NATIONALCHIP_DECODER_AUDIO_DTS
+	bool "Enabled DTS Audio Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+
+config NATIONALCHIP_DECODER_VIDEO_ALL
+	bool "Enabled ALL Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && GXAV_NDS
+
+config NATIONALCHIP_DECODER_VIDEO_AVC
+	bool "Enabled H.264 Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+
+config NATIONALCHIP_DECODER_VIDEO_HEVC
+	bool "Enabled H.265 Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS && GX3211
+
+config NATIONALCHIP_DECODER_VIDEO_MPEG2
+	bool "Enabled Mpeg2 Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+
+config NATIONALCHIP_DECODER_VIDEO_MPEG4
+	bool "Enabled Mpeg4 Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+
+config NATIONALCHIP_DECODER_VIDEO_RV
+	bool "Enabled Real Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+
+config NATIONALCHIP_DECODER_VIDEO_AVS
+	bool "Enabled AVS Video Decoder"
+	default y
+	depends on NATIONALCHIP_GXAVDEV && !GXAV_NDS
+endif
+
+endif
+
+if ARCH_SIRIUS
+config NATIONALCHIP_M2M
+	tristate "nationalchip m2m"
+	default y
+
+config NATIONALCHIP_CRYPTO
+	tristate "nationalchip crypto"
+	default y
+endif
+
+if ARCH_SOCFPGA
+config NATIONALCHIP_MAILBOX
+	tristate "nationalchip mailbox"
+	default m
+endif
+

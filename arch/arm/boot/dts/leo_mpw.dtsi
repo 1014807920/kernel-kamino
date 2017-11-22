@@ -1,0 +1,550 @@
+/*
+ *  Copyright (C) 2012 Altera <www.altera.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "skeleton.dtsi"
+#include "leo_mpw_pinctrl.dtsi"
+#include <dt-bindings/reset/altr,rst-mgr.h>
+#include <dt-bindings/input/linux-event-codes.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		serial0 = &uart0;
+		serial1 = &uart1;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-a7";
+			device_type = "cpu";
+			reg = <0>;
+		};
+	};
+
+	intc: intc@02500000 {
+		compatible = "nationalchip,intc-v1";
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		reg = <0x02500000 0x400>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		device_type = "soc";
+		interrupt-parent = <&intc>;
+		ranges;
+
+		clkmgr@0030A000 {
+			compatible = "nationalchip,clk-mgr";
+			reg = <0x0030A000 0x1000>;
+
+			clocks {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				osc1: osc1 {
+					#clock-cells = <0>;
+					compatible = "fixed-clock";
+					clock-frequency = <27000000>;
+				};
+
+				ahb: ahb{
+					#clock-cells = <0>;
+					compatible = "fixed-clock";
+					clock-frequency = <148500000>;
+				};
+
+				apb0: apb0{
+					#clock-cells = <0>;
+					compatible = "fixed-clock";
+					clock-frequency = <54000000>;
+				};
+
+				apb1: apb1{
+					#clock-cells = <0>;
+					compatible = "fixed-clock";
+					clock-frequency = <148500000>;
+				};
+
+				dwuart: dwuart{
+					#clock-cells = <0>;
+					compatible = "fixed-clock";
+					clock-frequency = <48000000>;
+				};
+				dwmmc: dwmmc{
+					#clock-cells = <0>;
+					compatible = "fixed-clock";
+					clock-frequency = <49500000>;
+				};
+			};
+		};
+
+		timer0 {
+			compatible = "nationalchip,timer-v1";
+			reg = <0x0220A000 0x400>;
+			clock-frequency = <54000000>;
+			interrupt-parent = <&intc>;
+			interrupts = <5>;
+		};
+
+		counter: counter@0220a000 {
+			compatible = "nationalchip,counter-v1";
+			reg = <0x0220A000 0x400>;
+			clocks = <&apb0>;
+			interrupt-parent = <&intc>;
+			interrupts = <5>, <6>, <7>, <8>;
+		};
+
+		ocram: sram@ffff0000 {
+			compatible = "mmio-sram";
+			reg = <0xf000 1024>;
+		};
+
+		sdr: sdr@02c00000 {
+			compatible = "nationalchip,sdr-ctl";
+			reg = <0x02c00000 0x1000>;
+		};
+
+		resume: resume@0030a0d0 {
+			compatible = "nationalchip,resume-reg";
+			reg = <0x0030a0d0 0x8>;
+		};
+
+
+		mmc0: dwmmc@02d00000 {
+			compatible = "altr,socfpga-dw-mshc";
+			reg = <0x02d00000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <43>;
+			fifo-depth = <0x200>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			num-slots = <1>;
+			broken-cd;
+			bus-width = <4>;
+			cap-mmc-highspeed;
+			cap-sd-highspeed;
+
+			clocks = <&ahb>, <&dwmmc>;
+			clock-names = "biu", "ciu";
+
+			status = "okay";
+		};
+
+		mmc1: dwmmc@02e00000 {
+			compatible = "altr,socfpga-dw-mshc";
+			reg = <0x02e00000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <44>;
+			fifo-depth = <0x200>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			num-slots = <1>;
+			broken-cd;
+			bus-width = <4>;
+			cap-mmc-highspeed;
+			cap-sd-highspeed;
+
+			clocks = <&ahb>, <&dwmmc>;
+			clock-names = "biu", "ciu";
+
+			status = "okay";
+		};
+
+		dwdma0: dma@02800000 {
+			compatible = "snps,dma-spear1340";
+			reg = <0x02800000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <10>;
+			dma-requests = <32>;
+			dma-channels = <4>;
+			dma-masters  = <4>;
+			#dma-cells   = <3>;
+			chan_allocation_order = <1>;
+			chan_priority = <1>;
+			block_size = <3072>;
+			data_width = <2 2 2 2>;
+			clocks = <&ahb>;
+			clock-names = "hclk";
+			is_private;
+			is_memcpy;
+
+			status = "okay";
+		};
+
+		spi0: spi@00303000 {
+			compatible = "snps,dw-apb-ssi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x00303000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <34>;
+
+			is-int-from-mcu;
+			ifc-reg  = <0x0030a274 12>;
+			ifc-chan = <4>;
+
+			poll-mode = <1>;
+
+			num-cs = <4>;
+			clocks = <&apb1>;
+			cs-reg = <0x30a168>;
+			status = "okay";
+		};
+
+		spi1: spi@02302000 {
+			compatible = "snps,dw-apb-ssi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x02302000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <11>;
+			num-cs = <4>;
+			clocks = <&apb1>;
+			cs-reg = <0x230a600>;
+			status = "okay";
+		};
+
+		i2c0: i2c@02202000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-i2c";
+			reg = <0x02202000 0x1000>;
+			clocks = <&apb0>;
+			interrupts = <1>;
+			status = "okay";
+
+			eeprom: 24c02@50 {
+				compatible = "at,24c02";
+				pagesize = <8>;
+				reg = <0x50>;
+			};
+			leds: is31fl3236@3c {
+				compatible = "issi,is31fl3236a";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x3c>;
+
+				led@0 {
+					label = "led0";
+					reg = <0x1>;
+				};
+
+				led@1 {
+					label = "led1";
+					reg = <0x2>;
+				};
+
+				led@2 {
+					label = "led2";
+					reg = <0x3>;
+				};
+
+				led@3 {
+					label = "led3";
+					reg = <0x4>;
+				};
+
+				led@4 {
+					label = "led4";
+					reg = <0x5>;
+				};
+
+				led@5 {
+					label = "led5";
+					reg = <0x6>;
+				};
+
+				led@6 {
+					label = "led6";
+					reg = <0x7>;
+				};
+
+				led@7 {
+					label = "led7";
+					reg = <0x8>;
+				};
+
+				led@8 {
+					label = "led8";
+					reg = <0x9>;
+				};
+
+				led@9 {
+					label = "led9";
+					reg = <0xa>;
+				};
+
+				led@10 {
+					label = "led10";
+					reg = <0xb>;
+				};
+
+				led@11 {
+					label = "led11";
+					reg = <0xc>;
+				};
+
+				led@12 {
+					label = "led12";
+					reg = <0xd>;
+				};
+
+				led@13 {
+					label = "led13";
+					reg = <0xe>;
+				};
+
+				led@14 {
+					label = "led14";
+					reg = <0xf>;
+				};
+
+				led@15 {
+					label = "led15";
+					reg = <0x10>;
+				};
+
+				led@16 {
+					label = "led16";
+					reg = <0x11>;
+				};
+
+				led@17 {
+					label = "led17";
+					reg = <0x12>;
+				};
+
+				led@18 {
+					label = "led18";
+					reg = <0x13>;
+				};
+
+				led@19 {
+					label = "led19";
+					reg = <0x14>;
+				};
+
+				led@20 {
+					label = "led20";
+					reg = <0x15>;
+				};
+
+				led@21 {
+					label = "led21";
+					reg = <0x16>;
+				};
+
+				led@22 {
+					label = "led22";
+					reg = <0x17>;
+				};
+
+				led@23 {
+					label = "led23";
+					reg = <0x18>;
+				};
+
+				led@24 {
+					label = "led24";
+					reg = <0x19>;
+				};
+
+				led@25 {
+					label = "led25";
+					reg = <0x1a>;
+				};
+
+				led@26 {
+					label = "led26";
+					reg = <0x1b>;
+				};
+
+				led@27 {
+					label = "led27";
+					reg = <0x1c>;
+				};
+
+				led@28 {
+					label = "led28";
+					reg = <0x1d>;
+				};
+
+				led@29 {
+					label = "led29";
+					reg = <0x1e>;
+				};
+
+				led@30 {
+					label = "led30";
+					reg = <0x1f>;
+				};
+
+				led@31 {
+					label = "led31";
+					reg = <0x20>;
+				};
+
+				led@32 {
+					label = "led32";
+					reg = <0x21>;
+				};
+
+				led@33 {
+					label = "led33";
+					reg = <0x22>;
+				};
+
+				led@34 {
+					label = "led34";
+					reg = <0x23>;
+				};
+
+				led@35 {
+					label = "led35";
+					reg = <0x24>;
+				};
+			};
+		};
+
+		i2c1: i2c@02203000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-i2c";
+			reg = <0x02203000 0x1000>;
+			clocks = <&apb0>;
+			interrupts = <2>;
+			status = "okay";
+		};
+
+
+		uart0: serial0@0x02309000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x02309000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <15>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			clocks = <&dwuart>;
+		};
+
+		uart1: serial1@0x02308000 {
+			compatible = "snps,dw-apb-uart";
+			reg = <0x02308000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <14>;
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			clocks = <&dwuart>;
+		};
+
+		watchdog0: watchdog@0220b000 {
+			compatible = "snps,dw-wdt";
+			reg = <0x0220b000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <9>;
+			clocks = <&apb1>;
+			status = "disabled";
+		};
+
+		ehci: ehci-hcd@0x02900000 {
+		  compatible = "generic-ehci";
+		  reg = <0x02900000 0x400>;
+		  interrupt-parent = <&intc>;
+		  interrupts = <59>;
+		};
+
+
+		alsa: nationalchip-alsa@0x01200000 {
+			name = "nationalchip-alsa";
+			compatible  = "NationalChip,Alsa-Audio";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x01200000 0xf4>,
+				<0x0030a1a0 0xc>,
+				<0x0030a274 0x8>;
+			reg-names = "gx8010.aout.opt.regs",
+				"gx8010.aout.lodec.regs",
+				"gx8010.aout.irq.regs";
+			interrupts = <34>;
+			interrupt-names = "gx8010.aout.irqs";
+			status = "okay";
+		};
+
+		gxavdev-leo {
+			compatible  = "nationalchip,gxavdev.leo.device";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x01200000 0xf4>,
+				<0x0030a1a0 0xc>,
+				<0x0030a018 0x4>,
+				<0x0030a274 0x8>,
+				<0x04600100 0xe8>,
+				<0x04400000 0xd4>,
+				<0x04400000 0xd4>,
+				<0x04400200 0x30>,
+				<0x0230a000 0x4>,
+				<0x0230a018 0xc>,
+				<0x04d00000 0x1bc>;
+			reg-names = "gxavdev.aout.opt.regs",
+				"gxavdev.aout.lodac.regs",
+				"gxavdev.aout.clock.regs",
+				"gxavdev.aout.irq.regs",
+				"gxavdev.adec.opt.regs",
+				"gxavdev.jpeg.enc.regs",
+				"gxavdev.jpeg.dec.regs",
+				"gxavdev.jpeg.prp.regs",
+				"gxavdev.jpeg.reset.regs",
+				"gxavdev.jpeg.clk.regs",
+				"gxavdev.bt1120.regs";
+			interrupts = <34>,
+						<36>,
+						<36>,
+						<37>,
+						<47>;
+			interrupt-names = "gxavdev.aout.irqs",
+							"gxavdev.jpeg.enc.irqs",
+							"gxavdev.jpeg.dec.irqs",
+							"gxavdev.adec.irqs",
+							"gxavdev.bt1120.irqs";
+			status = "okay";
+		};
+
+		npu: gxnpu {
+			compatible = "nationalchip,npu-v1";
+			reg = <0x04000000 0x4000>, <0x01000000 0x4000>;
+			interrupt-parent = <&intc>;
+			interrupts = <33>, <34>;
+		};
+
+		vsp: gxvsp@0x0030A000 {
+			compatible = "nationalchip,vsp-v1";
+			reg = <0x0030A000 0x1000>;
+			interrupt-parent = <&intc>;
+			interrupts = <34>;
+		};
+	};
+};
