@@ -293,7 +293,7 @@ int spi_nand_scan(struct spi_nand *nand, const char *name)
 		mtd->name = dev_name(dev);
 
 	mtd->priv            = nand;
-	mtd->type            = MTD_MLCNANDFLASH;
+	mtd->type            = MTD_NANDFLASH;
 	mtd->flags           = MTD_WRITEABLE | MTD_POWERUP_LOCK;
 	mtd->size            = info->usable_size;
 	mtd->writesize       = info->page_main_size;

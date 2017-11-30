@@ -35,8 +35,6 @@
 static u32 (*leo_sdram_self_refresh_in_ocram)(u32 sdr_base, u32 resume_base);
 static void __iomem *resume_base_addr;
 static phys_addr_t resume_addr; /* The physical resume address for asm code */
-static void __iomem *intr_to_mcu_reg;
-static unsigned int idle_intr_to_mcu_channel;
 
 static int leo_setup_ocram_self_refresh(void)
 {
@@ -102,10 +100,6 @@ static int leo_setup_ocram_self_refresh(void)
 	if (!leo_sdram_self_refresh_in_ocram)
 		ret = -EFAULT;
 
-	np = of_find_compatible_node(NULL, NULL, "nationalchip,intr_to_mcu");
-	intr_to_mcu_reg     = of_iomap(np, 0);
-	of_property_read_u32(np, "idle_intr_to_mcu_channel", &idle_intr_to_mcu_channel);
-
 put_node:
 	of_node_put(np);
 
@@ -114,14 +108,12 @@ put_node:
 
 static int leo_pm_suspend(unsigned long arg)
 {
-	u32 ret, data;
+	u32 ret;
 
 	if (!sdr_ctl_base_addr )
 		return -EFAULT;
 
 	writel(resume_addr, resume_base_addr);
-	data = readl(intr_to_mcu_reg) | (1 << idle_intr_to_mcu_channel);
-	writel(data, intr_to_mcu_reg);
 	ret = leo_sdram_self_refresh_in_ocram((u32)sdr_ctl_base_addr, (u32)resume_base_addr);
 
 	pr_debug("%s self-refresh loops request=%d exit=%d\n", __func__,

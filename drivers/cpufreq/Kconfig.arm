@@ -226,7 +226,7 @@ config ARM_TEGRA20_CPUFREQ
 
 config ARM_LEO_CPUFREQ
 	bool "LEO CPUFreq support"
-	depends on ARCH_LEO
+	depends on (ARCH_LEO || ARCH_LEO_MPW)
 	default y
 	help
 	  This adds the CPUFreq driver support for LEO SOCs.

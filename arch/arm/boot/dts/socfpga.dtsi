@@ -847,28 +847,6 @@
 			interrupts = <0 40 4>;
 		};
 
-		gx-mailbox {
-		    compatible  = "nationalchip.mailbox.device";
-		    #address-cells = <1>;
-		    #size-cells = <1>;
-		    reg = <0xc0000000 0x24>;
-		    reg-names = "mb.regs";
-		    interrupts = <0 40 4>;
-		    interrupt-names = "mb.irq";
-		    status = "okay";
-		};
-
-		gx-mailbox-tee {
-		    compatible  = "nationalchip.mailbox_tee.device";
-		    #address-cells = <1>;
-		    #size-cells = <1>;
-		    reg = <0xc0400000 0x24>;
-		    reg-names = "mb_tee.regs";
-		    interrupts = <0 41 4>;
-		    interrupt-names = "mb_tee.irq";
-		    status = "okay";
-		};
-
 		gxavdev-leo {
 			compatible  = "nationalchip,gxavdev.leo.device";
 			#address-cells = <1>;

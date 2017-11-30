@@ -22,8 +22,8 @@
 #include "leo_mpw.dtsi"
 
 / {
-	model = "nationalchip leo_mpw_ssd_1v SoC";
-	compatible = "nationalchip,leo_mpw_ssd_1v", "nationalchip,leo";
+	model = "nationalchip leo_mpw_toy_1v SoC";
+	compatible = "nationalchip,leo_mpw_toy_1v", "nationalchip,leo";
 
 	chosen {
 		bootargs = "earlyprintk";

@@ -4,7 +4,7 @@ config IRQCHIP
 
 config ARM_NATIONALCHIP
 	bool
-	depends on ARCH_LEO
+	depends on (ARCH_LEO_MPW || ARCH_LEO)
 
 config ARM_GIC
 	bool

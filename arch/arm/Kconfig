@@ -899,6 +899,8 @@ source "arch/arm/mach-sa1100/Kconfig"
 
 source "arch/arm/mach-socfpga/Kconfig"
 
+source "arch/arm/mach-leo_mpw/Kconfig"
+
 source "arch/arm/mach-leo/Kconfig"
 
 source "arch/arm/mach-spear/Kconfig"

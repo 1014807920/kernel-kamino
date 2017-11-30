@@ -67,23 +67,3 @@ int drop_caches_sysctl_handler(struct ctl_table *table, int write,
 	}
 	return 0;
 }
-
-unsigned char *__gx_page_malloc(unsigned long size)
-{
-	void *p = NULL;
-	unsigned long real_size = size <= 4096 ? 4096 : size;
-
-	p = (unsigned char *)__get_free_pages(GFP_KERNEL | __GFP_NOWARN, get_order(real_size));
-	if (p != NULL)
-		return p;
-
-	printk("start drop pagecache & slab....\n");
-	iterate_supers(drop_pagecache_sb, NULL);
-	count_vm_event(DROP_PAGECACHE);
-	drop_slab();
-	count_vm_event(DROP_SLAB);
-
-	return (unsigned char *)__get_free_pages(GFP_KERNEL | __GFP_NOWARN, get_order(real_size));
-}
-
-EXPORT_SYMBOL(__gx_page_malloc);

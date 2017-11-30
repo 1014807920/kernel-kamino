@@ -7,4 +7,3 @@ endif
 ifeq ($(CONFIG_NATIONALCHIP_GXAVDEV), y)
 	obj-$(CONFIG_NATIONALCHIP_GXAVDEV) += gxavdev.o
 endif
-

@@ -131,6 +131,12 @@
 			reg = <0x0030a0d0 0x8>;
 		};
 
+		intr_to_mcu: intr_to_mcu@0x0030a270 {
+			compatible = "nationalchip,intr_to_mcu";
+			reg = <0x0030a270 0x8>;
+			idle_intr_to_mcu_channel = <30>;
+		};
+
 
 		mmc0: dwmmc@02d00000 {
 			compatible = "altr,socfpga-dw-mshc";
