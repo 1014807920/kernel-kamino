@@ -47,6 +47,12 @@
 		reg = <0x02500000 0x400>;
 	};
 
+	pmu {
+		compatible = "arm,cortex-a7-pmu";
+		interrupt-parent = <&intc>;
+		interrupts = <53>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -126,9 +132,10 @@
 			reg = <0x02c00000 0x1000>;
 		};
 
-		resume: resume@0030a0d0 {
-			compatible = "nationalchip,resume-reg";
-			reg = <0x0030a0d0 0x8>;
+		gx_pm: gx_pm@0030a0d0 {
+			compatible = "nationalchip,gx_pm";
+			reg = <0x0030a0d0 0x8>, <0x0030a268 12>;
+			cpu_int_chan = <31>;
 		};
 
 

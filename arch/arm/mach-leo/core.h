@@ -20,7 +20,7 @@
 #ifndef __MACH_CORE_H
 #define __MACH_CORE_H
 
-#define SOCFPGA_RSTMGR_CTRL	0x04
+#define SOCFPGA_RSTMGR_CTRL		0x04
 #define SOCFPGA_RSTMGR_MODMPURST	0x10
 #define SOCFPGA_RSTMGR_MODPERRST	0x14
 #define SOCFPGA_RSTMGR_BRGMODRST	0x1c
@@ -32,9 +32,28 @@
 extern void socfpga_init_clocks(void);
 extern void socfpga_sysmgr_init(void);
 
-extern void __iomem *sys_manager_base_addr;
-extern void __iomem *rst_manager_base_addr;
-extern void __iomem *sdr_ctl_base_addr;
+#define LEO_CPU_INT_STAT	0X00
+#define LEO_CPU_INT_CLEAN	0X04
+#define LEO_CPU_INT_ENABLE	0X08
+#define LEO_CPU_MSG_VALUE	0X00
+#define LEO_CPU_MSG_FLAGS	0X04
+
+enum reset_mode {
+	RESET_REBOOT,
+	RESET_POWEROFF,
+	RESET_SUSPEND,
+	RESET_RESUME,
+};
+
+struct gx_pm {
+	void __iomem *sdr_ctl_base_addr;
+	void __iomem *cpu_int_msg;		// cpu传递消息给mcu通用寄存器
+	void __iomem *cpu_int_base;		// cpu传递mcu中断控制器基地址
+	int cpu_int_chan;			// reboot/halt对应通道
+};
+
+extern struct gx_pm *gx_pm_get(void);
+extern void leo_suspend(void);
 
 #ifdef CONFIG_SUSPEND
 void v7_cpu_resume(void);

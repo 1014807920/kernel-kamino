@@ -17,6 +17,7 @@
 #include <linux/phy_fixed.h>
 #include <linux/interrupt.h>
 #include <linux/dma-mapping.h>
+#include <linux/platform_data/b53.h>
 #include <linux/bcm47xx_nvram.h>
 
 static const struct bcma_device_id bgmac_bcma_tbl[] = {
@@ -25,6 +26,18 @@ static const struct bcma_device_id bgmac_bcma_tbl[] = {
 	{},
 };
 MODULE_DEVICE_TABLE(bcma, bgmac_bcma_tbl);
+
+static inline bool bgmac_is_bcm4707_family(struct bgmac *bgmac)
+{
+	switch (bgmac->core->bus->chipinfo.id) {
+	case BCMA_CHIP_ID_BCM4707:
+	case BCMA_CHIP_ID_BCM47094:
+	case BCMA_CHIP_ID_BCM53018:
+		return true;
+	default:
+		return false;
+	}
+}
 
 static bool bgmac_wait_value(struct bcma_device *core, u16 reg, u32 mask,
 			     u32 value, int timeout)
@@ -234,6 +247,8 @@ err_dma_head:
 
 err_drop:
 	dev_kfree_skb(skb);
+	net_dev->stats.tx_dropped++;
+	net_dev->stats.tx_errors++;
 	return NETDEV_TX_OK;
 }
 
@@ -272,6 +287,8 @@ static void bgmac_dma_tx_free(struct bgmac *bgmac, struct bgmac_dma_ring *ring)
 				       DMA_TO_DEVICE);
 
 		if (slot->skb) {
+			bgmac->net_dev->stats.tx_bytes += slot->skb->len;
+			bgmac->net_dev->stats.tx_packets++;
 			bytes_compl += slot->skb->len;
 			pkts_compl++;
 
@@ -452,6 +469,7 @@ static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
 				bgmac_err(bgmac, "Found poisoned packet at slot %d, DMA issue!\n",
 					  ring->start);
 				put_page(virt_to_head_page(buf));
+				bgmac->net_dev->stats.rx_errors++;
 				break;
 			}
 
@@ -459,6 +477,8 @@ static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
 				bgmac_err(bgmac, "Found oversized packet at slot %d, DMA issue!\n",
 					  ring->start);
 				put_page(virt_to_head_page(buf));
+				bgmac->net_dev->stats.rx_length_errors++;
+				bgmac->net_dev->stats.rx_errors++;
 				break;
 			}
 
@@ -466,6 +486,12 @@ static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
 			len -= ETH_FCS_LEN;
 
 			skb = build_skb(buf, BGMAC_RX_ALLOC_SIZE);
+			if (unlikely(!skb)) {
+				bgmac_err(bgmac, "build_skb failed\n");
+				put_page(virt_to_head_page(buf));
+				bgmac->net_dev->stats.rx_errors++;
+				break;
+			}
 			skb_put(skb, BGMAC_RX_FRAME_OFFSET +
 				BGMAC_RX_BUF_OFFSET + len);
 			skb_pull(skb, BGMAC_RX_FRAME_OFFSET +
@@ -473,6 +499,8 @@ static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
 
 			skb_checksum_none_assert(skb);
 			skb->protocol = eth_type_trans(skb, bgmac->net_dev);
+			bgmac->net_dev->stats.rx_bytes += len;
+			bgmac->net_dev->stats.rx_packets++;
 			napi_gro_receive(&bgmac->napi, skb);
 			handled++;
 		} while (0);
@@ -982,11 +1010,9 @@ static void bgmac_mac_speed(struct bgmac *bgmac)
 static void bgmac_miiconfig(struct bgmac *bgmac)
 {
 	struct bcma_device *core = bgmac->core;
-	struct bcma_chipinfo *ci = &core->bus->chipinfo;
 	u8 imode;
 
-	if (ci->id == BCMA_CHIP_ID_BCM4707 ||
-	    ci->id == BCMA_CHIP_ID_BCM53018) {
+	if (bgmac_is_bcm4707_family(bgmac)) {
 		bcma_awrite32(core, BCMA_IOCTL,
 			      bcma_aread32(core, BCMA_IOCTL) | 0x40 |
 			      BGMAC_BCMA_IOCTL_SW_CLKEN);
@@ -1038,8 +1064,9 @@ static void bgmac_chip_reset(struct bgmac *bgmac)
 	    (ci->id == BCMA_CHIP_ID_BCM53572 && ci->pkg == BCMA_PKG_ID_BCM47188))
 		iost &= ~BGMAC_BCMA_IOST_ATTACHED;
 
-	/* 3GMAC: for BCM4707, only do core reset at bgmac_probe() */
-	if (ci->id != BCMA_CHIP_ID_BCM4707) {
+	/* 3GMAC: for BCM4707 & BCM47094, only do core reset at bgmac_probe() */
+	if (ci->id != BCMA_CHIP_ID_BCM4707 &&
+	    ci->id != BCMA_CHIP_ID_BCM47094) {
 		flags = 0;
 		if (iost & BGMAC_BCMA_IOST_ATTACHED) {
 			flags = BGMAC_BCMA_IOCTL_SW_CLKEN;
@@ -1050,9 +1077,7 @@ static void bgmac_chip_reset(struct bgmac *bgmac)
 	}
 
 	/* Request Misc PLL for corerev > 2 */
-	if (core->id.rev > 2 &&
-	    ci->id != BCMA_CHIP_ID_BCM4707 &&
-	    ci->id != BCMA_CHIP_ID_BCM53018) {
+	if (core->id.rev > 2 && !bgmac_is_bcm4707_family(bgmac)) {
 		bgmac_set(bgmac, BCMA_CLKCTLST,
 			  BGMAC_BCMA_CLKCTLST_MISC_PLL_REQ);
 		bgmac_wait_value(bgmac->core, BCMA_CLKCTLST,
@@ -1188,8 +1213,7 @@ static void bgmac_enable(struct bgmac *bgmac)
 		break;
 	}
 
-	if (ci->id != BCMA_CHIP_ID_BCM4707 &&
-	    ci->id != BCMA_CHIP_ID_BCM53018) {
+	if (!bgmac_is_bcm4707_family(bgmac)) {
 		rxq_ctl = bgmac_read(bgmac, BGMAC_RXQ_CTL);
 		rxq_ctl &= ~BGMAC_RXQ_CTL_MDP_MASK;
 		bp_clk = bcma_pmu_get_bus_clock(&bgmac->core->bus->drv_cc) /
@@ -1369,6 +1393,127 @@ static const struct net_device_ops bgmac_netdev_ops = {
  * ethtool_ops
  **************************************************/
 
+struct bgmac_stat {
+	u8 size;
+	u32 offset;
+	const char *name;
+};
+
+static struct bgmac_stat bgmac_get_strings_stats[] = {
+	{ 8, BGMAC_TX_GOOD_OCTETS, "tx_good_octets" },
+	{ 4, BGMAC_TX_GOOD_PKTS, "tx_good" },
+	{ 8, BGMAC_TX_OCTETS, "tx_octets" },
+	{ 4, BGMAC_TX_PKTS, "tx_pkts" },
+	{ 4, BGMAC_TX_BROADCAST_PKTS, "tx_broadcast" },
+	{ 4, BGMAC_TX_MULTICAST_PKTS, "tx_multicast" },
+	{ 4, BGMAC_TX_LEN_64, "tx_64" },
+	{ 4, BGMAC_TX_LEN_65_TO_127, "tx_65_127" },
+	{ 4, BGMAC_TX_LEN_128_TO_255, "tx_128_255" },
+	{ 4, BGMAC_TX_LEN_256_TO_511, "tx_256_511" },
+	{ 4, BGMAC_TX_LEN_512_TO_1023, "tx_512_1023" },
+	{ 4, BGMAC_TX_LEN_1024_TO_1522, "tx_1024_1522" },
+	{ 4, BGMAC_TX_LEN_1523_TO_2047, "tx_1523_2047" },
+	{ 4, BGMAC_TX_LEN_2048_TO_4095, "tx_2048_4095" },
+	{ 4, BGMAC_TX_LEN_4096_TO_8191, "tx_4096_8191" },
+	{ 4, BGMAC_TX_LEN_8192_TO_MAX, "tx_8192_max" },
+	{ 4, BGMAC_TX_JABBER_PKTS, "tx_jabber" },
+	{ 4, BGMAC_TX_OVERSIZE_PKTS, "tx_oversize" },
+	{ 4, BGMAC_TX_FRAGMENT_PKTS, "tx_fragment" },
+	{ 4, BGMAC_TX_UNDERRUNS, "tx_underruns" },
+	{ 4, BGMAC_TX_TOTAL_COLS, "tx_total_cols" },
+	{ 4, BGMAC_TX_SINGLE_COLS, "tx_single_cols" },
+	{ 4, BGMAC_TX_MULTIPLE_COLS, "tx_multiple_cols" },
+	{ 4, BGMAC_TX_EXCESSIVE_COLS, "tx_excessive_cols" },
+	{ 4, BGMAC_TX_LATE_COLS, "tx_late_cols" },
+	{ 4, BGMAC_TX_DEFERED, "tx_defered" },
+	{ 4, BGMAC_TX_CARRIER_LOST, "tx_carrier_lost" },
+	{ 4, BGMAC_TX_PAUSE_PKTS, "tx_pause" },
+	{ 4, BGMAC_TX_UNI_PKTS, "tx_unicast" },
+	{ 4, BGMAC_TX_Q0_PKTS, "tx_q0" },
+	{ 8, BGMAC_TX_Q0_OCTETS, "tx_q0_octets" },
+	{ 4, BGMAC_TX_Q1_PKTS, "tx_q1" },
+	{ 8, BGMAC_TX_Q1_OCTETS, "tx_q1_octets" },
+	{ 4, BGMAC_TX_Q2_PKTS, "tx_q2" },
+	{ 8, BGMAC_TX_Q2_OCTETS, "tx_q2_octets" },
+	{ 4, BGMAC_TX_Q3_PKTS, "tx_q3" },
+	{ 8, BGMAC_TX_Q3_OCTETS, "tx_q3_octets" },
+	{ 8, BGMAC_RX_GOOD_OCTETS, "rx_good_octets" },
+	{ 4, BGMAC_RX_GOOD_PKTS, "rx_good" },
+	{ 8, BGMAC_RX_OCTETS, "rx_octets" },
+	{ 4, BGMAC_RX_PKTS, "rx_pkts" },
+	{ 4, BGMAC_RX_BROADCAST_PKTS, "rx_broadcast" },
+	{ 4, BGMAC_RX_MULTICAST_PKTS, "rx_multicast" },
+	{ 4, BGMAC_RX_LEN_64, "rx_64" },
+	{ 4, BGMAC_RX_LEN_65_TO_127, "rx_65_127" },
+	{ 4, BGMAC_RX_LEN_128_TO_255, "rx_128_255" },
+	{ 4, BGMAC_RX_LEN_256_TO_511, "rx_256_511" },
+	{ 4, BGMAC_RX_LEN_512_TO_1023, "rx_512_1023" },
+	{ 4, BGMAC_RX_LEN_1024_TO_1522, "rx_1024_1522" },
+	{ 4, BGMAC_RX_LEN_1523_TO_2047, "rx_1523_2047" },
+	{ 4, BGMAC_RX_LEN_2048_TO_4095, "rx_2048_4095" },
+	{ 4, BGMAC_RX_LEN_4096_TO_8191, "rx_4096_8191" },
+	{ 4, BGMAC_RX_LEN_8192_TO_MAX, "rx_8192_max" },
+	{ 4, BGMAC_RX_JABBER_PKTS, "rx_jabber" },
+	{ 4, BGMAC_RX_OVERSIZE_PKTS, "rx_oversize" },
+	{ 4, BGMAC_RX_FRAGMENT_PKTS, "rx_fragment" },
+	{ 4, BGMAC_RX_MISSED_PKTS, "rx_missed" },
+	{ 4, BGMAC_RX_CRC_ALIGN_ERRS, "rx_crc_align" },
+	{ 4, BGMAC_RX_UNDERSIZE, "rx_undersize" },
+	{ 4, BGMAC_RX_CRC_ERRS, "rx_crc" },
+	{ 4, BGMAC_RX_ALIGN_ERRS, "rx_align" },
+	{ 4, BGMAC_RX_SYMBOL_ERRS, "rx_symbol" },
+	{ 4, BGMAC_RX_PAUSE_PKTS, "rx_pause" },
+	{ 4, BGMAC_RX_NONPAUSE_PKTS, "rx_nonpause" },
+	{ 4, BGMAC_RX_SACHANGES, "rx_sa_changes" },
+	{ 4, BGMAC_RX_UNI_PKTS, "rx_unicast" },
+};
+
+#define BGMAC_STATS_LEN	ARRAY_SIZE(bgmac_get_strings_stats)
+
+static int bgmac_get_sset_count(struct net_device *dev, int string_set)
+{
+	switch (string_set) {
+	case ETH_SS_STATS:
+		return BGMAC_STATS_LEN;
+	}
+
+	return -EOPNOTSUPP;
+}
+
+static void bgmac_get_strings(struct net_device *dev, u32 stringset,
+			      u8 *data)
+{
+	int i;
+
+	if (stringset != ETH_SS_STATS)
+		return;
+
+	for (i = 0; i < BGMAC_STATS_LEN; i++)
+		strlcpy(data + i * ETH_GSTRING_LEN,
+			bgmac_get_strings_stats[i].name, ETH_GSTRING_LEN);
+}
+
+static void bgmac_get_ethtool_stats(struct net_device *dev,
+				    struct ethtool_stats *ss, uint64_t *data)
+{
+	struct bgmac *bgmac = netdev_priv(dev);
+	const struct bgmac_stat *s;
+	unsigned int i;
+	u64 val;
+
+	if (!netif_running(dev))
+		return;
+
+	for (i = 0; i < BGMAC_STATS_LEN; i++) {
+		s = &bgmac_get_strings_stats[i];
+		val = 0;
+		if (s->size == 8)
+			val = (u64)bgmac_read(bgmac, s->offset + 4) << 32;
+		val |= bgmac_read(bgmac, s->offset);
+		data[i] = val;
+	}
+}
+
 static int bgmac_get_settings(struct net_device *net_dev,
 			      struct ethtool_cmd *cmd)
 {
@@ -1393,6 +1538,9 @@ static void bgmac_get_drvinfo(struct net_device *net_dev,
 }
 
 static const struct ethtool_ops bgmac_ethtool_ops = {
+	.get_strings		= bgmac_get_strings,
+	.get_sset_count		= bgmac_get_sset_count,
+	.get_ethtool_stats	= bgmac_get_ethtool_stats,
 	.get_settings		= bgmac_get_settings,
 	.set_settings		= bgmac_set_settings,
 	.get_drvinfo		= bgmac_get_drvinfo,
@@ -1467,14 +1615,12 @@ static int bgmac_fixed_phy_register(struct bgmac *bgmac)
 
 static int bgmac_mii_register(struct bgmac *bgmac)
 {
-	struct bcma_chipinfo *ci = &bgmac->core->bus->chipinfo;
 	struct mii_bus *mii_bus;
 	struct phy_device *phy_dev;
 	char bus_id[MII_BUS_ID_SIZE + 3];
 	int i, err = 0;
 
-	if (ci->id == BCMA_CHIP_ID_BCM4707 ||
-	    ci->id == BCMA_CHIP_ID_BCM53018)
+	if (bgmac_is_bcm4707_family(bgmac))
 		return bgmac_fixed_phy_register(bgmac);
 
 	mii_bus = mdiobus_alloc();
@@ -1538,6 +1684,17 @@ static void bgmac_mii_unregister(struct bgmac *bgmac)
 	mdiobus_free(mii_bus);
 }
 
+static struct b53_platform_data bgmac_b53_pdata = {
+};
+
+static struct platform_device bgmac_b53_dev = {
+	.name		= "b53-srab-switch",
+	.id		= -1,
+	.dev		= {
+		.platform_data = &bgmac_b53_pdata,
+	},
+};
+
 /**************************************************
  * BCMA bus ops
  **************************************************/
@@ -1545,7 +1702,6 @@ static void bgmac_mii_unregister(struct bgmac *bgmac)
 /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipattach */
 static int bgmac_probe(struct bcma_device *core)
 {
-	struct bcma_chipinfo *ci = &core->bus->chipinfo;
 	struct net_device *net_dev;
 	struct bgmac *bgmac;
 	struct ssb_sprom *sprom = &core->bus->sprom;
@@ -1573,6 +1729,11 @@ static int bgmac_probe(struct bcma_device *core)
 		dev_warn(&core->dev, "Using random MAC: %pM\n", mac);
 	}
 
+	/* This (reset &) enable is not preset in specs or reference driver but
+	 * Broadcom does it in arch PCI code when enabling fake PCI device.
+	 */
+	bcma_core_enable(core, 0);
+
 	/* Allocation and references */
 	net_dev = alloc_etherdev(sizeof(*bgmac));
 	if (!net_dev)
@@ -1584,6 +1745,7 @@ static int bgmac_probe(struct bcma_device *core)
 	bgmac->net_dev = net_dev;
 	bgmac->core = core;
 	bcma_set_drvdata(core, bgmac);
+	SET_NETDEV_DEV(net_dev, &core->dev);
 
 	/* Defaults */
 	memcpy(bgmac->net_dev->dev_addr, mac, ETH_ALEN);
@@ -1626,8 +1788,7 @@ static int bgmac_probe(struct bcma_device *core)
 	bgmac_chip_reset(bgmac);
 
 	/* For Northstar, we have to take all GMAC core out of reset */
-	if (ci->id == BCMA_CHIP_ID_BCM4707 ||
-	    ci->id == BCMA_CHIP_ID_BCM53018) {
+	if (bgmac_is_bcm4707_family(bgmac)) {
 		struct bcma_device *ns_core;
 		int ns_gmac;
 
@@ -1679,6 +1840,14 @@ static int bgmac_probe(struct bcma_device *core)
 	net_dev->hw_features = net_dev->features;
 	net_dev->vlan_features = net_dev->features;
 
+	if (bgmac_is_bcm4707_family(bgmac) && !bgmac_b53_pdata.regs) {
+		bgmac_b53_pdata.regs = ioremap_nocache(0x18007000, 0x1000);
+
+		err = platform_device_register(&bgmac_b53_dev);
+		if (!err)
+			bgmac->b53_device = &bgmac_b53_dev;
+	}
+
 	err = register_netdev(bgmac->net_dev);
 	if (err) {
 		bgmac_err(bgmac, "Cannot register net device\n");
@@ -1704,6 +1873,10 @@ err_netdev_free:
 static void bgmac_remove(struct bcma_device *core)
 {
 	struct bgmac *bgmac = bcma_get_drvdata(core);
+
+	if (bgmac->b53_device)
+		platform_device_unregister(&bgmac_b53_dev);
+	bgmac->b53_device = NULL;
 
 	unregister_netdev(bgmac->net_dev);
 	bgmac_mii_unregister(bgmac);

@@ -35,6 +35,8 @@
 static u32 (*leo_sdram_self_refresh_in_ocram)(u32 sdr_base, u32 resume_base);
 static void __iomem *resume_base_addr;
 static phys_addr_t resume_addr; /* The physical resume address for asm code */
+static void __iomem *intr_to_mcu_reg;
+static unsigned int idle_intr_to_mcu_channel;
 
 static int leo_setup_ocram_self_refresh(void)
 {
@@ -84,8 +86,7 @@ static int leo_setup_ocram_self_refresh(void)
 		goto put_node;
 	}
 
-	np = of_find_compatible_node(NULL, NULL, "nationalchip,resume-reg");
-	resume_base_addr = of_iomap(np, 0);
+	resume_base_addr = gx_pm_get()->cpu_int_msg + LEO_CPU_MSG_VALUE;
 
 	/* Copy the code that puts DDR in self refresh to ocram */
 	leo_sdram_self_refresh_in_ocram =
@@ -100,6 +101,10 @@ static int leo_setup_ocram_self_refresh(void)
 	if (!leo_sdram_self_refresh_in_ocram)
 		ret = -EFAULT;
 
+	np = of_find_compatible_node(NULL, NULL, "nationalchip,intr_to_mcu");
+	intr_to_mcu_reg     = of_iomap(np, 0);
+	of_property_read_u32(np, "idle_intr_to_mcu_channel", &idle_intr_to_mcu_channel);
+
 put_node:
 	of_node_put(np);
 
@@ -108,17 +113,33 @@ put_node:
 
 static int leo_pm_suspend(unsigned long arg)
 {
-	u32 ret;
+	u32 ret, data;
+	u32 tmp;
+	struct gx_pm *pm = gx_pm_get();
 
-	if (!sdr_ctl_base_addr )
+	if (!pm->sdr_ctl_base_addr)
 		return -EFAULT;
 
 	writel(resume_addr, resume_base_addr);
-	ret = leo_sdram_self_refresh_in_ocram((u32)sdr_ctl_base_addr, (u32)resume_base_addr);
+	data = readl(intr_to_mcu_reg) | (1 << idle_intr_to_mcu_channel);
+	writel(data, intr_to_mcu_reg);
+
+	/* flush cache back to ram */
+	flush_cache_all();
+	/* disable l1 cache */
+	__asm__ __volatile__ (
+		"mrc    p15, 0, %0, c1, c0, 0\n\t"
+		"bic    %0, %0, #0x1000\n\t"
+		"bic    %0, %0, #0x4\n\t"
+		"mcr    p15, 0, %0, c1, c0, 0\n\t"
+		: "=r" (tmp));
+
+	ret = leo_sdram_self_refresh_in_ocram((u32)pm->sdr_ctl_base_addr, (u32)resume_base_addr);
 
 	pr_debug("%s self-refresh loops request=%d exit=%d\n", __func__,
 			ret & 0xffff, (ret >> 16) & 0xffff);
 
+	leo_suspend();
 	return 0;
 }
 
@@ -129,8 +150,6 @@ static int leo_pm_enter(suspend_state_t state)
 	case PM_SUSPEND_MEM:
 	case PM_SUSPEND_FREEZE:
 		outer_disable();
-		/* flush cache back to ram */
-		flush_cache_all();
 		cpu_suspend(0, leo_pm_suspend);
 		writel(0, resume_base_addr);
 		outer_resume();

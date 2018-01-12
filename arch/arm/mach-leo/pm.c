@@ -86,8 +86,7 @@ static int leo_setup_ocram_self_refresh(void)
 		goto put_node;
 	}
 
-	np = of_find_compatible_node(NULL, NULL, "nationalchip,resume-reg");
-	resume_base_addr = of_iomap(np, 0);
+	resume_base_addr = gx_pm_get()->cpu_int_msg + LEO_CPU_MSG_VALUE;
 
 	/* Copy the code that puts DDR in self refresh to ocram */
 	leo_sdram_self_refresh_in_ocram =
@@ -115,18 +114,20 @@ put_node:
 static int leo_pm_suspend(unsigned long arg)
 {
 	u32 ret, data;
+	struct gx_pm *pm = gx_pm_get();
 
-	if (!sdr_ctl_base_addr )
+	if (!pm->sdr_ctl_base_addr)
 		return -EFAULT;
 
-	writel(resume_addr, resume_base_addr);
-	data = readl(intr_to_mcu_reg) | (1 << idle_intr_to_mcu_channel);
-	writel(data, intr_to_mcu_reg);
-	ret = leo_sdram_self_refresh_in_ocram((u32)sdr_ctl_base_addr, (u32)resume_base_addr);
+//	writel(resume_addr, resume_base_addr);
+//	data = readl(intr_to_mcu_reg) | (1 << idle_intr_to_mcu_channel);
+//	writel(data, intr_to_mcu_reg);
+	ret = leo_sdram_self_refresh_in_ocram((u32)pm->sdr_ctl_base_addr, (u32)resume_base_addr);
 
 	pr_debug("%s self-refresh loops request=%d exit=%d\n", __func__,
 			ret & 0xffff, (ret >> 16) & 0xffff);
 
+	leo_suspend();
 	return 0;
 }
 

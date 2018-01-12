@@ -26,35 +26,51 @@
 #include <asm/cacheflush.h>
 
 #include "core.h"
+static struct gx_pm pm_info;
 
-void __iomem *sys_manager_base_addr;
-void __iomem *rst_manager_base_addr;
-void __iomem *sdr_ctl_base_addr;
+inline struct gx_pm *gx_pm_get(void)
+{
+	return &pm_info;
+}
+
+static void do_gx_pm(enum reset_mode mode)
+{
+	u32 tmp;
+	struct gx_pm *pm = gx_pm_get();
+
+	writel(mode, pm->cpu_int_msg + LEO_CPU_MSG_FLAGS);
+
+	tmp  = readl(pm->cpu_int_base + LEO_CPU_INT_ENABLE);
+	tmp |= 1 << pm->cpu_int_chan;
+	writel(tmp, pm->cpu_int_base + LEO_CPU_INT_ENABLE);
+}
+
+void leo_suspend(void)
+{
+	do_gx_pm(RESET_SUSPEND);
+}
+
+static void leo_power_off(void)
+{
+	do_gx_pm(RESET_POWEROFF);
+}
 
 void __init leo_sysmgr_init(void)
 {
-
 	struct device_node *np;
-
-#if 0
-	np = of_find_compatible_node(NULL, NULL, "altr,sys-mgr");
-
-	if (of_property_read_u32(np, "cpu1-start-addr",
-				(u32 *) &socfpga_cpu1start_addr))
-		pr_err("SMP: Need cpu1-start-addr in device tree.\n");
-
-	/* Ensure that socfpga_cpu1start_addr is visible to other CPUs */
-	smp_wmb();
-	sync_cache_w(&socfpga_cpu1start_addr);
-
-	sys_manager_base_addr = of_iomap(np, 0);
-
-	np = of_find_compatible_node(NULL, NULL, "altr,rst-mgr");
-	rst_manager_base_addr = of_iomap(np, 0);
-#endif
+	struct gx_pm *pm = gx_pm_get();
 
 	np = of_find_compatible_node(NULL, NULL, "nationalchip,sdr-ctl");
-	sdr_ctl_base_addr = of_iomap(np, 0);
+	pm->sdr_ctl_base_addr = of_iomap(np, 0);
+
+	np = of_find_compatible_node(NULL, NULL, "nationalchip,gx_pm");
+	pm->cpu_int_base = of_iomap(np, 1);
+	pm->cpu_int_msg  = of_iomap(np, 0);
+
+	if(of_property_read_u32(np, "cpu_int_chan", &pm->cpu_int_chan) < 0)
+		pm->cpu_int_chan = -1;
+
+	pm_power_off = leo_power_off;
 }
 
 static void __init leo_init_irq(void)
@@ -65,17 +81,7 @@ static void __init leo_init_irq(void)
 
 static void leo_restart(enum reboot_mode mode, const char *cmd)
 {
-#if 0
-	u32 temp;
-
-	temp = readl(rst_manager_base_addr + SOCFPGA_RSTMGR_CTRL);
-
-	if (mode == REBOOT_HARD)
-		temp |= RSTMGR_CTRL_SWCOLDRSTREQ;
-	else
-		temp |= RSTMGR_CTRL_SWWARMRSTREQ;
-	writel(temp, rst_manager_base_addr + SOCFPGA_RSTMGR_CTRL);
-#endif
+	do_gx_pm(RESET_REBOOT);
 }
 
 static const char *nationalchip_dt_match[] = {
