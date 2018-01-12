@@ -84,9 +84,9 @@
 
 &spi0{
 	status = "okay";
-	spinand1: TC58CVG053HRA1G@0 {
-		compatible        = "spi-nand";
-		spi-max-frequency = <37125000>; // A7 总线频率14850000/37125000 = 4; 实际频率CK总线频率99M/4 = 25M
+	spinor1: M25P@0 {
+		compatible        = "jedec,spi-nor";
+		spi-max-frequency = <37125000>;  // A7 总线频率14850000/37125000 = 4; 实际频率CK总线频率99M/4 = 25M
 		cs-reg            = <0x30a168>;
 		dma-reg           = <0x800000>;
 		reg               = <0>;

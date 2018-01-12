@@ -47,6 +47,12 @@
 		reg = <0x02500000 0x400>;
 	};
 
+	pmu {
+		compatible = "arm,cortex-a7-pmu";
+		interrupt-parent = <&intc>;
+		interrupts = <53>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

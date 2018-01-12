@@ -123,7 +123,7 @@
 #define BGMAC_TX_LEN_1024_TO_1522		0x334
 #define BGMAC_TX_LEN_1523_TO_2047		0x338
 #define BGMAC_TX_LEN_2048_TO_4095		0x33c
-#define BGMAC_TX_LEN_4095_TO_8191		0x340
+#define BGMAC_TX_LEN_4096_TO_8191		0x340
 #define BGMAC_TX_LEN_8192_TO_MAX		0x344
 #define BGMAC_TX_JABBER_PKTS			0x348		/* Error */
 #define BGMAC_TX_OVERSIZE_PKTS			0x34c		/* Error */
@@ -166,7 +166,7 @@
 #define BGMAC_RX_LEN_1024_TO_1522		0x3e4
 #define BGMAC_RX_LEN_1523_TO_2047		0x3e8
 #define BGMAC_RX_LEN_2048_TO_4095		0x3ec
-#define BGMAC_RX_LEN_4095_TO_8191		0x3f0
+#define BGMAC_RX_LEN_4096_TO_8191		0x3f0
 #define BGMAC_RX_LEN_8192_TO_MAX		0x3f4
 #define BGMAC_RX_JABBER_PKTS			0x3f8		/* Error */
 #define BGMAC_RX_OVERSIZE_PKTS			0x3fc		/* Error */
@@ -199,9 +199,9 @@
 #define  BGMAC_CMDCFG_TAI			0x00000200
 #define  BGMAC_CMDCFG_HD			0x00000400	/* Set if in half duplex mode */
 #define  BGMAC_CMDCFG_HD_SHIFT			10
-#define  BGMAC_CMDCFG_SR_REV0			0x00000800	/* Set to reset mode, for other revs */
-#define  BGMAC_CMDCFG_SR_REV4			0x00002000	/* Set to reset mode, only for core rev 4 */
-#define  BGMAC_CMDCFG_SR(rev)  ((rev == 4) ? BGMAC_CMDCFG_SR_REV4 : BGMAC_CMDCFG_SR_REV0)
+#define  BGMAC_CMDCFG_SR_REV0			0x00000800	/* Set to reset mode, for core rev 0-3 */
+#define  BGMAC_CMDCFG_SR_REV4			0x00002000	/* Set to reset mode, for core rev >= 4 */
+#define  BGMAC_CMDCFG_SR(rev)  ((rev >= 4) ? BGMAC_CMDCFG_SR_REV4 : BGMAC_CMDCFG_SR_REV0)
 #define  BGMAC_CMDCFG_ML			0x00008000	/* Set to activate mac loopback mode */
 #define  BGMAC_CMDCFG_AE			0x00400000
 #define  BGMAC_CMDCFG_CFE			0x00800000
@@ -463,6 +463,9 @@ struct bgmac {
 	bool has_robosw;
 
 	bool loopback;
+
+	/* platform device for associated switch */
+	struct platform_device *b53_device;
 };
 
 static inline u32 bgmac_read(struct bgmac *bgmac, u16 offset)

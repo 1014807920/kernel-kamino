@@ -115,6 +115,9 @@ config HAVE_KERNEL_LZO
 config HAVE_KERNEL_LZ4
 	bool
 
+config HAVE_KERNEL_CAT
+	bool
+
 choice
 	prompt "Kernel compression mode"
 	default KERNEL_GZIP
@@ -181,9 +184,10 @@ config KERNEL_LZO
 	bool "LZO"
 	depends on HAVE_KERNEL_LZO
 	help
-	  Its compression ratio is the poorest among the choices. The kernel
-	  size is about 10% bigger than gzip; however its speed
-	  (both compression and decompression) is the fastest.
+	  Its compression ratio is the poorest among the choices (apart from
+	  uncompressed below). The kernel size is about 10% bigger than gzip;
+	  however its speed (both compression and decompression) is the
+	  fastest.
 
 config KERNEL_LZ4
 	bool "LZ4"
@@ -196,6 +200,12 @@ config KERNEL_LZ4
 	  Its compression ratio is worse than LZO. The size of the kernel
 	  is about 8% bigger than LZO. But the decompression speed is
 	  faster than LZO.
+
+config KERNEL_CAT
+	bool "uncompressed"
+	depends on HAVE_KERNEL_CAT
+	help
+	  Don't use compression at all.
 
 endchoice
 
@@ -1286,6 +1296,10 @@ config RELAY
 
 	  If unsure, say N.
 
+config CRASHLOG
+	bool "Crash logging"
+	depends on (!NO_BOOTMEM || HAVE_MEMBLOCK) && !(ARM || SPARC || PPC)
+
 config BLK_DEV_INITRD
 	bool "Initial RAM filesystem and RAM disk (initramfs/initrd) support"
 	depends on BROKEN || !FRV
@@ -1344,6 +1358,17 @@ config SYSCTL_ARCH_UNALIGN_ALLOW
 	  Allows arches to define/use @unaligned_enabled to runtime toggle
 	  the unaligned access emulation.
 	  see arch/parisc/kernel/unaligned.c for reference
+
+config KALLSYMS_UNCOMPRESSED
+	bool "Keep kallsyms uncompressed"
+	depends on KALLSYMS
+	help
+		Normally kallsyms contains compressed symbols (using a token table),
+		reducing the uncompressed kernel image size. Keeping the symbol table
+		uncompressed significantly improves the size of this part in compressed
+		kernel images.
+
+		Say N unless you need compressed kernel images to be small.
 
 config HAVE_PCSPKR_PLATFORM
 	bool
@@ -1622,6 +1647,15 @@ config EMBEDDED
 	  This option should be enabled if compiling the kernel for
 	  an embedded system so certain expert options are available
 	  for configuration.
+
+config MANGLE_BOOTARGS
+	bool "Rename offending bootargs"
+	depends on EXPERT
+	help
+	  Sometimes the bootloader passed bogus root= and rootfstype=
+	  parameters to the kernel, and while you want to ignore them,
+	  you need to know the values f.e. to support dual firmware
+	  layouts on the flash.
 
 config HAVE_PERF_EVENTS
 	bool
@@ -2014,6 +2048,13 @@ config MODULE_COMPRESS_XZ
 	bool "XZ"
 
 endchoice
+
+config MODULE_STRIPPED
+	bool "Reduce module size"
+	depends on MODULES
+	help
+	  Remove module parameter descriptions, author info, version, aliases,
+	  device tables, etc.
 
 endif # MODULES
 
