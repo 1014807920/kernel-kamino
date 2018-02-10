@@ -37,9 +37,9 @@ static int leo_pmode_cur;
 #define   CONFIG_CLOCK_DIV_CONFIG 0x24
 
 static struct cpufreq_frequency_table freq_table[] = {
+	{ .frequency = 216000000 },
 	{ .frequency = 432000000 },
-	{ .frequency = 594000000 },
-	/*{ .frequency = 148500000 },*/
+	{ .frequency = 600000000 },
 	{ .frequency = CPUFREQ_TABLE_END },
 };
 
@@ -50,9 +50,10 @@ static struct param{
 	unsigned char  clkn;
 	unsigned char  clkm;
 } param_table[] = {
-	{432000000  , 0  , 0  , 1  , 1 } , // 432Hz    DDR
-	{594000000  , 0  , 1  , 1  , 43 } , // 594MHz   ARM
-	/*{148500000  , 0  , 3  , 1  , 43 } ,*/ // 148.5MHz   ARM
+	{216000000  , 0  , 3  , 0  , 71 }, // 216MHz
+	{432000000  , 0  , 2  , 0  , 71 }, // 432MHz
+	{600000000  , 0  , 1  , 0  , 49 }, // 600MHz
+	/*{1200000000 , 0  , 0  , 0  , 49 }, // 1.2GHz DTO */
 };
 
 void __iomem *g_leo_config_addr_base = NULL;
@@ -92,18 +93,18 @@ static unsigned int PLL_Config_query(void)
 	clkod = (j>>12)&0xff;
 	clkn = (j>>7)&0xf;
 	clkm = j&0x3f;
-	
-	if (clkn == 1)
+
+	if (clkn == 0)
 	{
-		if (clkod == 0 && clkm == 1)
+		if (clkod == 3 && clkm == 71)
 		{
 			return 0;
 		}
-		else if (clkod == 1 && clkm == 43)
+		else if (clkod == 2 && clkm == 71)
 		{
 			return 1;
 		}
-		else if (clkod == 3 && clkm == 43)
+		else if (clkod == 1 && clkm == 49)
 		{
 			return 2;
 		}

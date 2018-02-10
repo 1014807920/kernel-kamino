@@ -1645,5 +1645,14 @@ config RTC_DRV_HID_SENSOR_TIME
 	  If this driver is compiled as a module, it will be named
 	  rtc-hid-sensor-time.
 
+config RTC_DRV_LEO
+	tristate "NatinalChip leo SoC RTC"
+	depends on ARCH_LEO
+	help
+	  RTC (Realtime Clock) driver for the clock inbuilt into the
+	  NatinalChip Leo series of SoCs.
+
+	  This driver can also be build as a module. If so, the module
+	  will be called rtc-leo.
 
 endif # RTC_CLASS

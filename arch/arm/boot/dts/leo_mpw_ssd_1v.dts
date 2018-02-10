@@ -79,6 +79,11 @@
 			key_code  = <KEY_VOLUMEDOWN>;
 			key_gpio = <22>;
 		};
+
+		key5:key5{
+			key_code  = <KEY_POWER>;
+			key_gpio = <12>;
+		};
 	};
 };
 

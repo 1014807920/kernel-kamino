@@ -570,7 +570,11 @@ dtb-$(CONFIG_ARCH_LEO_MPW) += \
 	leo_mpw_toy_1v.dtb
 
 dtb-$(CONFIG_ARCH_LEO) += \
-	leo_fpga_1v.dtb
+	leo_fpga_1v.dtb       \
+	leo_gx8010_dev_1v.dtb \
+	leo_gx8010_ssd_1v.dtb \
+	leo_gx8010_rkd_1v.dtb \
+	leo_gx8010_rkd_2v.dtb
 
 dtb-$(CONFIG_ARCH_SPEAR13XX) += \
 	spear1310-evb.dtb \

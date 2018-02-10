@@ -1,9 +1,18 @@
 #
 # leo Pin control drivers
 #
+
 config PINCTRL_NATIONALCHIP
-	bool "nationalchip LEO_A7 pinctrl driver"
+	bool
+	default y
 	select PINMUX
 	select PINCONF
 	select GPIOLIB_IRQCHIP
 
+config PINCTRL_LEO_MPW
+	bool "nationalchip LEO MPW pinctrl driver"
+	depends on ARCH_LEO_MPW
+
+config PINCTRL_LEO
+	bool "nationalchip LEO pinctrl driver"
+	depends on ARCH_LEO
