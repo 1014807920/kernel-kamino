@@ -22,7 +22,7 @@
 #include "leo.dtsi"
 
 / {
-	model = "nationalchip leo_fpga_1v SoC";
+	model = "nationalchip leo_gx8010_rkd_1v SoC";
 	compatible = "nationalchip,leo_fpga_1v", "nationalchip,leo";
 
 	chosen {
@@ -51,7 +51,7 @@
 
 	a7_key:a7_key@0x2305008{
 		compatible = "nationalchip,LEO-keypad";
-		reg = <0x2305008 0x90>;
+		reg = <0x230501c 0x90>;
 		autorepeat;
 
 		key1:key1{
@@ -62,7 +62,7 @@
 
 	csky_key:csky_key@0x305004{
 		compatible = "nationalchip,LEO-keypad";
-		reg = <0x305004 0x90>;
+		reg = <0x30501c 0x90>;
 		autorepeat;
 
         key5:key2{
@@ -104,9 +104,10 @@
 	};
 };
 
-&dwuart{
-	clock-frequency = <20000000>;
+&mmc0{
+	status = "disabled";
 };
-&dwmmc{
-	clock-frequency = <20000000>;
+
+&mmc1{
+	status = "disabled";
 };

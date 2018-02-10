@@ -35,8 +35,6 @@ extern void socfpga_sysmgr_init(void);
 #define LEO_CPU_INT_STAT	0X00
 #define LEO_CPU_INT_CLEAN	0X04
 #define LEO_CPU_INT_ENABLE	0X08
-#define LEO_CPU_MSG_VALUE	0X00
-#define LEO_CPU_MSG_FLAGS	0X04
 
 enum reset_mode {
 	RESET_REBOOT,
@@ -48,6 +46,7 @@ enum reset_mode {
 struct gx_pm {
 	void __iomem *sdr_ctl_base_addr;
 	void __iomem *cpu_int_msg;		// cpu传递消息给mcu通用寄存器
+	void __iomem *cpu_int_msg_flag;		// cpu传递消息标志给mcu通用寄存器
 	void __iomem *cpu_int_base;		// cpu传递mcu中断控制器基地址
 	int cpu_int_chan;			// reboot/halt对应通道
 };

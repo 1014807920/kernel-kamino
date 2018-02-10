@@ -16,7 +16,7 @@
  */
 
 #include "skeleton.dtsi"
-/*#include "leo_mpw_pinctrl.dtsi"*/
+#include "leo_pinctrl.dtsi"
 #include <dt-bindings/reset/altr,rst-mgr.h>
 #include <dt-bindings/input/linux-event-codes.h>
 
@@ -72,13 +72,13 @@
 				osc1: osc1 {
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
-					clock-frequency = <27000000>;
+					clock-frequency = <12000000>;
 				};
 
 				ahb: ahb{
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
-					clock-frequency = <148500000>;
+					clock-frequency = <150000000>;
 				};
 
 				apb0: apb0{
@@ -87,25 +87,25 @@
 					clock-frequency = <54000000>;
 				};
 
-				apb1: apb1{
-					#clock-cells = <0>;
-					compatible = "fixed-clock";
-					clock-frequency = <148500000>;
-				};
-
 				dwuart: dwuart{
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
-					clock-frequency = <20000000>;
+					clock-frequency = <48000000>;
 				};
 				dwmmc: dwmmc{
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
-					clock-frequency = <20000000>;
+					clock-frequency = <50000000>;
 				};
 			};
 		};
 
+		timer {
+		    compatible = "arm,armv7-timer";
+		    clock-frequency = <12000000>;
+		    interrupt-parent = <&intc>;
+		    interrupts = <17>, <16>, <19>, <18>;
+		};
 		timer0 {
 			compatible = "nationalchip,timer-v1";
 			reg = <0x0220A000 0x400>;
@@ -132,15 +132,10 @@
 			reg = <0x02c00000 0x1000>;
 		};
 
-		resume: resume@0030a0d0 {
-			compatible = "nationalchip,resume-reg";
-			reg = <0x0030a0d0 0x8>;
-		};
-
-		intr_to_mcu: intr_to_mcu@0x0030a270 {
-			compatible = "nationalchip,intr_to_mcu";
-			reg = <0x0030a270 0x8>;
-			idle_intr_to_mcu_channel = <30>;
+		gx_pm: gx_pm@0030a0d0 {
+			compatible = "nationalchip,gx_pm";
+			reg = <0x0030a0c4 0x4>, <0x0030a174 0x4>, <0x0030a268 12>;
+			cpu_int_chan = <31>;
 		};
 
 
@@ -222,7 +217,7 @@
 			poll-mode = <1>;
 
 			num-cs = <4>;
-			clocks = <&apb1>;
+			clocks = <&ahb>;
 			cs-reg = <0x30a168>;
 			status = "okay";
 		};
@@ -235,7 +230,7 @@
 			interrupt-parent = <&intc>;
 			interrupts = <11>;
 			num-cs = <4>;
-			clocks = <&apb1>;
+			clocks = <&ahb>;
 			cs-reg = <0x230a600>;
 			status = "okay";
 		};
@@ -453,7 +448,7 @@
 		};
 
 
-		uart1: serial1@0x02309000 {
+		uart0: serial0@0x02309000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x02309000 0x1000>;
 			interrupt-parent = <&intc>;
@@ -463,7 +458,7 @@
 			clocks = <&dwuart>;
 		};
 
-		uart0: serial0@0x02308000 {
+		uart1: serial1@0x02308000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x02308000 0x1000>;
 			interrupt-parent = <&intc>;
@@ -478,7 +473,7 @@
 			reg = <0x0220b000 0x1000>;
 			interrupt-parent = <&intc>;
 			interrupts = <9>;
-			clocks = <&apb1>;
+			clocks = <&ahb>;
 			status = "disabled";
 		};
 
@@ -501,13 +496,14 @@
 			reg-names = "gx8010.aout.opt.regs",
 				"gx8010.aout.lodec.regs",
 				"gx8010.aout.irq.regs";
-			interrupts = <34>;
+			interrupts = <49>;
 			interrupt-names = "gx8010.aout.irqs";
 			status = "okay";
 		};
 
 		gxavdev-leo {
 			compatible  = "nationalchip,gxavdev.leo.device";
+			interrupt-parent = <&intc>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x01200000 0xf4>,
@@ -532,7 +528,7 @@
 				"gxavdev.jpeg.reset.regs",
 				"gxavdev.jpeg.clk.regs",
 				"gxavdev.bt1120.regs";
-			interrupts = <34>,
+			interrupts = <49>,
 						<36>,
 						<36>,
 						<37>,
@@ -558,5 +554,13 @@
 			interrupt-parent = <&intc>;
 			interrupts = <34>;
 		};
+
+		rtc: rtc@0x00209000 {
+			compatible = "nationalchip,leo-rtc";
+			reg = <0x00209000 0x500>;
+			clocks = <&apb0>;
+			interrupt-parent = <&intc>;
+			interrupts = <4>;
+        };
 	};
 };
