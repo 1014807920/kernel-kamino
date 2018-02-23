@@ -38,7 +38,7 @@ static void do_gx_pm(enum reset_mode mode)
 	u32 tmp;
 	struct gx_pm *pm = gx_pm_get();
 
-	writel(mode, pm->cpu_int_msg + LEO_CPU_MSG_FLAGS);
+	writel(mode, pm->cpu_int_msg_flag);
 
 	tmp  = readl(pm->cpu_int_base + LEO_CPU_INT_ENABLE);
 	tmp |= 1 << pm->cpu_int_chan;
@@ -64,8 +64,9 @@ void __init leo_sysmgr_init(void)
 	pm->sdr_ctl_base_addr = of_iomap(np, 0);
 
 	np = of_find_compatible_node(NULL, NULL, "nationalchip,gx_pm");
-	pm->cpu_int_base = of_iomap(np, 1);
-	pm->cpu_int_msg  = of_iomap(np, 0);
+	pm->cpu_int_base     = of_iomap(np, 2);
+	pm->cpu_int_msg      = of_iomap(np, 0);
+	pm->cpu_int_msg_flag = of_iomap(np, 1);
 
 	if(of_property_read_u32(np, "cpu_int_chan", &pm->cpu_int_chan) < 0)
 		pm->cpu_int_chan = -1;
