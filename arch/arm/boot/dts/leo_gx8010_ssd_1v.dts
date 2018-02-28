@@ -53,11 +53,6 @@
 		compatible = "nationalchip,LEO-keypad";
 		reg = <0x230501c 0x90>;
 		autorepeat;
-
-		key1:key1{
-			key_code  = <KEY_VOLUMEUP>;
-			key_gpio = <0>;
-		};
 	};
 
 	csky_key:csky_key@0x305004{
@@ -65,19 +60,27 @@
 		reg = <0x30501c 0x90>;
 		autorepeat;
 
-        key5:key2{
-			key_code  = <KEY_VOLUMEDOWN>;
-			key_gpio = <12>;
-		};
-        key6:key3{
+        key1:key1{
 			key_code  = <KEY_MUTE>;
-			key_gpio = <13>;
+			key_gpio = <15>;
 		};
-        key7:key4{
-			key_code  = <KEY_HOME>;
+        key2:key2{
+			key_code  = <KEY_VOLUMEUP>;
+			key_gpio = <16>;
+		};
+        key3:key3{
+			key_code  = <KEY_VOLUMEDOWN>;
 			key_gpio = <14>;
 		};
-	};
+        key5:key5{
+			key_code  = <KEY_HOME>;
+			key_gpio = <17>;
+		};
+        key6:key6{
+			key_code  = <KEY_POWER>;
+			key_gpio = <20>;
+		};
+    };
 };
 
 &spi1{

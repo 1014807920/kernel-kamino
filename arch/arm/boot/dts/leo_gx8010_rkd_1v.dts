@@ -108,6 +108,3 @@
 	status = "disabled";
 };
 
-&mmc1{
-	status = "disabled";
-};
