@@ -78,6 +78,20 @@
 			key_gpio = <14>;
 		};
 	};
+    touchkey {
+        compatible = "nationalchip,touchkey";
+        status = "okay";
+        ck-gpio = <&ck_gpa0 30 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cap_i2c {
+			 compatible = "nationalchip,cap1xxx_i2c";
+			 i2c_bus = <0>;
+			 interrupt = <4>;
+			 reg = <0x28>;
+			 status = "okay";
+			 };
+	};
 };
 
 &spi1{

@@ -728,4 +728,11 @@ config KEYBOARD_LEO
 	  To compile this driver as a module, choose M here: the
 	  module will be called nationalchip-keypad.
 
+config KEYBOARD_CAP1114
+	tristate "Microchip CAP1114 based touch sensors"
+	depends on OF && I2C
+	select REGMAP_I2C
+	help
+	  Say Y here to enable the CAP1114 touch sensor driver.
+
 endif

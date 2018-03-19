@@ -1139,11 +1139,13 @@ static int nationalchip_pinctrl_probe(struct platform_device *pdev)
 	}
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	drvdata->irq = platform_get_irq(pdev,0);
-	if (drvdata->irq == -ENXIO)
-	{
-		dev_err(&pdev->dev, "driver not get irq\n");
-		return -ENXIO;
+	if (of_property_read_bool(pdev->dev.of_node, "interrupts")){
+		drvdata->irq = platform_get_irq(pdev,0);
+		if (drvdata->irq == -ENXIO)
+		{
+			dev_err(&pdev->dev, "driver not get irq\n");
+			return -ENXIO;
+		}
 	}
 
 	PRINTK("res start:%#x\n", res->start);
@@ -1164,7 +1166,8 @@ static int nationalchip_pinctrl_probe(struct platform_device *pdev)
 	}
 	PRINTK("---- gx register pinctrl ok\n");
 
-	nationalchip_gpio_irq_init(pdev, drvdata);
+	if (of_property_read_bool(pdev->dev.of_node, "interrupts"))
+		nationalchip_gpio_irq_init(pdev, drvdata);
 
 	drvdata->dev = dev;
 	platform_set_drvdata(pdev, drvdata);
