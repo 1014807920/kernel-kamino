@@ -27,8 +27,6 @@
 #define N_HCI	15
 #endif
 
-#define BTCOEX
-
 /* Ioctls */
 #define HCIUARTSETPROTO		_IOW('U', 200, int)
 #define HCIUARTGETPROTO		_IOR('U', 201, int)
@@ -184,9 +182,3 @@ int bcm_deinit(void);
 int qca_init(void);
 int qca_deinit(void);
 #endif
-
-int rtk_h5_init(void);
-int rtk_h5_deinit(void);
-
-int hci_uart_send_frame(struct hci_dev *hdev, struct sk_buff *skb);
-
