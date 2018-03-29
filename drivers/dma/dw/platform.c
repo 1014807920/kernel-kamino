@@ -103,6 +103,7 @@ dw_dma_parse_dt(struct platform_device *pdev)
 	struct device_node *np = pdev->dev.of_node;
 	struct dw_dma_platform_data *pdata;
 	u32 tmp, arr[DW_DMA_MAX_NR_MASTERS];
+	u32 data, size;
 
 	if (!np) {
 		dev_err(&pdev->dev, "Missing DT data\n");
@@ -142,6 +143,31 @@ dw_dma_parse_dt(struct platform_device *pdev)
 				pdata->nr_masters))
 		for (tmp = 0; tmp < pdata->nr_masters; tmp++)
 			pdata->data_width[tmp] = arr[tmp];
+
+	pdata->int_from_ck = of_property_read_bool(np, "int-from-ck");
+	if(pdata->int_from_ck){
+		of_property_read_u32_index(np, "ifc-reg", 0, &data);
+		of_property_read_u32_index(np, "ifc-reg", 1, &size);
+		pdata->ifc_reg = ioremap(data, size);
+		if(!pdata->ifc_reg){
+			dev_err(&pdev->dev, "intc reg region map failed\n");
+			return NULL;
+		}
+		of_property_read_u32(np, "ifc-chan", &pdata->ifc_chan);
+
+		of_property_read_u32_index(np, "ifc-data", 0, &data);
+		of_property_read_u32_index(np, "ifc-data", 1, &size);
+		pdata->ifc_data = ioremap(data, size);
+		if(!pdata->ifc_data){
+			dev_err(&pdev->dev, "intc data region map failed\n");
+			return NULL;
+		}
+
+		data = 1 << pdata->ifc_chan;
+		writel(data, pdata->ifc_reg + 4);	// clear ck to arm intc spi bit
+		writel(data, pdata->ifc_reg + 8);	// enable ck to arm intc spi bit
+	}
+
 
 	return pdata;
 }

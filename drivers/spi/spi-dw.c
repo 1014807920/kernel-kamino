@@ -148,47 +148,47 @@ static void dw_spi_set_cs(struct spi_device *spi, bool enable)
 		dw_writel(dws, DW_SPI_SER, BIT(spi->chip_select));
 }
 
-#define tx_max(_dws) ({                                                         \
-	uint32_t __tx_left, __fifo_left, __rxtx_gap;                            \
-	__tx_left   = ((_dws)->tx_end - (_dws)->tx) / (_dws)->n_bytes;          \
-	__fifo_left = (_dws)->fifo_len - dw_readl((_dws), DW_SPI_TXFLR);        \
-	__rxtx_gap  = (((_dws)->rx_end - (_dws)->rx) -                          \
-		((_dws)->tx_end - (_dws)->tx)) / (_dws)->n_bytes;               \
+#define tx_max(_dws) ({\
+	uint32_t __tx_left, __fifo_left, __rxtx_gap;\
+	__tx_left   = ((_dws)->tx_end - (_dws)->tx) / (_dws)->n_bytes;\
+	__fifo_left = (_dws)->fifo_len - dw_readl((_dws), DW_SPI_TXFLR);\
+	__rxtx_gap  = (((_dws)->rx_end - (_dws)->rx) -\
+		((_dws)->tx_end - (_dws)->tx)) / (_dws)->n_bytes;\
 	min3(__tx_left, __fifo_left, (uint32_t)((_dws)->fifo_len - __rxtx_gap));\
 })
 
-#define dw_writer(_dws) do{                                                     \
-	uint32_t __max = tx_max(_dws);                                          \
-	uint16_t __txw = ~0;                                                    \
-	while(__max--){                                                         \
-		if((_dws)->tx_end - (_dws)->len){                               \
-			__txw = ((_dws)->n_bytes == 1) ?                        \
-			*(uint8_t*)((_dws)->tx) : *(uint16_t*)((_dws)->tx);     \
-		}                                                               \
-		dw_write_io_reg(_dws, DW_SPI_DR, __txw);                        \
-		(_dws)->tx += (_dws)->n_bytes;                                  \
-	}                                                                       \
+#define dw_writer(_dws) do{\
+	uint32_t __max = tx_max(_dws);\
+	uint16_t __txw = ~0;\
+	while(__max--){\
+		if((_dws)->tx_end - (_dws)->len){\
+			__txw = ((_dws)->n_bytes == 1) ?\
+			*(uint8_t*)((_dws)->tx) : *(uint16_t*)((_dws)->tx);\
+		}\
+		dw_write_io_reg(_dws, DW_SPI_DR, __txw);\
+		(_dws)->tx += (_dws)->n_bytes;\
+	}\
 }while(0)
 
-#define rx_max(_dws) ({                                                         \
-	uint32_t __rx_left, __fifo_left = dw_readl(_dws, DW_SPI_RXFLR);         \
-	__rx_left = ((_dws)->rx_end - (_dws)->rx) / (_dws)->n_bytes;            \
-	__rx_left < __fifo_left ? __rx_left : __fifo_left;                      \
+#define rx_max(_dws) ({\
+	uint32_t __rx_left, __fifo_left = dw_readl(_dws, DW_SPI_RXFLR);\
+	__rx_left = ((_dws)->rx_end - (_dws)->rx) / (_dws)->n_bytes;\
+	__rx_left < __fifo_left ? __rx_left : __fifo_left;\
 })
 
-#define dw_reader(_dws) do{                                                     \
-	uint32_t __max = rx_max(_dws);                                          \
-	uint16_t __rxw;                                                         \
-	while(__max--){                                                         \
-		__rxw = dw_read_io_reg(_dws, DW_SPI_DR);                        \
-		if((_dws)->rx_end - (_dws)->len) {                              \
-			if ((_dws)->n_bytes == 1)                               \
-				*(uint8_t*)((_dws)->rx)  = __rxw;               \
-			else                                                    \
-				*(uint16_t*)((_dws)->rx) = __rxw;               \
-		}                                                               \
-		(_dws)->rx += (_dws)->n_bytes;                                  \
-	}                                                                       \
+#define dw_reader(_dws) do{\
+	uint32_t __max = rx_max(_dws);\
+	uint16_t __rxw;\
+	while(__max--){\
+		__rxw = dw_read_io_reg(_dws, DW_SPI_DR);\
+		if((_dws)->rx_end - (_dws)->len) {\
+			if ((_dws)->n_bytes == 1)\
+				*(uint8_t*)((_dws)->rx)  = __rxw;\
+			else\
+				*(uint16_t*)((_dws)->rx) = __rxw;\
+		}\
+		(_dws)->rx += (_dws)->n_bytes;\
+	}\
 }while(0)
 
 static void int_error_stop(struct dw_spi *dws, const char *msg)
@@ -302,6 +302,8 @@ static int dw_spi_transfer_one(struct spi_master *master,
 		chip->speed_hz = transfer->speed_hz;
 		chip->clk_div  = clk_div < 2 ? 2 : clk_div;
 		spi_set_clk(dws, chip->clk_div);
+		if(chip->speed_hz > DW_SPI_SPEED_LEVEL)
+			dw_writel(dws, DW_SPI_SAMPLE_DLY, dws->sample_dly);	// 设置相位延时
 	}
 	if (transfer->bits_per_word == 8) {
 		dws->n_bytes = 1;
@@ -371,6 +373,7 @@ static int dw_spi_transfer_one(struct spi_master *master,
 		ret = dws->dma_ops->dma_transfer(dws, transfer);
 		if (ret < 0)
 			return ret;
+		return 1;
 	}
 
 	if (chip->poll_mode)

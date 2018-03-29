@@ -1,0 +1,9 @@
+Package: perf
+Version: 4.4.25-2
+Depends: libc, libssp, librt, libpthread, libelf1, libdw, libpthread, librt, objdump
+Source: package/devel/perf
+Section: devel
+Maintainer: Felix Fietkau <nbd@nbd.name>
+Architecture: leo
+Installed-Size: 552148
+Description:  perf is the Linux performance monitoring tool
