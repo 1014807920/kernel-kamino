@@ -222,50 +222,6 @@ void ehci_adjust_port_wakeup_flags(struct ehci_hcd *ehci,
 }
 EXPORT_SYMBOL_GPL(ehci_adjust_port_wakeup_flags);
 
-#define LEO_USBCONFIG1      0x0230a104
-#define USB_PLL_ENABLE_BIT  (1 << 5)
-static void clear_usb_pll_enable (struct ehci_hcd *ehci)
-{
-	void *usb_config1_p;
-	u32   usb_config1_value;
-
-	usb_config1_p = ioremap (LEO_USBCONFIG1, 4);
-	if (usb_config1_p) {
-		usb_config1_value = ehci_readl(ehci, usb_config1_p);
-		if (usb_config1_value & USB_PLL_ENABLE_BIT) {
-			usb_config1_value &= ~USB_PLL_ENABLE_BIT;
-			ehci_writel (ehci, usb_config1_value, usb_config1_p);
-			ehci_readl (ehci, usb_config1_p);
-		}
-		ehci_dbg (ehci, "%s, usb config1 : %x\n", __func__, ehci_readl (ehci, usb_config1_p));
-		iounmap (usb_config1_p);
-		return ;
-	}
-
-	ehci_err (ehci, "%s, ioremap failed\n", __func__);
-}
-
-static void set_usb_pll_enable (struct ehci_hcd *ehci)
-{
-	void *usb_config1_p;
-	u32   usb_config1_value;
-
-	usb_config1_p = ioremap (LEO_USBCONFIG1, 4);
-	if (usb_config1_p) {
-		usb_config1_value = ehci_readl(ehci, usb_config1_p);
-		if (!(usb_config1_value & USB_PLL_ENABLE_BIT)) {
-			usb_config1_value |= USB_PLL_ENABLE_BIT;
-			ehci_writel (ehci, usb_config1_value, usb_config1_p);
-			ehci_readl (ehci, usb_config1_p);
-		}
-		ehci_dbg (ehci, "%s, usb config1 : %x\n", __func__, ehci_readl (ehci, usb_config1_p));
-		iounmap (usb_config1_p);
-		return ;
-	}
-
-	ehci_err (ehci, "%s, ioremap failed\n", __func__);
-}
-
 static int ehci_bus_suspend (struct usb_hcd *hcd)
 {
 	struct ehci_hcd		*ehci = hcd_to_ehci (hcd);
@@ -273,7 +229,6 @@ static int ehci_bus_suspend (struct usb_hcd *hcd)
 	int			mask;
 	int			changed;
 	bool			fs_idle_delay;
-	u32         port_sc;
 
 	ehci_dbg(ehci, "suspend root hub\n");
 
@@ -348,15 +303,6 @@ static int ehci_bus_suspend (struct usb_hcd *hcd)
 						USB_PORT_STAT_HIGH_SPEED)
 				fs_idle_delay = true;
 			ehci_writel(ehci, t2, reg);
-
-			/* when ehci suspend a port, the phy will shutdown ohci's clock, 
-			 * This will result in the ohci register being inaccessible,
-			 * So Open the clock of ohci's as follows
-			 */
-			port_sc = ehci_readl(ehci, &ehci->regs->port_status[port]);
-			if (port_sc & PORT_SUSPEND)
-				set_usb_pll_enable (ehci);
-
 			changed = 1;
 		}
 	}
@@ -424,6 +370,7 @@ static int ehci_bus_suspend (struct usb_hcd *hcd)
 	return 0;
 }
 
+
 /* caller has locked the root hub, and should reset/reinit on error */
 static int ehci_bus_resume (struct usb_hcd *hcd)
 {
@@ -432,8 +379,6 @@ static int ehci_bus_resume (struct usb_hcd *hcd)
 	u32			power_okay;
 	int			i;
 	unsigned long		resume_needed = 0;
-
-	clear_usb_pll_enable (ehci);
 
 	if (time_before (jiffies, ehci->next_statechange))
 		msleep(5);
@@ -1230,7 +1175,6 @@ int ehci_hub_control(
 			 */
 			temp &= ~PORT_WKCONN_E;
 			temp |= PORT_WKDISC_E | PORT_WKOC_E;
-			printk (KERN_INFO "%s, %d, Want goto Suspend\n", __func__, __LINE__);
 			ehci_writel(ehci, temp | PORT_SUSPEND, status_reg);
 			if (ehci->has_tdi_phy_lpm) {
 				spin_unlock_irqrestore(&ehci->lock, flags);
@@ -1316,11 +1260,9 @@ int ehci_hub_control(
 						&ehci->regs->port_status[ports];
 
 				temp = ehci_readl(ehci, sreg) & ~PORT_RWC_BITS;
-				if (temp & PORT_PE) {
-					printk (KERN_INFO "%s, %d, Want goto Suspend\n", __func__, __LINE__);
+				if (temp & PORT_PE)
 					ehci_writel(ehci, temp | PORT_SUSPEND,
 							sreg);
-				}
 			}
 
 			spin_unlock_irqrestore(&ehci->lock, flags);

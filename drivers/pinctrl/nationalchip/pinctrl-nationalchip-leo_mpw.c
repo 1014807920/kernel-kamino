@@ -531,6 +531,7 @@ static int nationalchip_gpio_get(struct gpio_chip *gc, unsigned offset)
 {
     struct nationalchip_pin_bank *bank = gc_to_pin_bank(gc);
     void __iomem *reg;
+    /*void __iomem    *irq_base;*/
     u32 data;
 
     reg = bank->drvdata->virt_base + bank->pctl_offset;
@@ -1036,7 +1037,8 @@ static int nationalchip_gpio_irq_init(struct platform_device *pdev,
 	struct nationalchip_pin_bank *pin_bank;
 	struct irq_chip *irq_chip;
 	int bank, ret;
-	void __iomem    *irq_base;
+    void __iomem    *irq_base;
+	/*u32 data;*/
 
 	irq_base = drvdata->virt_base;
 

@@ -63,21 +63,6 @@
 			/* 需要什么管脚输出pwm再相应添加*/
 	};
 
-	ck_pinctrl_0: ck_pinctrl_0@0x2305000 {
-		compatible = "nationalchip,LEO_A7-pinctrl";
-		reg = <0x305000 0x60>;
-			ck_gpa0: ck_gpa0 {
-				gpio-controller;
-				#gpio-cells = <2>;
-
-				nationalchip,base_offset = <0x0>;
-				nationalchip,reg_offset  = <0x0 0x10 0x1c 0x20 0x30 0x3c>;
-				nationalchip,cfg_width   = <  1	   1	1	 4 	  1    1>;
-				nationalchip,nr_pins     = <32>;
-			};
-			/* 需要什么管脚输出pwm再相应添加*/
-	};
-
 	pwm0: pwm0@0x02305080 {
 		compatible = "nationalchip,LEO_A7-pwm";
 		reg = <0x02305080 0x7f>;

@@ -23,8 +23,6 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/pm_runtime.h>
-#include <linux/of.h>
-#include <linux/of_device.h>
 
 #include "../dmaengine.h"
 #include "internal.h"
@@ -620,14 +618,6 @@ static irqreturn_t dw_dma_interrupt(int irq, void *dev_id)
 	struct dw_dma *dw = dev_id;
 	u32 status = dma_readl(dw, STATUS_INT);
 
-	if(dw->int_from_ck){
-		u32 data = readl(dw->ifc_reg);
-		if((data & (1 << dw->ifc_chan)) == 0)
-			return IRQ_NONE;
-		status = readl(dw->ifc_data);
-		writel(1 << dw->ifc_chan, dw->ifc_reg + 4);	// clear ck to arm intc spi bit
-	}
-
 	dev_vdbg(dw->dma.dev, "%s: status=0x%x\n", __func__, status);
 
 	/* Check if we have any interrupt from the DMAC */
@@ -773,6 +763,7 @@ dwc_prep_slave_sg(struct dma_chan *chan, struct scatterlist *sgl,
 		unsigned long flags, void *context)
 {
 	struct dw_dma_chan	*dwc = to_dw_dma_chan(chan);
+	struct dw_dma		*dw = to_dw_dma(chan->device);
 	struct dma_slave_config	*sconfig = &dwc->dma_sconfig;
 	struct dw_desc		*prev;
 	struct dw_desc		*first;
@@ -798,22 +789,25 @@ dwc_prep_slave_sg(struct dma_chan *chan, struct scatterlist *sgl,
 	case DMA_MEM_TO_DEV:
 		reg_width = __ffs(sconfig->dst_addr_width);
 		reg = sconfig->dst_addr;
-		ctllo = DWC_DEFAULT_CTLLO(chan) |
-			DWC_CTLL_DST_WIDTH(reg_width)|
-			DWC_CTLL_DST_FIX | DWC_CTLL_SRC_INC;
+		ctllo = (DWC_DEFAULT_CTLLO(chan)
+				| DWC_CTLL_DST_WIDTH(reg_width)
+				| DWC_CTLL_DST_FIX
+				| DWC_CTLL_SRC_INC);
 
 		ctllo |= sconfig->device_fc ? DWC_CTLL_FC(DW_DMA_FC_P_M2P) :
 			DWC_CTLL_FC(DW_DMA_FC_D_M2P);
 
-		data_width = __ffs(sconfig->src_addr_width);
+		data_width = dw->data_width[dwc->src_master];
 
 		for_each_sg(sgl, sg, sg_len, i) {
-			struct dw_desc *desc;
-			u32 len, dlen, mem;
+			struct dw_desc	*desc;
+			u32		len, dlen, mem;
 
 			mem = sg_dma_address(sg);
 			len = sg_dma_len(sg);
-			mem_width = min_t(u32, data_width, dwc_fast_ffs(mem | len));
+
+			mem_width = min_t(unsigned int,
+					  data_width, dwc_fast_ffs(mem | len));
 
 slave_sg_todev_fill_desc:
 			desc = dwc_desc_get(dwc);
@@ -845,34 +839,32 @@ slave_sg_todev_fill_desc:
 			prev = desc;
 			total_len += dlen;
 
-			dev_vdbg(chan2dev(chan), "desc->lli.sar = 0x%x, "
-				"desc->lli.dar = 0x%x, desc->lli.ctllo = 0x%x\n",
-				desc->lli.sar, desc->lli.dar, desc->lli.ctllo);
-
 			if (len)
 				goto slave_sg_todev_fill_desc;
 		}
 		break;
-
 	case DMA_DEV_TO_MEM:
 		reg_width = __ffs(sconfig->src_addr_width);
 		reg = sconfig->src_addr;
-		ctllo = DWC_DEFAULT_CTLLO(chan)|
-			DWC_CTLL_SRC_WIDTH(reg_width)|
-			DWC_CTLL_DST_INC | DWC_CTLL_SRC_FIX;
+		ctllo = (DWC_DEFAULT_CTLLO(chan)
+				| DWC_CTLL_SRC_WIDTH(reg_width)
+				| DWC_CTLL_DST_INC
+				| DWC_CTLL_SRC_FIX);
 
 		ctllo |= sconfig->device_fc ? DWC_CTLL_FC(DW_DMA_FC_P_P2M) :
 			DWC_CTLL_FC(DW_DMA_FC_D_P2M);
 
-		data_width = __ffs(sconfig->dst_addr_width);
+		data_width = dw->data_width[dwc->dst_master];
 
 		for_each_sg(sgl, sg, sg_len, i) {
-			struct dw_desc *desc;
-			u32 len, dlen, mem;
+			struct dw_desc	*desc;
+			u32		len, dlen, mem;
 
 			mem = sg_dma_address(sg);
 			len = sg_dma_len(sg);
-			mem_width = min_t(u32, data_width, dwc_fast_ffs(mem | len));
+
+			mem_width = min_t(unsigned int,
+					  data_width, dwc_fast_ffs(mem | len));
 
 slave_sg_fromdev_fill_desc:
 			desc = dwc_desc_get(dwc);
@@ -902,10 +894,6 @@ slave_sg_fromdev_fill_desc:
 			}
 			prev = desc;
 			total_len += dlen;
-
-			dev_vdbg(chan2dev(chan), "desc->lli.sar = 0x%x, "
-				"desc->lli.dar = 0x%x, desc->lli.ctllo = 0x%x\n",
-				desc->lli.sar, desc->lli.dar, desc->lli.ctllo);
 
 			if (len)
 				goto slave_sg_fromdev_fill_desc;
@@ -1568,12 +1556,6 @@ int dw_dma_probe(struct dw_dma_chip *chip, struct dw_dma_platform_data *pdata)
 		goto err_pdata;
 	}
 
-	/* get interrupt transmit info */
-	dw->int_from_ck	= pdata->int_from_ck;
-	dw->ifc_reg	= pdata->ifc_reg;
-	dw->ifc_data	= pdata->ifc_data;
-	dw->ifc_chan	= pdata->ifc_chan;
-
 	/* Get hardware configuration parameters */
 	dw->nr_masters = pdata->nr_masters;
 	for (i = 0; i < dw->nr_masters; i++)
@@ -1697,8 +1679,6 @@ int dw_dma_probe(struct dw_dma_chip *chip, struct dw_dma_platform_data *pdata)
 	dw->dma.directions = BIT(DMA_DEV_TO_MEM) | BIT(DMA_MEM_TO_DEV) |
 			     BIT(DMA_MEM_TO_MEM);
 	dw->dma.residue_granularity = DMA_RESIDUE_GRANULARITY_BURST;
-
-	dev_set_name(dw->dma.dev, "%s", chip->dev->of_node->name);
 
 	err = dma_async_device_register(&dw->dma);
 	if (err)

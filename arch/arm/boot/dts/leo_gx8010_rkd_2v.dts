@@ -80,50 +80,27 @@
 	};
 };
 
+&spi1{
+	status = "okay";
+	spinand0: GD5F1G@0 {
+		compatible        = "spi-nand";
+		spi-max-frequency = <25000000>;
+		cs-reg            = <0x30a168>;
+		dma-reg           = <0x800000>;
+		reg               = <0>;
+		status            = "okay";
+	};
+};
+
 &spi0{
 	status = "okay";
-
-	/* spi nor flash */
-	/*M25P@0 {
-		compatible = "jedec,spi-nor";
-		spi-max-frequency = <85000000>;
-		reg = <1>;
-		status = "okay";
-
-		partitions {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "fixed-partitions";
-			scpu {		reg = <0x000000 0x100000>; };
-			uboot_stage1 {	reg = <0x100000 0x40000>;  };
-			uboot_env {	reg = <0x140000 0x40000>;  };
-			uboot_stage2 {	reg = <0x180000 0x80000>;  };
-			boot_music {	reg = <0x200000 0x80000>;  };
-			kernel_dtb {	reg = <0x280000 0x80000>;  };
-			kernel {	reg = <0x300000 0x500000>; };
-		};
-	};*/
-
-	/* spi nand flash */
-	spinand_mcu@0 {
-		compatible = "spinand";
-		spi-max-frequency = <85000000>;
-		reg = <0>;
-		status = "okay";
-
-		partitions {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			compatible = "fixed-partitions";
-			scpu {		reg = <0x000000 0x100000>; };
-			uboot_stage1 {	reg = <0x100000 0x40000>;  };
-			uboot_env {	reg = <0x140000 0x40000>;  };
-			uboot_stage2 {	reg = <0x180000 0x80000>;  };
-			boot_music {	reg = <0x200000 0x80000>;  };
-			kernel_dtb {	reg = <0x280000 0x80000>;  };
-			kernel {	reg = <0x300000 0x700000>; };
-			rootfs {	reg = <0xa00000 0x7600000>;};
-		};
+	spinand1: TC58CVG053HRA1G@0 {
+		compatible        = "spi-nand";
+		spi-max-frequency = <37125000>;  // A7 总线频率14850000/37125000 = 4; 实际频率CK总线频率99M/4 = 25M
+		cs-reg            = <0x30a168>;
+		dma-reg           = <0x800000>;
+		reg               = <0>;
+		status            = "okay";
 	};
 };
 

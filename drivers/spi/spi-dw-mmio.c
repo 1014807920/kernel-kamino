@@ -55,14 +55,11 @@ static int dw_spi_mmio_probe(struct platform_device *pdev)
 		return -EINVAL;
 	}
 
-	dws->paddr = mem->start;
-
 	dws->regs = devm_ioremap_resource(&pdev->dev, mem);
 	if (IS_ERR(dws->regs)) {
 		dev_err(&pdev->dev, "SPI region map failed\n");
 		return PTR_ERR(dws->regs);
 	}
-	spi_mask_intr(dws, 0xff);
 
 	ret = device_property_read_u32(&pdev->dev, "cs-reg", &cs_reg);
 	if(!ret){
@@ -116,7 +113,6 @@ static int dw_spi_mmio_probe(struct platform_device *pdev)
 
 	dws->max_freq = clk_get_rate(dwsmmio->clk);
 	device_property_read_u32(&pdev->dev, "poll-mode", &dws->poll_mode);
-	device_property_read_u32(&pdev->dev, "sample-dly", &dws->sample_dly);
 	device_property_read_u32(&pdev->dev, "reg-io-width", &dws->reg_io_width);
 
 	num_cs = 4;
@@ -146,7 +142,6 @@ static int dw_spi_mmio_probe(struct platform_device *pdev)
 		}
 	}
 
-	dw_spi_dma_init(dws);
 	ret = dw_spi_add_host(&pdev->dev, dws);
 	if (ret)
 		goto out;
