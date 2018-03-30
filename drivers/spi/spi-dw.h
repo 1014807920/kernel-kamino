@@ -31,8 +31,6 @@
 #define DW_SPI_IDR			0x58
 #define DW_SPI_VERSION			0x5c
 #define DW_SPI_DR			0x60
-#define DW_SPI_SAMPLE_DLY		0xF0
-#define DW_SPI_SPEED_LEVEL		40000000
 
 /* Bit fields in CTRLR0 */
 #define SPI_DFS_OFFSET			0
@@ -120,8 +118,7 @@ struct dw_spi {
 	u32			reg_io_width;	/* DR I/O width in bytes */
 	u16			bus_num;
 	u16			num_cs;		/* supported slave numbers */
-	int			poll_mode;
-	u32			sample_dly;	/* spi phase delay */
+	int 			poll_mode;
 
 	/* Current message transfer state info */
 	size_t			len;
@@ -257,11 +254,6 @@ extern int dw_spi_add_host(struct device *dev, struct dw_spi *dws);
 extern void dw_spi_remove_host(struct dw_spi *dws);
 extern int dw_spi_suspend_host(struct dw_spi *dws);
 extern int dw_spi_resume_host(struct dw_spi *dws);
-#ifdef CONFIG_SPI_DW_MMIO_DMA
-extern int dw_spi_dma_init(struct dw_spi *dws);
-#else
-#define dw_spi_dma_init(args...)
-#endif
 
 /* platform related setup */
 extern int dw_spi_mid_init(struct dw_spi *dws); /* Intel MID platforms */

@@ -61,12 +61,6 @@
 		interrupt-parent = <&intc>;
 		ranges;
 
-		clock-arm@0 {
-			compatible = "nationalchip,arm-clk";
-			clocks = <&arm_cpu>, <&axi>, <&ahb>;
-			clock-names = "arm-clk-cpu", "arm-clk-axi", "arm-clk-ahb";
-		};
-
 		clkmgr@0030A000 {
 			compatible = "nationalchip,clk-mgr";
 			reg = <0x0030A000 0x1000>;
@@ -75,459 +69,33 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
-				osc: osc {
+				osc1: osc1 {
 					#clock-cells = <0>;
 					compatible = "fixed-clock";
 					clock-frequency = <12000000>;
 				};
 
-// PLL 配置
-
-				pll_arm: pll_arm@0230a0d0{
+				ahb: ahb{
 					#clock-cells = <0>;
-					compatible = "nationalchip,leo_pll";
-					reg = <0x0230a0d0 0x4>;
-					clocks = <&osc>;
-					clock-output-names = "pll_arm";
+					compatible = "fixed-clock";
+					clock-frequency = <150000000>;
 				};
-
-				pll_ddr: pll_ddr@0230a0e0{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_pll";
-					reg = <0x0230a0e0 0x4>;
-					clocks = <&osc>;
-					clock-output-names = "pll_ddr";
-					clock-frequency = <216000000>;
-				};
-
-				pll_audio: pll_audio@0030a0c0{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_pll";
-					reg = <0x0030a0c0 0x4>;
-					clocks = <&osc>;
-					clock-output-names = "pll_audio";
-					clock-frequency = <516000000>;
-				};
-
-				pll_dto: pll_dto@0030a0c8{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_pll";
-					reg = <0x0030a0c8 0x4>;
-					clocks = <&osc>;
-					clock-output-names = "pll_dto";
-				};
-
-// DDR PLL 时钟树
-				ddr_mux: ddr_mux{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_mux";
-					reg = <0x0230a170 0x4>;
-					mux_offset = <18>;
-					clocks = <&osc>, <&pll_ddr>;
-					clock-output-names = "ddr_mux";
-				};
-
-				ddr_div: ddr_div{
-					compatible = "fixed-factor-clock";
-					clocks = <&arm_cpu>;
-					#clock-cells = <0>;
-					clock-div  = <2>;
-					clock-mult = <1>;
-					clock-output-names = "ddr_div";
-				};
-
-				bt1120_ddr: bt1120_ddr{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <18>;
-					clocks = <&ddr_div>;
-					clock-output-names = "bt1120_ddr";
-				};
-
-			/*	npu_ddr: npu_ddr{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <16>;
-					clocks = <&ddr_div>;
-					clock-output-names = "npu_ddr";
-				}; */
-
-				ga_jpeg_ddr: ga_jpeg_ddr{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <17>;
-					clocks = <&ddr_div>;
-					clock-output-names = "ga_jpeg_ddr";
-				};
-
-// ARM PLL 时钟树
-
-				arm_cpu_div: arm_cpu_div{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_divider";
-					reg = <0x0230a178 0x4 0x0230a178 0x4>;
-					clocks = <&pll_arm>;
-					div_shift = <12>;
-					div_width = <6>;
-					div_base  = <1>;
-					enable_shift = <20>;
-					clock-output-names = "arm_cpu_div";
-				};
-
-				arm_cpu: arm_cpu{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_mux";
-					reg = <0x0230a170 0x4>;
-					mux_offset = <0>;
-					clocks = <&osc>, <&arm_cpu_div>;
-					clock-output-names = "arm_cpu";
-				};
-
-				arm_debug_div: arm_debug_div{
-					compatible = "fixed-factor-clock";
-					clocks = <&arm_cpu>;
-					#clock-cells = <0>;
-					clock-div  = <8>;
-					clock-mult = <1>;
-					clock-output-names = "arm_debug_div";
-				};
-
-				arm_debug: arm_debug{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <0>;
-					clocks = <&arm_debug_div>;
-					clock-output-names = "arm_debug";
-				};
-
-				axi:axi{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_table_div";
-					reg = <0x0230a024 0x4>;
-					clk_ratio = <0 1 3 7 15>;
-					clk_div   = <2 2 3 4  6>;
-					div_shift = <0>;
-					div_width = <4>;
-					clocks = <&arm_cpu>;
-					clock-output-names = "axi";
-				};
-
-				arm_ahb_mux: arm_ahb_mux{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_mux";
-					reg = <0x0230a170 0x4>;
-					mux_offset = <17>;
-					clocks = <&osc>, <&pll_arm>;
-					clock-output-names = "arm_ahb_mux";
-				};
-
-				ahb:ahb{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_table_div";
-					reg = <0x0230a024 0x4>;
-					clk_ratio = <0 1 3 7 15>;
-					clk_div   = <2 2 3 8  6>;
-					div_shift = <8>;
-					div_width = <4>;
-					clocks = <&pll_arm>;
-					clock-output-names = "arm_ahb";
-				};
-
-				ahb_usb: ahb_usb{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <1>;
-					clocks = <&ahb>;
-					clock-output-names = "ahb_usb";
-				};
-
-				ahb_mac: ahb_mac{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <2>;
-					clocks = <&ahb>;
-					clock-output-names = "ahb_mac";
-				};
-
-				ahb_mmc0: ahb_mmc0{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <3>;
-					clocks = <&ahb>;
-					clock-output-names = "ahb_mmc0";
-				};
-
-				ahb_mmc1: ahb_mmc1{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_gate";
-					reg = <0x0230a018 0x4>;
-					gate_bit = <4>;
-					clocks = <&ahb>;
-					clock-output-names = "ahb_mmc1";
-				};
-
-// AUDIO PLL 时钟树
-
-
-// DTO PLL 时钟树
-				dto_arm: dto_arm{
-					#clock-cells = <1>;
-					compatible = "nationalchip,leo_dto";
-					reg = <0x0230a028 0x80>;
-					clocks = <&pll_dto>;
-					clock-indices = <0>, <1>,
-									<2>, <3>,
-									<4>, <5>,
-									<6>, <7>,
-									<7>, <9>;
-					clock-output-names = "dto_reserv",    "dto_arm_apb2_0",
-										 "dto_arm_uart",  "dto_arm_npu",
-										 "dto_arm_jpeg",  "dto_arm_ga",
-										 "dto_arm_audio", "dto_arm_mmc0",
-										 "dto_arm_mmc1",  "dto_arm_dolphin";
-					};
 
 				apb0: apb0{
 					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&dto_arm 1>;
-					mux_offset = <1>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <5>;
-					clock-output-names = "apb0";
+					compatible = "fixed-clock";
+					clock-frequency = <54000000>;
 				};
 
-				apb2_uart: apb2_uart{
+				dwuart: dwuart{
 					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&dto_arm 2>;
-					mux_offset = <2>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <6>;
-					clock-output-names = "apb2_uart";
+					compatible = "fixed-clock";
+					clock-frequency = <48000000>;
 				};
-
-				npu_mux2: npu_mux2{
+				dwmmc: dwmmc{
 					#clock-cells = <0>;
-					compatible = "nationalchip,leo_mux";
-					reg = <0x0230a170 0x4>;
-					mux_offset = <24>;
-					clocks = <&dto_arm 3>, <&pll_audio>;
-					clock-output-names = "arm_npu2";
-				};
-
-				/* clk_npu: clk_npu{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&npu_mux2>;
-					mux_offset = <3>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <15>;
-					clock-output-names = "clk_npu";
-				}; */
-
-				clk_jpeg: clk_jpeg{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&dto_arm 4>;
-					mux_offset = <4>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <7>;
-					clock-output-names = "clk_jpeg";
-				};
-
-				clk_ga: clk_ga{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&dto_arm 5>;
-					mux_offset = <5>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <8>;
-					clock-output-names = "clk_ga";
-				};
-
-				clk_audio: clk_audio{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&dto_arm 6>;
-					mux_offset = <6>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <9>;
-					clock-output-names = "clk_audio";
-				};
-
-				clk_mmc0: clk_mmc0{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a068 0x4>;
-					clocks = <&osc>, <&dto_arm 7>;
-					mux_offset = <21>;
-					clock_div  = <2>;
-					clock_mult = <1>;
-					gate_bit   = <16>;
-					gate_width = <3>;
-					clock-output-names = "clk_mmc0";
-				};
-
-				clk_mmc1: clk_mmc1{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a068 0x4>;
-					clocks = <&osc>, <&dto_arm 8>;
-					mux_offset = <22>;
-					clock_div  = <2>;
-					clock_mult = <1>;
-					gate_bit   = <20>;
-					gate_width = <3>;
-					clock-output-names = "clk_mmc1";
-				};
-
-				clk_dolphin: clk_dolphin{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a068 0x4>;
-					clocks = <&osc>, <&dto_arm 9>;
-					mux_offset = <15>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <15>;
-					clock-output-names = "clk_dolphin";
-				};
-
-				bt1120_div: bt1120_div{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_divider";
-					reg = <0x0230a024 0x4>;
-					clocks = <&pll_dto>;
-					div_shift = <12>;
-					div_width = <6>;
-					div_base  = <1>;
-					clock-output-names = "bt1120_div";
-				};
-
-				clk_bt1120: clk_bt1120{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&bt1120_div>;
-					mux_offset = <12>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <14>;
-					clock-output-names = "clk_bt1120";
-				};
-
-				usb_div100: usb_div100{
-					compatible = "fixed-factor-clock";
-					clocks = <&pll_dto>;
-					#clock-cells = <0>;
-					clock-div = <100>;
-					clock-mult = <1>;
-					clock-output-names = "usb_div100";
-				};
-
-				usb_mux: usb_mux{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_mux";
-					reg = <0x0230a170 0x4>;
-					mux_offset = <7>;
-					clocks = <&osc>, <&usb_div100>;
-					clock-output-names = "usb_mux";
-				};
-
-				usb_phy1: usb_phy1{
-					compatible = "fixed-factor-clock";
-					clocks = <&usb_mux>;
-					#clock-cells = <0>;
-					clock-div  = <1>;
-					clock-mult = <5>;
-					clock-output-names = "usb_phy1";
-				};
-
-				usb_mac: usb_mac{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&usb_phy1>;
-					mux_offset = <8>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <11>;
-					clock-output-names = "usb_mac";
-				};
-
-				usb_phy2: usb_phy2{
-					compatible = "fixed-factor-clock";
-					clocks = <&usb_mux>;
-					#clock-cells = <0>;
-					clock-div  = <1>;
-					clock-mult = <40>;
-					clock-output-names = "usb_phy2";
-				};
-
-				usb_div_1: usb_div_1{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_divider";
-					reg = <0x0230a178 0x4>;
-					clocks = <&usb_phy2>;
-					div_shift = <24>;
-					div_width = <6>;
-					div_base  = <1>;
-					clock-output-names = "usb_div_1";
-				};
-
-				usb_div_2: usb_div_2{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_divider";
-					reg = <0x0230a024 0x4>;
-					clocks = <&usb_div_1>;
-					div_shift = <24>;
-					div_width = <6>;
-					div_base  = <1>;
-					clock-output-names = "usb_div_2";
-				};
-
-				usb_48M: usb_48M{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&usb_div_1>;
-					mux_offset = <10>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <12>;
-					clock-output-names = "usb_48M";
-				};
-
-				usb_12M: usb_12M{
-					#clock-cells = <0>;
-					compatible = "nationalchip,leo_composite";
-					reg = <0x0230a170 0x4 0x0230a018 0x4>;
-					clocks = <&osc>, <&usb_div_2>;
-					mux_offset = <11>;
-					clock_div  = <1>;
-					clock_mult = <1>;
-					gate_bit   = <13>;
-					clock-output-names = "usb_12M";
+					compatible = "fixed-clock";
+					clock-frequency = <50000000>;
 				};
 			};
 		};
@@ -586,7 +154,7 @@
 			cap-mmc-highspeed;
 			cap-sd-highspeed;
 
-			clocks = <&ahb_mmc0>, <&clk_mmc0>;
+			clocks = <&ahb>, <&dwmmc>;
 			clock-names = "biu", "ciu";
 
 			status = "okay";
@@ -607,33 +175,13 @@
 			cap-mmc-highspeed;
 			cap-sd-highspeed;
 
-			clocks = <&ahb_mmc1>, <&clk_mmc1>;
+			clocks = <&ahb>, <&dwmmc>;
 			clock-names = "biu", "ciu";
 
 			status = "okay";
 		};
 
-		dma_mcu@0800000 {
-			compatible = "snps,dma-spear1340";
-			reg = <0x00800000 0x1000>;
-			interrupt-parent = <&intc>;
-			interrupts = <30>;
-			dma-requests = <32>;
-			dma-channels = <4>;
-			dma-masters  = <4>;
-			#dma-cells   = <3>;
-			chan_allocation_order = <0>;
-			chan_priority = <1>;
-			block_size = <0xFFF>;
-			data_width = <2 2 2 2>;
-			clocks = <&ahb>;
-			clock-names = "hclk";
-			is_private;
-			is_memcpy;
-			status = "okay";
-		};
-
-		dma_cpu@02800000 {
+		dwdma0: dma@02800000 {
 			compatible = "snps,dma-spear1340";
 			reg = <0x02800000 0x1000>;
 			interrupt-parent = <&intc>;
@@ -642,14 +190,15 @@
 			dma-channels = <4>;
 			dma-masters  = <4>;
 			#dma-cells   = <3>;
-			chan_allocation_order = <0>;
+			chan_allocation_order = <1>;
 			chan_priority = <1>;
-			block_size = <0xFFF>;
+			block_size = <3072>;
 			data_width = <2 2 2 2>;
 			clocks = <&ahb>;
 			clock-names = "hclk";
 			is_private;
 			is_memcpy;
+
 			status = "okay";
 		};
 
@@ -659,11 +208,14 @@
 			#size-cells = <0>;
 			reg = <0x00303000 0x1000>;
 			interrupt-parent = <&intc>;
-			interrupts = <25>;
+			interrupts = <34>;
+
+			is-int-from-mcu;
+			ifc-reg  = <0x0030a274 12>;
+			ifc-chan = <4>;
+
 			poll-mode = <1>;
-			sample-dly = <2>;
-			/* 选择使用哪个dma控制器, 为上面dma设备树的名称*/
-			dma_ctrl_name = "dma_mcu";
+
 			num-cs = <4>;
 			clocks = <&ahb>;
 			cs-reg = <0x30a168>;
@@ -680,12 +232,6 @@
 			num-cs = <4>;
 			clocks = <&ahb>;
 			cs-reg = <0x230a600>;
-			bus-num = <0>;
-			poll-mode = <1>;
-			sample-dly = <2>;
-			reg-io-width = <1>;
-			/* 选择使用哪个dma控制器, 为上面dma设备树的名称*/
-			dma_ctrl_name = "dma_cpu";
 			status = "okay";
 		};
 
@@ -909,7 +455,7 @@
 			interrupts = <15>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			clocks = <&apb2_uart>;
+			clocks = <&dwuart>;
 		};
 
 		uart1: serial1@0x02308000 {
@@ -919,7 +465,7 @@
 			interrupts = <14>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			clocks = <&apb2_uart>;
+			clocks = <&dwuart>;
 		};
 
 		watchdog0: watchdog@0220b000 {
@@ -934,20 +480,10 @@
 		ehci: ehci-hcd@0x02900000 {
 		  compatible = "generic-ehci";
 		  reg = <0x02900000 0x400>;
-		  clocks = <&usb_mac>,<&ahb_usb>;
-		  clock-names = "usb_mac","ahb_usb";
 		  interrupt-parent = <&intc>;
 		  interrupts = <59>;
 		};
 
-		ohci: ohci-hcd@0x02a00000 {
-		  compatible = "generic-ohci";
-		  reg = <0x02a00000 0x400>;
-		  clocks = <&usb_48M>,<&usb_12M>,<&usb_mac>,<&ahb_usb>;
-		  clock-names = "usb_48m","usb_12m","usb_mac","ahb_usb";
-		  interrupt-parent = <&intc>;
-		  interrupts = <58>;
-	    };
 
 		alsa: nationalchip-alsa@0x01200000 {
 			name = "nationalchip-alsa";
@@ -970,20 +506,6 @@
 			interrupt-parent = <&intc>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			clocks = <&clk_jpeg>,
-				<&clk_ga>,
-				<&ga_jpeg_ddr>,
-				<&clk_bt1120>,
-				<&bt1120_div>,
-				<&bt1120_ddr>,
-				<&clk_audio>;
-			clock-names = "gxavdev.jpeg.clk",
-				"gxavdev.ga.clk",
-				"gxavdev.ga_jpeg_ddr.clk",
-				"gxavdev.bt1120.clk",
-				"gxavdev.bt1120_div.clk",
-				"gxavdev.bt1120_ddr.clk",
-				"gxavdev.adec.clk";
 			reg = <0x01200000 0xf4>,
 				<0x0030a1a0 0xc>,
 				<0x0030a018 0x4>,
@@ -993,6 +515,7 @@
 				<0x04400000 0xd4>,
 				<0x04400200 0x30>,
 				<0x0230a000 0x4>,
+				<0x0230a018 0xc>,
 				<0x04d00000 0x1bc>;
 			reg-names = "gxavdev.aout.opt.regs",
 				"gxavdev.aout.lodac.regs",
@@ -1003,6 +526,7 @@
 				"gxavdev.jpeg.dec.regs",
 				"gxavdev.jpeg.prp.regs",
 				"gxavdev.jpeg.reset.regs",
+				"gxavdev.jpeg.clk.regs",
 				"gxavdev.bt1120.regs";
 			interrupts = <49>,
 						<36>,
@@ -1038,16 +562,5 @@
 			interrupt-parent = <&intc>;
 			interrupts = <4>;
         };
-
-		gxeva: gxeva-udc@0x0900000 {
-		  compatible = "gx-eva,gx-eva-usb2-device";
-		  reg = <0x900000 0x10000>;
-		  #interrupt-parent = <&intc>;
-		  interrupts = <50>, <51>, <52>;
-		  eva,has-builtin-dma;
-		  clocks = <&ahb>;
-		  clock-names = "hclk";
-		};
-
 	};
 };

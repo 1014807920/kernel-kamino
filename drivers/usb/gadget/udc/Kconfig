@@ -373,15 +373,6 @@ config USB_GADGET_XILINX
 	  dynamically linked module called "udc-xilinx" and force all
 	  gadget drivers to also be dynamically linked.
 
-config USB_GADGET_EVA
-	tristate "EVA USB Driver"
-	help
-	  EVA gadget driver
-
-	  Say "y" to link the driver statically, or "m" to build a
-	  dynamically linked module called "udc-xilinx" and force all
-	  gadget drivers to also be dynamically linked.
-
 #
 # LAST -- dummy/emulated controller
 #
