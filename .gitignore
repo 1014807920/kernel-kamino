@@ -50,7 +50,8 @@ Module.symvers
 /vmlinuz
 /System.map
 /Module.markers
-
+/tools/perf-target-arm_cortex-a7+neon_glibc-2.22_eabi/
+/user_headers/
 #
 # Debian directory (make deb-pkg)
 #
