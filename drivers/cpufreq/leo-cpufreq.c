@@ -21,150 +21,55 @@
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/cpufreq.h>
-//#include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/err.h>
-//#include <linux/clk.h>
 #include <linux/io.h>
+#include <linux/of_device.h>
 
-static int leo_pmode_cur;
 #define NUM_CPUS	1
+#define KHZ_TO_HZ	1000
+#define HZ_TO_KHZ	1000
 
-#define   LEO_CONFIG_ADDRESS      0x0230a000
-#define   CONFIG_SOURCE_SEL       0x170
-#define   PLL_DDR_CONFIG_BASE     0xe0
-#define   PLL_ARM_CONFIG_BASE     0xd0 //0xcc -> 0xd0
-#define   CONFIG_CLOCK_DIV_CONFIG 0x24
+#define AXI_FREQ (300000 * (KHZ_TO_HZ))
+#define AHB_FREQ (150000 * (KHZ_TO_HZ))
 
-static struct cpufreq_frequency_table freq_table[] = {
-	{ .frequency = 216000000 },
-	{ .frequency = 432000000 },
-	{ .frequency = 600000000 },
-	{ .frequency = CPUFREQ_TABLE_END },
+#define FREQ_STEPS 4
+
+struct leo_cpufreq {
+	struct device_node *np;
+	struct clk *cpu_clk;
+	struct clk *axi_clk;
+	struct clk *ahb_clk;
+	unsigned int cur_freq;
 };
 
-static struct param{
-	unsigned int   freq;
-	unsigned char  clkbp;
-	unsigned char  clkod;
-	unsigned char  clkn;
-	unsigned char  clkm;
-} param_table[] = {
-	{216000000  , 0  , 3  , 0  , 71 }, // 216MHz
-	{432000000  , 0  , 2  , 0  , 71 }, // 432MHz
-	{600000000  , 0  , 1  , 0  , 49 }, // 600MHz
-	/*{1200000000 , 0  , 0  , 0  , 49 }, // 1.2GHz DTO */
-};
-
-void __iomem *g_leo_config_addr_base = NULL;
-
-// fclkout = fvco / (2 ^ clkod)
-static void PLL_Config(void * pll, unsigned int freq)
-{
-	int i;
-	volatile unsigned int j = 100;
-	for (i=0; i < sizeof(param_table) / sizeof(struct param); i++) {
-		if (freq == param_table[i].freq) {
-			//unsigned int clkbp = param_table[i].clkbp;
-			unsigned int clkod = param_table[i].clkod;
-			unsigned int clkn = param_table[i].clkn;
-			unsigned int clkm = param_table[i].clkm;
-			*(volatile unsigned int*)(pll) = (1<<15)|(1<<14)|(clkod<<12)|(clkn<<7)|clkm;
-			while(j--);
-			*(volatile unsigned int*)(pll) = (0<<15)|(1<<14)|(clkod<<12)|(clkn<<7)|clkm;
-			j=100;
-			while(j--);
-			*(volatile unsigned int*)(pll) = (0<<15)|(0<<14)|(clkod<<12)|(clkn<<7)|clkm;
-		}
-	}
-	j=100;
-	while(j--);
-}
-
-static unsigned int PLL_Config_query(void)
-{
-	volatile unsigned int j;
-	unsigned char  clkod;
-	unsigned char  clkn;
-	unsigned char  clkm;
-	void * pll = g_leo_config_addr_base + PLL_ARM_CONFIG_BASE;
-
-	j = *(volatile unsigned int*)(pll);
-	clkod = (j>>12)&0xff;
-	clkn = (j>>7)&0xf;
-	clkm = j&0x3f;
-
-	if (clkn == 0)
-	{
-		if (clkod == 3 && clkm == 71)
-		{
-			return 0;
-		}
-		else if (clkod == 2 && clkm == 71)
-		{
-			return 1;
-		}
-		else if (clkod == 1 && clkm == 49)
-		{
-			return 2;
-		}
-		else 
-			return -1;
-	}
-	else
-		return -1;
-	
-}
-
-static void cpu_select_pll(int speed_mode)
-{
-	PLL_Config(g_leo_config_addr_base + PLL_ARM_CONFIG_BASE,freq_table[speed_mode].frequency);
-	*(volatile unsigned int*)(g_leo_config_addr_base+CONFIG_SOURCE_SEL) |= 1;
-}
-
-static void cpu_select_xtal(void)
-{
-	*(volatile unsigned int*)(g_leo_config_addr_base+CONFIG_SOURCE_SEL) &= ~0x1;
-}
-
-static int leo_switch_freq(int speed_mode)
-{
-	unsigned long flags;
-
-	local_irq_save(flags);
-	cpu_select_xtal();
-	cpu_select_pll(speed_mode);
-	local_irq_restore(flags);
-	leo_pmode_cur = speed_mode;
-
-	return 0;
-}
-
-static int leo_query_freq(void)
-{
-	unsigned long freq_idx;
-	freq_idx = PLL_Config_query();
-
-	return freq_idx;
-}
+static struct leo_cpufreq leo_clk_info;
+static struct cpufreq_frequency_table freq_table[FREQ_STEPS+1];
 
 static int leo_target(struct cpufreq_policy *policy, unsigned int index)
 {
 	int ret = 0;
-	ret = leo_switch_freq(index);
+	unsigned long freq_hz = freq_table[index].frequency * KHZ_TO_HZ;
+
+	ret = clk_set_rate(leo_clk_info.cpu_clk,
+			clk_round_rate(leo_clk_info.cpu_clk, freq_hz));
+	ret |= clk_set_rate(leo_clk_info.axi_clk,
+			clk_round_rate(leo_clk_info.axi_clk, AXI_FREQ));
+	ret |= clk_set_rate(leo_clk_info.ahb_clk,
+			clk_round_rate(leo_clk_info.ahb_clk, AHB_FREQ));
+	leo_clk_info.cur_freq = freq_table[index].frequency;
 
 	return ret;
 }
 
 static unsigned int leo_cpufreq_get(unsigned int cpu)
 {
-	return freq_table[leo_pmode_cur].frequency;
+	return leo_clk_info.cur_freq;
 }
 
 static int leo_cpu_init(struct cpufreq_policy *policy)
 {
 	int ret;
-
 	if (policy->cpu >= NUM_CPUS)
 		return -EINVAL;
 
@@ -175,7 +80,7 @@ static int leo_cpu_init(struct cpufreq_policy *policy)
 		return ret;
 	}
 
-	policy->suspend_freq = freq_table[0].frequency;
+	policy->suspend_freq = freq_table[FREQ_STEPS-1].frequency;
 	return 0;
 }
 
@@ -198,19 +103,46 @@ static struct cpufreq_driver leo_cpufreq_driver = {
 
 static int __init leo_cpufreq_init(void)
 {
-	leo_pmode_cur = -1;
-	
-	g_leo_config_addr_base = ioremap(LEO_CONFIG_ADDRESS, PAGE_SIZE);
-	if (!g_leo_config_addr_base) {
-		return -ENOMEM;
+	int i = 0;
+	unsigned long freq_hz = 0;
+
+	leo_clk_info.np = of_find_compatible_node(NULL, NULL, "nationalchip,arm-clk");
+	if (!leo_clk_info.np) {
+		printk("failed to get cpu device node\n");
+		return -ENODEV;
 	}
-	leo_switch_freq(leo_query_freq());
+
+	leo_clk_info.cpu_clk = of_clk_get_by_name(leo_clk_info.np, "arm-clk-cpu");
+	if (IS_ERR(leo_clk_info.cpu_clk)) {
+		printk("Unable to get cpu clk\n");
+		return PTR_ERR(leo_clk_info.cpu_clk);
+	}
+
+	leo_clk_info.axi_clk = of_clk_get_by_name(leo_clk_info.np, "arm-clk-axi");
+	if (IS_ERR(leo_clk_info.axi_clk)) {
+		printk("Unable to get axi clk\n");
+		return PTR_ERR(leo_clk_info.axi_clk);
+	}
+
+	leo_clk_info.ahb_clk = of_clk_get_by_name(leo_clk_info.np, "arm-clk-ahb");
+	if (IS_ERR(leo_clk_info.ahb_clk)) {
+		printk("Unable to get ahb clk\n");
+		return PTR_ERR(leo_clk_info.ahb_clk);
+	}
+
+	freq_hz = clk_get_rate(leo_clk_info.cpu_clk);
+	leo_clk_info.cur_freq = freq_hz / HZ_TO_KHZ;
+
+	/* Fill freq table */
+	for (i = 1; i <= FREQ_STEPS; i++)
+		freq_table[i-1].frequency = leo_clk_info.cur_freq / i;
+	freq_table[FREQ_STEPS].frequency = CPUFREQ_TABLE_END;
+
 	return cpufreq_register_driver(&leo_cpufreq_driver);
 }
 
 static void __exit leo_cpufreq_exit(void)
 {
-	iounmap(g_leo_config_addr_base);
 	cpufreq_unregister_driver(&leo_cpufreq_driver);
 }
 

@@ -181,7 +181,7 @@
 			status = "okay";
 		};
 
-		dwdma0: dma@02800000 {
+		dma_cpu@02800000 {
 			compatible = "snps,dma-spear1340";
 			reg = <0x02800000 0x1000>;
 			interrupt-parent = <&intc>;
@@ -190,9 +190,9 @@
 			dma-channels = <4>;
 			dma-masters  = <4>;
 			#dma-cells   = <3>;
-			chan_allocation_order = <1>;
+			chan_allocation_order = <0>;
 			chan_priority = <1>;
-			block_size = <3072>;
+			block_size = <0xFFF>;
 			data_width = <2 2 2 2>;
 			clocks = <&ahb>;
 			clock-names = "hclk";
@@ -215,7 +215,7 @@
 			ifc-chan = <4>;
 
 			poll-mode = <1>;
-
+			sample-dly = <2>;
 			num-cs = <4>;
 			clocks = <&apb1>;
 			cs-reg = <0x30a168>;
@@ -232,6 +232,12 @@
 			num-cs = <4>;
 			clocks = <&apb1>;
 			cs-reg = <0x230a600>;
+			bus-num = <0>;
+			poll-mode = <1>;
+			sample-dly = <2>;
+			reg-io-width = <1>;
+			/* 选择使用哪个dma控制器, 为上面dma设备树的名称*/
+			dma_ctrl_name = "dma_cpu";
 			status = "okay";
 		};
 

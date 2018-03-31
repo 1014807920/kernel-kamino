@@ -193,11 +193,21 @@ config USB_F_UVC
 config USB_F_MIDI
 	tristate
 
+config USB_F_ANDROID
+	tristate
+
 config USB_F_HID
 	tristate
 
 config USB_F_PRINTER
 	tristate
+
+config USB_CONFIGFS_ANDROID
+	bool "android function"
+	select USB_LIBCOMPOSITE
+	select USB_F_ANDROID
+	help
+	  Android ADB.
 
 choice
 	tristate "USB Gadget Drivers"
@@ -219,6 +229,8 @@ choice
 	  a less common variant of a device class protocol.
 
 # this first set of drivers all depend on bulk-capable hardware.
+
+
 
 config USB_CONFIGFS
 	tristate "USB functions configurable through configfs"

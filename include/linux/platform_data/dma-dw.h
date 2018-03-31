@@ -26,6 +26,7 @@
  */
 struct dw_dma_slave {
 	struct device		*dma_dev;
+	const char		*dma_ctrl_name;
 	u8			src_id;
 	u8			dst_id;
 	u8			src_master;
@@ -58,6 +59,11 @@ struct dw_dma_platform_data {
 	unsigned short	block_size;
 	unsigned char	nr_masters;
 	unsigned char	data_width[DW_DMA_MAX_NR_MASTERS];
+
+	bool		int_from_ck;
+	void __iomem	*ifc_reg;
+	void __iomem	*ifc_data;
+	int		ifc_chan;
 };
 
 #endif /* _PLATFORM_DATA_DMA_DW_H */
