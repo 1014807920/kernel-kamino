@@ -148,7 +148,7 @@ static const struct i2c_device_id cap1xxx_i2c_id[] = {
 MODULE_DEVICE_TABLE(i2c, cap1xxx_i2c_id);
 
 static struct of_device_id cap1xxx_match_table[] = {
-    {.compatible = "nationalchip,cap1xxx_i2c",},
+    {.compatible = "nationalchip, cap1xxx_i2c",},
     {}
 };
 
@@ -626,10 +626,11 @@ static int  cap1xxx_touchkey_probe(struct platform_device *pdev)
     }
 
 	desc = devm_gpiod_get(&pdev->dev, "ck", GPIOD_OUT_LOW);
-    if (IS_ERR(desc)) {
-        return PTR_ERR(desc);
-    }
-    gpiod_set_value(desc, 0);
+	if (IS_ERR(desc)){
+		return PTR_ERR(desc);
+	}
+	gpiod_set_value(desc, 0);
+
 
     if (i2c_add_driver(&cap1xxx_i2c_driver)) {
         pr_err("add i2c driver error %s\n", __func__);
@@ -698,7 +699,7 @@ static int cap1xxx_touchkey_remove(struct platform_device *pdev)
 
 static const struct of_device_id cap1xxx_dt_match[] = {
     {
-        .compatible = "nationalchip,touchkey",
+        .compatible = "nationalchip,LEO-touchkey",
     },
     {}
 };
