@@ -13,17 +13,20 @@
 #include <linux/gpio/driver.h>
 #include <linux/gpio/machine.h>
 #include <config/gpiolib.h>
-/*#include "../../gpio/gpiolib.h"*/
 
-#define	CTRL_CHAN_OFFS	0x0c
-#define PWM_CYCLE		0x04
-#define PWM_DACIN		0x08
+#define CHAN_OFFS       0x04
+#define PWM_DUTY        (0x80 - 0x80)
+#define PWM_CYCLE       (0xc0 - 0x80)
+#define PWM_UPDATE      (0xe0 - 0x80)
+#define PWM_EN          (0xe4 - 0x80)
+#define PWM_DIV         (0xf0 - 0x80)
 
 struct nationalchip_pwm {
 	void __iomem *base;
 	spinlock_t lock;
 	struct clk *clk;
 	struct pwm_chip chip;
+	unsigned long rate;
 };
 
 static inline struct nationalchip_pwm *to_nationalchip_pwm(struct pwm_chip *chip)
@@ -37,11 +40,8 @@ static int nationalchip_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm
 	struct nationalchip_pwm *p = to_nationalchip_pwm(chip);
 	unsigned long pc, dc;
 	u64 rate, tmp;
-	u32 value;
 
-	rate = (u64)clk_get_rate(p->clk);
-	printk("rate : %lld \n",rate);
-	printk("hwpwm : %d \n",pwm->hwpwm);
+	rate = p->rate;
 
 	tmp = period_ns * rate;
 	do_div(tmp, NSEC_PER_SEC);
@@ -51,64 +51,31 @@ static int nationalchip_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm
 	do_div(tmp, NSEC_PER_SEC);
 	dc = tmp;
 
+	if (pc > 0xffff || dc > 0xffff){
+		printk("This cycle is too big!");
+		return -1;
+	}
 	spin_lock(&p->lock);
-	writel(pc - 1, p->base + pwm->hwpwm * CTRL_CHAN_OFFS + PWM_CYCLE);
-	writel(dc, p->base + pwm->hwpwm * CTRL_CHAN_OFFS + PWM_DACIN);
-	printk("pc : %ld \n",pc);
-	printk("dc : %ld \n",dc);
+	writel(pc - 1, p->base + PWM_CYCLE + pwm->hwpwm * CHAN_OFFS);
+	writel(dc, p->base + PWM_DUTY + pwm->hwpwm *  CHAN_OFFS);
 	spin_unlock(&p->lock);
-
-	printk("pwn config ok\n");
-
-
-	value = readl(p->base);
-	printk("enble : %#x \n",value);
 
 	return 0;
-}
-
-static int nationalchip_pwm_set_polarity(struct pwm_chip *chip,
-                    struct pwm_device *pwm,
-                    enum pwm_polarity polarity)
-{
-	struct nationalchip_pwm *p = to_nationalchip_pwm(chip);
-	unsigned int offset        = pwm->hwpwm * CTRL_CHAN_OFFS;
-	u32 value;
-
-	printk("pwn set polarity start\n");
-	spin_lock(&p->lock);
-	value = readl(p->base + offset);
-
-	if (PWM_POLARITY_NORMAL == polarity) {
-		value &= ~(1 << 1);
-	} else if (PWM_POLARITY_INVERSED == polarity){
-		value |= (1 << 1);
-	}
-
-	writel(value, p->base + offset);
-	spin_unlock(&p->lock);
-
-	printk("pwn set polarity ok\n");
-    return 0;
 }
 
 static inline void nationalchip_pwm_enable_set(struct nationalchip_pwm *p,
 					  unsigned int channel, bool enable)
 {
-	unsigned int offset = channel * CTRL_CHAN_OFFS;
+	unsigned int offset = PWM_EN;
 	u32 value;
 
 	spin_lock(&p->lock);
 	value = readl(p->base + offset);
 
-	printk("enble : %#x \n",value);
-
 	if (enable) {
-		value |= 1;
-		printk("pwm enable ok\n");
+		value |= (1 << channel);
 	} else {
-		value &= ~1;
-		printk("pwm disenable ok\n");
+		value &= ~(1 << channel);
 	}
 
 	writel(value, p->base + offset);
@@ -133,7 +100,6 @@ static void nationalchip_pwm_disable(struct pwm_chip *chip, struct pwm_device *p
 
 static const struct pwm_ops nationalchip_pwm_ops = {
 	.config       = nationalchip_pwm_config,
-	.set_polarity = nationalchip_pwm_set_polarity,
 	.enable       = nationalchip_pwm_enable,
 	.disable      = nationalchip_pwm_disable,
 	.owner        = THIS_MODULE,
@@ -149,72 +115,22 @@ static int nationalchip_pwm_probe(struct platform_device *pdev)
 {
 	struct nationalchip_pwm *p;
 	struct resource *res;
+	unsigned int freq, div;
 	int ret;
-	unsigned long rate;
-	struct clk *pclk;
 
 	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
 	if (!p)
 		return -ENOMEM;
 
 	spin_lock_init(&p->lock);
-#if 1
+
+	if (of_property_read_u32(pdev->dev.of_node, "clock-frequency", &freq))
+		return -1;
 	p->clk = devm_clk_get(&pdev->dev, NULL);
 	if (IS_ERR(p->clk)) {
 		dev_err(&pdev->dev, "failed to obtain clock\n");
 		return PTR_ERR(p->clk);
-	}else
-		printk("clk addr :%p\n", p->clk);
-	/*clk_enable(p->clk);*/
-	ret = clk_prepare_enable(p->clk);
-	printk("clk_enable ok\n");
-	rate = clk_get_rate(p->clk);
-	printk("get rate : %ld\n", rate);
-	/*rate = clk_round_rate(p->clk,54000000);*/
-	rate = clk_round_rate(p->clk, 600000000);
-	printk("round rate : %ld\n", rate);
-	clk_set_rate(p->clk,rate);
-	printk("get rate ok\n");
-
-	printk("change parent osc-------------------\n");
-	pclk = clk_get(&pdev->dev, "osc");
-	if (IS_ERR(pclk)) {
-		dev_err(&pdev->dev, "failed to obtain clock\n");
-		return PTR_ERR(p->clk);
-	}else
-		printk("clk addr :%p\n", pclk);
-	ret = clk_set_parent(p->clk, pclk);
-	printk("set parent ok %d\n",ret);
-	clk_get_parent(p->clk);
-	printk("get parent ok\n");
-	rate = clk_get_rate(p->clk);
-	printk("get rate : %ld\n", rate);
-/*#else*/
-
-	printk("set pll_arm-------------------\n");
-	pclk = clk_get(&pdev->dev, "pll_arm");
-	if (IS_ERR(pclk)) {
-		dev_err(&pdev->dev, "failed to obtain clock\n");
-		return PTR_ERR(p->clk);
-	}else
-		printk("clk addr :%p\n", pclk);
-	rate = clk_get_rate(pclk);
-	printk("get rate : %ld\n", rate);
-	/*rate = clk_round_rate(p->clk,54000000);*/
-	rate = clk_round_rate(pclk, 216000000);
-	printk("round rate : %ld\n", rate);
-	clk_set_rate(pclk,rate);
-	printk("set rate ok\n");
-	printk("change parent pll----------------------------\n");
-	ret = clk_set_parent(p->clk, pclk);
-	printk("set parent ok %d\n",ret);
-	rate = clk_get_rate(p->clk);
-	printk("get rate : %ld\n", rate);
-#endif
-
-	clk_disable_unprepare(p->clk);
-	/*clk_disable(p->clk);*/
-	printk("clk_disenable ok\n");
+	}
 
 	ret = clk_prepare_enable(p->clk);
 	if (ret < 0) {
@@ -242,7 +158,17 @@ static int nationalchip_pwm_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to add PWM chip: %d\n", ret);
 		goto out_clk;
 	}
-	printk("gx pwm chip add ok\n");
+
+	//分频
+	div = clk_get_rate(p->clk) / freq - 1;
+	if (div > 0xffff)
+		div = 0xffff;
+	p->rate = clk_get_rate(p->clk) / (div + 1);
+	writel(div, p->base + PWM_DIV);
+	//使能
+	writel(0xff, p->base + PWM_EN);
+	//更新占空比等寄存器
+	writel(0x00, p->base + PWM_UPDATE);
 
 	return 0;
 
@@ -262,40 +188,15 @@ static int nationalchip_pwm_remove(struct platform_device *pdev)
 	return ret;
 }
 
-#ifdef CONFIG_PM_SLEEP
-static int nationalchip_pwm_suspend(struct device *dev)
-{
-	struct nationalchip_pwm *p = dev_get_drvdata(dev);
-
-	clk_disable(p->clk);
-
-	return 0;
-}
-
-static int nationalchip_pwm_resume(struct device *dev)
-{
-	struct nationalchip_pwm *p = dev_get_drvdata(dev);
-
-	clk_enable(p->clk);
-
-	return 0;
-}
-#endif
-
-static SIMPLE_DEV_PM_OPS(nationalchip_pwm_pm_ops, nationalchip_pwm_suspend,
-			 nationalchip_pwm_resume);
-
 static struct platform_driver nationalchip_pwm_driver = {
 	.probe  = nationalchip_pwm_probe,
 	.remove = nationalchip_pwm_remove,
 	.driver = {
 		.name           = "pwm-nationalchip",
 		.of_match_table = nationalchip_pwm_of_match,
-		.pm             = &nationalchip_pwm_pm_ops,
 	},
 };
 module_platform_driver(nationalchip_pwm_driver);
 
 MODULE_DESCRIPTION("Nationalchip PWM driver");
-MODULE_AUTHOR("Liyj");
 MODULE_LICENSE("GPL");

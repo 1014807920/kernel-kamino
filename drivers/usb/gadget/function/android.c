@@ -49,9 +49,10 @@
 //#include "f_mtp.c"
 //#include "f_accessory.c"
 #define USB_ETH_RNDIS y
-//#include "f_rndis.c"
-//#include "rndis.c"
-//#include "u_ether.c"
+#include "f_rndis.c"
+#include "rndis.c"
+#include "u_ether.c"
+
 
 MODULE_AUTHOR("Mike Lockwood");
 MODULE_DESCRIPTION("Android Composite USB Driver");
@@ -455,7 +456,7 @@ static struct android_usb_function ptp_function = {
 	.cleanup	= ptp_function_cleanup,
 	.bind_config	= ptp_function_bind_config,
 };
-
+#endif
 
 struct rndis_function_config {
 	u8      ethaddr[ETH_ALEN];
@@ -463,6 +464,7 @@ struct rndis_function_config {
 	char	manufacturer[256];
 	/* "Wireless" RNDIS; auto-detected by Windows */
 	bool	wceis;
+	struct eth_dev *dev;
 };
 
 static int
@@ -486,6 +488,7 @@ rndis_function_bind_config(struct android_usb_function *f,
 		struct usb_configuration *c)
 {
 	int ret;
+	struct eth_dev *dev;
 	struct rndis_function_config *rndis = f->config;
 
 	if (!rndis) {
@@ -496,12 +499,20 @@ rndis_function_bind_config(struct android_usb_function *f,
 	pr_info("%s MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", __func__,
 		rndis->ethaddr[0], rndis->ethaddr[1], rndis->ethaddr[2],
 		rndis->ethaddr[3], rndis->ethaddr[4], rndis->ethaddr[5]);
-
+#if 0
 	ret = gether_setup_name(c->cdev->gadget, rndis->ethaddr, "rndis");
 	if (ret) {
 		pr_err("%s: gether_setup failed\n", __func__);
 		return ret;
 	}
+#endif
+	dev = gether_setup_name(c->cdev->gadget, rndis->ethaddr, "rndis");
+	if (IS_ERR(dev)) {
+		ret = PTR_ERR(dev);
+		pr_err("%s: gether_setup failed\n", __func__);
+		return ret;
+	}
+	rndis->dev = dev;
 
 	if (rndis->wceis) {
 		/* "Wireless" RNDIS; auto-detected by Windows */
@@ -516,13 +527,18 @@ rndis_function_bind_config(struct android_usb_function *f,
 	}
 
 	return rndis_bind_config_vendor(c, rndis->ethaddr, rndis->vendorID,
-					   rndis->manufacturer);
+					   rndis->manufacturer, rndis->dev);
+
+	//return rndis_bind_config_vendor(c, rndis->ethaddr, rndis->vendorID,
+	//				   rndis->manufacturer);
 }
 
 static void rndis_function_unbind_config(struct android_usb_function *f,
 						struct usb_configuration *c)
 {
-	gether_cleanup();
+	//gether_cleanup();
+	struct rndis_function_config *rndis = f->config;
+	gether_cleanup(rndis->dev);
 }
 
 static ssize_t rndis_manufacturer_show(struct device *dev,
@@ -643,7 +659,7 @@ static struct android_usb_function rndis_function = {
 	.attributes	= rndis_function_attributes,
 };
 
-
+#if 0
 struct mass_storage_function_config {
 	struct fsg_config fsg;
 	struct fsg_common *common;
@@ -772,7 +788,7 @@ static struct android_usb_function *supported_functions[] = {
 	//&acm_function,
 	//&mtp_function,
 	//&ptp_function,
-	//&rndis_function,
+	&rndis_function,
 	//&mass_storage_function,
 	//&accessory_function,
 	NULL
@@ -1162,8 +1178,11 @@ static int android_bind(struct usb_composite_dev *cdev)
 
 	android_enable_function(dev, "adb");
 
+	android_enable_function(dev, "rndis");
+
 	usb_add_config(cdev, &android_config_driver,
 					android_bind_config);
+	
 	usb_gadget_set_selfpowered(gadget);
 	dev->cdev = cdev;
 

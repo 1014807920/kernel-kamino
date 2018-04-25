@@ -449,11 +449,15 @@ static int evaudc_handle_unaligned_buf_start(struct evausb_udc *udc,
 
 	/* Save actual buffer */
 	req->saved_req_buf = req_buf;
-
+	//if (!strcmp(ep->name,"ep1out"))
+         //printk("ep1out: req_buf 0x%p\n",req->usb_req.buf );
 	if (ep->is_in)
 	{
 		memcpy(req->usb_req.buf, req_buf, req->usb_req.length);
+		//req->usb_req.dma = req->usb_req.buf - 0x80000000;
+		
 	}
+	req->usb_req.dma = __virt_to_phys((long unsigned int)(req->usb_req.buf));
 	return 0;
 }
 
@@ -490,6 +494,10 @@ static int evaudc_start_dma(struct evausb_ep *ep, dma_addr_t addr,u32 length,boo
 	ep->dma->dmaaddr = addr;
 	if (ep->is_in)
 	{
+		if(!strcmp(ep->name,"ep1in"))
+		{
+			//printk("ep->dma->dmaaddr is %x!!!!!!!!!!!!!\n",ep->dma->dmaaddr);
+		}
 		ep->dma->dmatsize = length;
 
 		/*If send0len=1, the device sends the short packet.*/
@@ -568,8 +576,9 @@ static int evaudc_dma_send(struct evausb_ep *ep, struct evausb_req *req,
 {
 	dma_addr_t src;
 	struct evausb_udc *udc = ep->udc;
-
+	
 	src = req->usb_req.dma + req->usb_req.actual;
+
 	if (req->usb_req.length)
 	{
 		dma_sync_single_for_device(udc->dev, src,
@@ -634,7 +643,23 @@ static int evaudc_eptxrx(struct evausb_ep *ep, struct evausb_req *req,
 
 	if (udc->dma_enabled) {
 		if (ep->is_in)
+		{
+#if 0		
+			if(!strcmp(ep->name,"ep1in"))
+			{
+				printk("");
+				
+				int i = 0;
+				unsigned char *tmp = bufferptr;
+				for(i=0;i<bufferlen;i++)
+				{
+					printk("%2x\n",tmp[i]);
+				}
+			
+			}
+#endif	
 			rc = evaudc_dma_send(ep, req, bufferptr, bufferlen);
+		}	
 		else
 			rc = evaudc_dma_receive(ep, req, bufferptr, bufferlen);
 		return rc;
@@ -671,14 +696,16 @@ static void evaudc_done(struct evausb_ep *ep, struct evausb_req *req, int status
 	if (udc->dma_enabled && ep->epnumber && req->usb_req.length)
 		usb_gadget_unmap_request(&udc->gadget, &req->usb_req,
 					 ep->is_in);
-	if (ep->is_in)
+	//if (ep->is_in)
 		evaudc_handle_unaligned_buf_complete(udc,ep,req);
-
+	
 	if (req->usb_req.complete) {
 		spin_unlock(&udc->lock);
 		req->usb_req.complete(&ep->ep_usb, &req->usb_req);
 		spin_lock(&udc->lock);
 	}
+
+	
 }
 
 /**
@@ -785,7 +812,8 @@ static int evaudc_write_fifo(struct evausb_ep *ep, struct evausb_req *req)
 	length = req->usb_req.length - req->usb_req.actual;
 	length = min(length, max);
 	req->real_dma_length = length;
-	ret = evaudc_eptxrx(ep, req, buf, length);
+	//ret = evaudc_eptxrx(ep, req, buf, length);
+	ret = evaudc_eptxrx(ep, req, req->usb_req.buf, length);
 	switch (ret) {
 	case 0:
 		req->usb_req.actual += length;
@@ -1755,7 +1783,6 @@ static void evaudc_startup_handler(struct evausb_udc *udc, u32 intrstatus)
 	if (intrstatus & EVAUSB_STATUS_URESIEIRQ_MASK) {
 
 		dev_info(udc->dev, "Reset\n");
-		printk( "evaudc_startup_handler Reset\n");
 
 		evaudc_stop_activity(udc);
 		evaudc_clear_stall_all_ep(udc);
@@ -2328,7 +2355,7 @@ static void evaudc_nonctrl_ep_dma_handler(struct evausb_udc *udc, u8 epnum,bool 
 	}
 	
 	req->usb_req.actual += act_len;
-	evaudc_handle_unaligned_buf_complete(ep->udc,ep,req);
+	//evaudc_handle_unaligned_buf_complete(ep->udc,ep,req);
 
 	/* Completion */
 	if (is_in) {

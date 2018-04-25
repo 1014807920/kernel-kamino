@@ -238,7 +238,6 @@ static inline void spi_reset_chip(struct dw_spi *dws)
 static inline void spi_shutdown_chip(struct dw_spi *dws)
 {
 	spi_enable_chip(dws, 0);
-	spi_set_clk(dws, 0);
 }
 
 /*

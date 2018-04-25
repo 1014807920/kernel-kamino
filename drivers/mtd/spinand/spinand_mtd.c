@@ -34,9 +34,12 @@ enum {
 	ECC_LAYOUT_W25ND_OOB64,
 	ECC_LAYOUT_TC58CV_OOB64,
 	ECC_LAYOUT_MT29F_OOB64,
-	ECC_LAYOUT_F50L_OOB64,
+	ECC_LAYOUT_F50LXX1A_OOB64,
+	ECC_LAYOUT_F50LXX41LB_OOB64,
 	ECC_LAYOUT_MX35LF_OOB64,
 	ECC_LAYOUT_PN26G_OOB64,
+	ECC_LAYOUT_XT26G_OOB64,
+	ECC_LAYOUT_ZD35X_OOB64,
 };
 
 static struct nand_ecclayout s_ecclayout[] = {
@@ -142,7 +145,7 @@ static struct nand_ecclayout s_ecclayout[] = {
 			{.offset = 52,	.length = 4},
 		}
 	},
-	[ECC_LAYOUT_F50L_OOB64] = {
+	[ECC_LAYOUT_F50LXX1A_OOB64] = {
 		.eccbytes = 28,
 		.eccpos = {
 			1 , 2 , 3 , 4 , 5 , 6 , 7 ,
@@ -156,6 +159,22 @@ static struct nand_ecclayout s_ecclayout[] = {
 			{.offset = 24,	.length = 8},
 			{.offset = 40,	.length = 8},
 			{.offset = 56,	.length = 8},
+		}
+	},
+	[ECC_LAYOUT_F50LXX41LB_OOB64] = {
+		.eccbytes = 28,
+		.eccpos = {
+			8 , 9 , 10, 11, 12, 13, 14, 15,
+			24, 25, 26, 27, 28, 29, 30, 31,
+			40, 41, 42, 43, 44, 45, 46, 47,
+			56, 57, 58, 59, 60, 61, 62, 63,
+		},
+		.oobavail = 16,
+		.oobfree = {
+			{.offset = 4,	.length = 4},
+			{.offset = 20,	.length = 4},
+			{.offset = 36,	.length = 4},
+			{.offset = 52,	.length = 4},
 		}
 	},
 	[ECC_LAYOUT_MX35LF_OOB64] = {
@@ -184,7 +203,32 @@ static struct nand_ecclayout s_ecclayout[] = {
 			{.offset = 34,	.length = 2},
 			{.offset = 49,	.length = 2},
 		}
-	}
+	},
+	[ECC_LAYOUT_XT26G_OOB64] = {
+		.eccbytes = 56,
+		.eccpos = {
+			8 , 9 , 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+			21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+			34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
+			47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+			60, 61, 62, 63
+		},
+		.oobavail = 7,
+		.oobfree = {
+			{.offset = 1,	.length = 7},
+		}
+	},
+	[ECC_LAYOUT_ZD35X_OOB64] = {
+		.eccbytes = 0,
+		.eccpos = { 0 },
+		.oobavail = 16,
+		.oobfree = {
+			{.offset = 4,	.length = 4},
+			{.offset = 20,	.length = 4},
+			{.offset = 36,	.length = 4},
+			{.offset = 52,	.length = 4},
+		}
+	},
 };
 
 static struct spinand_info s_nand_info[] = {
@@ -239,20 +283,36 @@ static struct spinand_info s_nand_info[] = {
 	},
 };
 
+
 static struct spinand_index s_id_table[] = {
-	ID_TABLE_FILL(0x112C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,	"MT29F1G01ZAC"),
-	ID_TABLE_FILL(0x122C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,	"MT29F1G01ZAC"),
-	ID_TABLE_FILL(0x132C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,	"MT29F1G01ZAC"),
-	ID_TABLE_FILL(0xF1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1G"),
-	ID_TABLE_FILL(0xF2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2G"),
-	ID_TABLE_FILL(0xD1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1G"),
-	ID_TABLE_FILL(0xD2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2G"),
+	/* GD spi nand flash */
+	ID_TABLE_FILL(0xF1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1GQ4UAYIG"),
+	ID_TABLE_FILL(0xD1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1GQ4U"),
+	ID_TABLE_FILL(0xC1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1GQ4R"),
+	ID_TABLE_FILL(0xD2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2GQ4U"),
+	ID_TABLE_FILL(0xC2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2GQ4R"),
+	ID_TABLE_FILL(0xF2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2GQ4RAYIG"),
 	ID_TABLE_FILL(0xD4C8, NAND_4G_PAGE4K_OOB256,ECC_LAYOUT_GD_OOB256,	"GD5F4G"),
-	ID_TABLE_FILL(0xC298, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_TC58CV_OOB64,	"TC58CVG0HRA1G"),
-	ID_TABLE_FILL(0xAAEF, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_W25ND_OOB64,	"W25NO1G"),
-	ID_TABLE_FILL(0x21C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_F50L_OOB64,	"F50L1G"),
-	ID_TABLE_FILL(0x12C2, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MX35LF_OOB64,	"MX35LF1GE4AB"),
+	/* TOSHIBA spi nand flash */
+	ID_TABLE_FILL(0xC298, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_TC58CV_OOB64,	"TC58CVG053HRA1G"),
+	/* Micron spi nand flash */
+	ID_TABLE_FILL(0x122C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,	"MT29F1G01ZAC"),
+	ID_TABLE_FILL(0x112C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,	"MT29F1G01ZAC"),
+	ID_TABLE_FILL(0x132C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,	"MT29F1G01ZAC"),
+	/* 芯天下 spi nand flash */
 	ID_TABLE_FILL(0xE1A1, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_PN26G_OOB64,	"PN26G01AWS1UG"),
+	ID_TABLE_FILL(0xE10B, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_XT26G_OOB64,	"XT26G01AWS1UG"),
+	ID_TABLE_FILL(0xE20B, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_XT26G_OOB64,	"XT26G02AWSEGA"),
+	/* Zetta Confidentia spi nand flash */
+	ID_TABLE_FILL(0x71ba, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_ZD35X_OOB64,	"ZD35X1GA"),
+	ID_TABLE_FILL(0x21ba, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_ZD35X_OOB64,	"ZD35X1GA"),
+	/* ESMT spi nand flash */
+	ID_TABLE_FILL(0x21C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_F50LXX1A_OOB64,	"F50L1G41A"),
+	ID_TABLE_FILL(0x01C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_F50LXX41LB_OOB64,"F50L1G41LB"),
+	/* winbond spi nand flash */
+	ID_TABLE_FILL(0xAAEF, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_W25ND_OOB64,	"W25N01GV"),
+	/* Mxic spi nand flash */
+	ID_TABLE_FILL(0x12C2, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MX35LF_OOB64,	"MX35LF1GE4AB"),
 	ID_TABLE_FILL(0x0001, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_DEFAULT_OOB64,	"General flash"),
 };
 
@@ -262,6 +322,7 @@ static int spinand_mtd_read_id(struct spinand_chip *chip)
 	struct spinand_cmd cmd = {
 		.cmd_len = 2,
 		.cmd[0] = CMD_READ_ID,
+		.cmd[1] = 0,
 		.xfer_len = 2,
 		.rx = (u8*)&id,
 	};

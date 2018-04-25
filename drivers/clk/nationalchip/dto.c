@@ -19,22 +19,34 @@ static unsigned long clk_dto_recalc_rate(struct clk_hw *hw,
 	data = clk_readl(dto->reg) & DTO_STEP;
 	rate = parent_rate;
 	rate = rate * data;
-	rate >>= DTO_DIV_SHIFT;
+	rate = (rate + (1 << (DTO_DIV_SHIFT - 1))) >> DTO_DIV_SHIFT;
 
 	return (unsigned long)rate;
 
 }
+
+static u32 clk_dto_round(unsigned long user_rate,
+				unsigned long prate)
+{
+	unsigned long long rate;
+	u32 mult;
+
+	rate = mul_u64_u64_shr((1ULL << DTO_DIV_SHIFT), (u64)user_rate, 0);
+	rate = rate + (prate >> 1);
+	do_div(rate, prate);
+	mult = (rate & DTO_STEP);
+	return mult;
+}
+
 static long clk_dto_round_rate(struct clk_hw *hw, unsigned long user_rate,
 				unsigned long *prate)
 {
 	unsigned long long rate;
 	u32 mult;
 
-	rate = mul_u64_u64_shr((1ULL << DTO_DIV_SHIFT), (u64)user_rate, 0);
-	do_div(rate, *prate);
-	mult = (rate & DTO_STEP);
+	mult = clk_dto_round(user_rate, *prate);
 	rate = (u64)*prate * mult;
-	rate = rate >> DTO_DIV_SHIFT;
+	rate = (rate + (1 << (DTO_DIV_SHIFT - 1))) >> DTO_DIV_SHIFT;
 
 	return (unsigned long)rate;
 
@@ -43,12 +55,9 @@ static int clk_dto_set_rate(struct clk_hw *hw, unsigned long user_rate,
 				unsigned long parent_rate)
 {
 	struct clk_dto *dto = to_clk_dto(hw);
-	unsigned long long int rate;
 	u32 mult;
 
-	rate = mul_u64_u64_shr((u64)(1 << DTO_DIV_SHIFT), (u64)user_rate, 0);
-	do_div(rate, parent_rate);
-	mult = (rate & DTO_STEP);
+	mult = clk_dto_round(user_rate, parent_rate);
 
 	clk_writel(1 << DTO_RESET, dto->reg);
 	clk_writel(0, dto->reg);
