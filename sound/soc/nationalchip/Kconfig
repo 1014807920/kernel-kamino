@@ -1,0 +1,11 @@
+#
+# nationalchip audio configuration
+#
+
+config NATIONALCHIP_GXASOC
+	tristate "SoC Audio for Nationalchip"
+	select SND_PCM
+	default n
+	depends on NATIONALCHIP_GXALSA=n
+	help
+		Use nationalchip gxasoc to achieve media player

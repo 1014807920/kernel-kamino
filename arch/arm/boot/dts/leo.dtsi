@@ -559,6 +559,11 @@
 			reg = <0xf000 1024>;
 		};
 
+		bbt: bbt@{
+			compatible = "bbt-test";
+			reg = <0x0030a2fc 1024>;
+		};
+
 		sdr: sdr@02c00000 {
 			compatible = "nationalchip,sdr-ctl";
 			reg = <0x02c00000 0x1000>;
@@ -901,6 +906,15 @@
 			status = "okay";
 		};
 
+		ck_i2c0: i2c@0205000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "snps,designware-i2c";
+			reg = <0x0205000 0x1000>;
+			clocks = <&apb0>;
+			interrupts = <23>;
+			status = "okay";
+		};
 
 		uart0: serial0@0x02309000 {
 			compatible = "snps,dw-apb-uart";
@@ -919,6 +933,7 @@
 			interrupts = <14>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
+			cts-override;
 			clocks = <&apb2_uart>;
 		};
 
@@ -948,6 +963,39 @@
 		  interrupt-parent = <&intc>;
 		  interrupts = <58>;
 		};*/
+
+		gxasoc-machine {
+			name = "gxasoc-machine";
+			compatible = "NationalChip,ASoc-Machine";
+			num_codecs = <3>;
+			codec-name     = "gxasoc-lodac", "nau8822", "npcp215x";
+			codec-dai-name = "gxasoc-lodac-dai", "nau8822-voice", "npcp215x-voice";
+			platform-name  = "gxasoc-platform";
+			cup-dai-name   = "gxasoc-platform-dai";
+			status = "okay";
+		};
+
+		gxasoc-platform {
+			dev-name   = "gxasoc-platform";
+			compatible = "NationalChip,ASoc-Platform";
+			reg = <0x01200000 0xf4>;
+			reg-names = "gxasoc.aout.regs";
+			status = "okay";
+		};
+
+		gxasoc-codec {
+			dev-name   = "gxasoc-lodac";
+			compatible = "NationalChip,ASoc-Lodac";
+			reg = <0x0030a1a0 0xc>;
+			reg-names = "gxasoc.lodac.regs";
+			status = "okay";
+		};
+
+		gxasoc-platform_dai {
+			dev-name   = "gxasoc-platform-dai";
+			compatible = "NationalChip,ASoc-Platform_Dai";
+			status = "okay";
+		};
 
 		alsa: nationalchip-alsa@0x01200000 {
 			name = "nationalchip-alsa";
@@ -1036,7 +1084,7 @@
 			reg = <0x00209000 0x500>;
 			clocks = <&osc>;
 			interrupt-parent = <&intc>;
-			interrupts = <4>;
+			interrupts = <31>;
         };
 
 		gxeva: gxeva-udc@0x0900000 {
@@ -1048,6 +1096,5 @@
 		  clocks = <&ahb>;
 		  clock-names = "hclk";
 		};
-
 	};
 };

@@ -22,8 +22,8 @@
 #include "leo.dtsi"
 
 / {
-	model = "nationalchip leo_gx8010_ssd_1v SoC";
-	compatible = "nationalchip,leo_fpga_1v", "nationalchip,leo";
+	model = "nationalchip leo_gx8010_rkd_3v SoC";
+	compatible = "nationalchip,leo_gx8010_rkd_3v_1v", "nationalchip,leo";
 
 	chosen {
 		bootargs = "earlyprintk";
@@ -62,23 +62,15 @@
 
         key1:key1{
 			key_code  = <KEY_MUTE>;
-			key_gpio = <15>;
+			key_gpio = <7>;
 		};
         key2:key2{
 			key_code  = <KEY_VOLUMEUP>;
-			key_gpio = <16>;
+			key_gpio = <8>;
 		};
         key3:key3{
 			key_code  = <KEY_VOLUMEDOWN>;
-			key_gpio = <14>;
-		};
-        key5:key5{
-			key_code  = <KEY_HOME>;
-			key_gpio = <17>;
-		};
-        key6:key6{
-			key_code  = <KEY_POWER>;
-			key_gpio = <20>;
+			key_gpio = <21>;
 		};
 	};
 	urat1_control{
@@ -94,7 +86,7 @@
 	status = "okay";
 
 	/* spi nor flash */
-	M25P@0 {
+	/*M25P@0 {
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <85000000>;
 		reg = <1>;
@@ -112,7 +104,7 @@
 			kernel_dtb {	reg = <0x280000 0x80000>;  };
 			kernel {	reg = <0x300000 0x500000>; };
 		};
-	};
+	};*/
 
 	/* spi nand flash */
 	spinand_mcu@0 {
@@ -134,5 +126,27 @@
 			kernel {	reg = <0x300000 0x700000>; };
 			rootfs {	reg = <0xa00000 0x7600000>;};
 		};
+	};
+};
+
+&mmc0{
+	status = "disabled";
+};
+
+&ck_i2c0{
+	npcp215x@73 {
+		compatible = "npcp215x";
+		dev-name = "npcp215x";
+		reg = <0x73>;
+		dsp_rst-gpio = <&gpa1 10 GPIO_ACTIVE_HIGH>;
+		amp_pdn-gpio = <&ck_gpa1 3 GPIO_ACTIVE_HIGH>;
+		hp_det-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	nau8822@1a {
+		compatible = "nau8822";
+		dev-name = "nau8822";
+		reg = <0x1a>;
+		hp_det-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 	};
 };

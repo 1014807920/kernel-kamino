@@ -10,6 +10,12 @@ config NATIONALCHIP_NPU
 	help
 	  This driver allows you to use NPU module to execute neural network.
 
+config NATIONALCHIP_UART_MCTRL
+	tristate "nationalchip uart flow control"
+	default	n
+	help
+	  This driver allows you to use gpio to simulate uart flow control.
+
 menuconfig NATIONALCHIP_GXAVDEV
 	tristate "nationalchip gxavdev modules select"
 	default	n
@@ -25,7 +31,7 @@ config NATIONALCHIP_AUDIO_IN
 config NATIONALCHIP_AUDIO_PLAY
 	bool "nationalchip audio play"
 	default	y
-	depends on NATIONALCHIP_GXALSA=n
+	depends on NATIONALCHIP_GXALSA=n && NATIONALCHIP_GXASOC=n
 
 config NATIONALCHIP_AUDIO_DECODE
 	bool "nationalchip audio decode"

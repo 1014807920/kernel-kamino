@@ -94,8 +94,8 @@ static irqreturn_t leo_rtc_irq(int irq, void *id)
 {
 	struct leo_rtc *info = (struct leo_rtc *)id;
 
-
 	writel(0x00, info->base + LEO_RTC_INTC_STA);
+	rtc_update_irq(info->rtc, 1, RTC_AF | RTC_IRQF);
 	return IRQ_HANDLED;
 }
 
@@ -256,6 +256,8 @@ static int leo_rtc_setalarm(struct device *dev, struct rtc_wkalrm *alrm)
 	alrm_en = rtc_con & LEO_RTC_ALM_EN;
 	rtc_con |= LEO_RTC_ALM_EN;
 	writel(rtc_con, info->base + LEO_RTC_CON);
+
+	writel(LEO_ALM_MASK_WEEK, info->base + LEO_ALM_MASK);
 
 	if (tm->tm_sec < 60 && tm->tm_sec >= 0) {
 		writel(bin2bcd(tm->tm_sec), info->base + LEO_ALM_SEC);

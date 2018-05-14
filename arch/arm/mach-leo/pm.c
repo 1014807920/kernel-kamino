@@ -31,6 +31,9 @@
 #include <asm/fncpy.h>
 #include "core.h"
 
+#define BBT_TEST_MODE 0x87654321
+#define BBT_SUSPEND   0x12345678
+
 /* Pointer to function copied to ocram */
 static u32 (*leo_sdram_self_refresh_in_ocram)(u32 sdr_base, u32 resume_base);
 static void __iomem *resume_base_addr;
@@ -156,6 +159,48 @@ static const struct platform_suspend_ops leo_pm_ops = {
 	.enter	= leo_pm_enter,
 };
 
+void leo_bbt_test(void)
+{
+	struct platform_device *pdev;
+	struct device_node *np;
+	void __iomem *bbt_base;
+	struct resource *res;
+	u32 data;
+	int ret = 0;
+
+	np = of_find_compatible_node(NULL, NULL, "bbt-test");
+	if (!np) {
+		pr_err("%s: Unable to find bbt-test in dtb\n", __func__);
+		return;
+	}
+
+	pdev = of_find_device_by_node(np);
+	if (!pdev) {
+		pr_warn("%s: failed to find ocram device!\n", __func__);
+		ret = -ENODEV;
+		goto put_node;
+	}
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	bbt_base = ioremap(res->start, resource_size(res));
+	if (!bbt_base) {
+		printk("ioremap failed for resource %pR\n", res);
+		goto put_node;
+	}
+
+	data = readl(bbt_base);
+	if (data == BBT_TEST_MODE){
+		printk("\n\nenter bbt mode\n\n");
+		writel(BBT_SUSPEND, bbt_base);
+		leo_pm_enter(PM_SUSPEND_FREEZE);
+		writel(BBT_SUSPEND, bbt_base);
+	}
+
+	iounmap(bbt_base);
+put_node:
+	of_node_put(np);
+}
+
 static int __init leo_pm_init(void)
 {
 	int ret;
@@ -166,6 +211,8 @@ static int __init leo_pm_init(void)
 
 	suspend_set_ops(&leo_pm_ops);
 	pr_info("leo initialized for DDR self-refresh during suspend.\n");
+
+	leo_bbt_test();
 
 	return 0;
 }
