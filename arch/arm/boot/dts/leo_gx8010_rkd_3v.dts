@@ -80,6 +80,39 @@
 		cts-gpio = <&gpa0 9 GPIO_ACTIVE_HIGH>;
 		rts-gpio = <&gpa0 10 GPIO_ACTIVE_HIGH>;
 	};
+
+	gxasoc-machine {
+		name = "gxasoc-machine";
+		compatible = "NationalChip,ASoc-Machine";
+		num_codecs = <3>;
+		codec-name     = "gxasoc-lodac", "nau8822", "npcp215x";
+		codec-dai-name = "gxasoc-lodac-dai", "nau8822-voice", "npcp215x-voice";
+		platform-name  = "gxasoc-platform";
+		cup-dai-name   = "gxasoc-platform-dai";
+		status = "okay";
+	};
+
+	gxasoc-platform {
+		dev-name   = "gxasoc-platform";
+		compatible = "NationalChip,ASoc-Platform";
+		reg = <0x01200000 0xf4>;
+		reg-names = "gxasoc.aout.regs";
+		status = "okay";
+	};
+
+	gxasoc-codec {
+		dev-name   = "gxasoc-lodac";
+		compatible = "NationalChip,ASoc-Lodac";
+		reg = <0x0030a1a0 0xc>;
+		reg-names = "gxasoc.lodac.regs";
+		status = "okay";
+	};
+
+	gxasoc-platform_dai {
+		dev-name   = "gxasoc-platform-dai";
+		compatible = "NationalChip,ASoc-Platform_Dai";
+		status = "okay";
+	};
 };
 
 &spi0{
@@ -138,15 +171,13 @@
 		compatible = "npcp215x";
 		dev-name = "npcp215x";
 		reg = <0x73>;
-		dsp_rst-gpio = <&gpa1 10 GPIO_ACTIVE_HIGH>;
+		dsp_rst-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 		amp_pdn-gpio = <&ck_gpa1 3 GPIO_ACTIVE_HIGH>;
-		hp_det-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 	};
 
 	nau8822@1a {
 		compatible = "nau8822";
 		dev-name = "nau8822";
 		reg = <0x1a>;
-		hp_det-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 	};
 };

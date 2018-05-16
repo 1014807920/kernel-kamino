@@ -964,39 +964,6 @@
 		  interrupts = <58>;
 		};*/
 
-		gxasoc-machine {
-			name = "gxasoc-machine";
-			compatible = "NationalChip,ASoc-Machine";
-			num_codecs = <3>;
-			codec-name     = "gxasoc-lodac", "nau8822", "npcp215x";
-			codec-dai-name = "gxasoc-lodac-dai", "nau8822-voice", "npcp215x-voice";
-			platform-name  = "gxasoc-platform";
-			cup-dai-name   = "gxasoc-platform-dai";
-			status = "okay";
-		};
-
-		gxasoc-platform {
-			dev-name   = "gxasoc-platform";
-			compatible = "NationalChip,ASoc-Platform";
-			reg = <0x01200000 0xf4>;
-			reg-names = "gxasoc.aout.regs";
-			status = "okay";
-		};
-
-		gxasoc-codec {
-			dev-name   = "gxasoc-lodac";
-			compatible = "NationalChip,ASoc-Lodac";
-			reg = <0x0030a1a0 0xc>;
-			reg-names = "gxasoc.lodac.regs";
-			status = "okay";
-		};
-
-		gxasoc-platform_dai {
-			dev-name   = "gxasoc-platform-dai";
-			compatible = "NationalChip,ASoc-Platform_Dai";
-			status = "okay";
-		};
-
 		alsa: nationalchip-alsa@0x01200000 {
 			name = "nationalchip-alsa";
 			compatible  = "NationalChip,Alsa-Audio";
