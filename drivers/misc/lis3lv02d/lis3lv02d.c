@@ -39,12 +39,17 @@
 #include <linux/pm_runtime.h>
 #include <linux/atomic.h>
 #include <linux/of_device.h>
+#include <linux/semaphore.h>
+#include <linux/cdev.h>
+#include <linux/device.h>
+#include <linux/kfifo.h>
+
 #include "lis3lv02d.h"
 
 #define DRIVER_NAME     "lis3lv02d"
 
 /* joystick device poll interval in milliseconds */
-#define MDPS_POLL_INTERVAL 50
+#define MDPS_POLL_INTERVAL 20
 #define MDPS_POLL_MIN	   0
 #define MDPS_POLL_MAX	   2000
 
@@ -78,7 +83,7 @@
 #define LIS3_ACCURACY			1024
 /* Sensitivity values for -2G +2G scale */
 #define LIS3_SENSITIVITY_12B		((LIS3_ACCURACY * 1000) / 1024)
-#define LIS3_SENSITIVITY_8B		(18 * LIS3_ACCURACY)
+#define LIS3_SENSITIVITY_8B		(16 * LIS3_ACCURACY)
 
 /*
  * LIS331DLH spec says 1LSBs corresponds 4G/4096 -> 1LSB is 1000/1024 mG.
@@ -93,6 +98,12 @@
 #define LIS3_DEFAULT_FLAT_12B		3
 #define LIS3_DEFAULT_FUZZ_8B		1
 #define LIS3_DEFAULT_FLAT_8B		1
+
+struct miscdevice lis_miscdev;
+unsigned long lis_misc_opened = 0;
+static struct kfifo lis_kfifo;
+#define FIFO_LENGTH 256
+
 
 struct lis3lv02d lis3_dev = {
 	.misc_wait   = __WAIT_QUEUE_HEAD_INITIALIZER(lis3_dev.misc_wait),
@@ -377,6 +388,8 @@ static u8 lis3_wai12_regs[] = {FF_WU_CFG, FF_WU_THS_L, FF_WU_THS_H,
 			       DD_THSE_L, DD_THSE_H,
 			       CTRL_REG1, CTRL_REG3, CTRL_REG2};
 
+static u8 lis3dc_wai8_regs[] = {CTRL_REG1, CTRL_REG2, CTRL_REG3};
+
 static inline void lis3_context_save(struct lis3lv02d *lis3)
 {
 	int i;
@@ -451,12 +464,21 @@ static void lis3lv02d_joystick_poll(struct input_polled_dev *pidev)
 	struct lis3lv02d *lis3 = pidev->private;
 	int x, y, z;
 
+	char abs_value[64] = {0};
+	//static int count = 0;
+
 	mutex_lock(&lis3->mutex);
 	lis3lv02d_get_xyz(lis3, &x, &y, &z);
 	input_report_abs(pidev->input, ABS_X, x);
 	input_report_abs(pidev->input, ABS_Y, y);
 	input_report_abs(pidev->input, ABS_Z, z);
 	input_sync(pidev->input);
+
+	memset(abs_value, 0, sizeof(abs_value));
+	sprintf(abs_value, "(%d,%d,%d)",x,y,z);
+
+	kfifo_in(&lis_kfifo, abs_value, strlen(abs_value));
+
 	mutex_unlock(&lis3->mutex);
 }
 
@@ -579,11 +601,20 @@ static int lis3lv02d_misc_open(struct inode *inode, struct file *file)
 
 	if (test_and_set_bit(0, &lis3->misc_opened))
 		return -EBUSY; /* already open */
-
 	if (lis3->pm_dev)
 		pm_runtime_get_sync(lis3->pm_dev);
 
 	atomic_set(&lis3->count, 0);
+	return 0;
+}
+
+static int lis_misc_open(struct inode *inode, struct file *file)
+{
+
+	if (test_and_set_bit(0, &lis_misc_opened))
+		return -EBUSY; /* already open */
+
+	//atomic_set(&lis3->count, 0);
 	return 0;
 }
 
@@ -595,6 +626,12 @@ static int lis3lv02d_misc_release(struct inode *inode, struct file *file)
 	clear_bit(0, &lis3->misc_opened); /* release the device */
 	if (lis3->pm_dev)
 		pm_runtime_put(lis3->pm_dev);
+	return 0;
+}
+
+static int lis_misc_release(struct inode *inode, struct file *file)
+{
+	clear_bit(0, &lis_misc_opened); /* release the device */
 	return 0;
 }
 
@@ -650,6 +687,36 @@ out:
 	return retval;
 }
 
+
+static ssize_t lis_misc_read(struct file *file, char __user *buf,
+				size_t count, loff_t *pos)
+{
+	int retval = 0;
+	char tmp[FIFO_LENGTH] = {0};
+	int left_count = count;
+	int read_length;
+	int inc = 0;
+	while(left_count > 0){
+		memset(tmp, 0, sizeof(tmp));
+		read_length = kfifo_out(&lis_kfifo, tmp, left_count);
+		if(read_length > 0){
+			retval = copy_to_user(&buf[inc], tmp, read_length);
+			if(retval < 0){
+				pr_err("%s copy_to_user err,retval=%d,read_length=%d\n", __func__, retval, read_length);
+				return -EFAULT;
+			}else{
+				left_count = left_count - read_length;
+				inc = inc + read_length;
+			}
+		}
+		msleep(MDPS_POLL_INTERVAL * 2);
+
+	}
+
+	return count;
+}
+
+
 static unsigned int lis3lv02d_misc_poll(struct file *file, poll_table *wait)
 {
 	struct lis3lv02d *lis3 = container_of(file->private_data,
@@ -678,6 +745,20 @@ static const struct file_operations lis3lv02d_misc_fops = {
 	.poll    = lis3lv02d_misc_poll,
 	.fasync  = lis3lv02d_misc_fasync,
 };
+
+
+static const struct file_operations lis_misc_fops = {
+	.owner   = THIS_MODULE,
+	.llseek  = no_llseek,
+	.read    = lis_misc_read,
+	.open    = lis_misc_open,
+	.release = lis_misc_release,
+//	.poll    = lis3lv02d_misc_poll,
+//	.fasync  = lis3lv02d_misc_fasync,
+};
+
+
+
 
 int lis3lv02d_joystick_enable(struct lis3lv02d *lis3)
 {
@@ -734,6 +815,19 @@ int lis3lv02d_joystick_enable(struct lis3lv02d *lis3)
 		lis3->idev = NULL;
 	}
 
+	err = kfifo_alloc(&lis_kfifo, FIFO_LENGTH, GFP_KERNEL);
+	if (err) {
+		pr_info("lis3 failed to alloc kfifo");
+		return err;
+	}
+
+	lis_miscdev.minor	= MISC_DYNAMIC_MINOR;
+	lis_miscdev.name	= "lis_buffer";
+	lis_miscdev.fops	= &lis_misc_fops;
+
+	if (misc_register(&lis_miscdev))
+		pr_err("lis_miscdev failed\n");
+
 	return err;
 }
 EXPORT_SYMBOL_GPL(lis3lv02d_joystick_enable);
@@ -753,6 +847,9 @@ void lis3lv02d_joystick_disable(struct lis3lv02d *lis3)
 	input_unregister_polled_device(lis3->idev);
 	input_free_polled_device(lis3->idev);
 	lis3->idev = NULL;
+
+	misc_deregister(&lis_miscdev);
+	kfifo_free(&lis_kfifo);
 }
 EXPORT_SYMBOL_GPL(lis3lv02d_joystick_disable);
 
@@ -814,6 +911,36 @@ static ssize_t lis3lv02d_position_show(struct device *dev,
 	mutex_unlock(&lis3->mutex);
 	return sprintf(buf, "(%d,%d,%d)\n", x, y, z);
 }
+
+/*
+static ssize_t lis3lv02d_buffer_show(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	struct lis3lv02d *lis3 = dev_get_drvdata(dev);
+	int ret;
+	char tmp[FIFO_LENGTH];
+
+	lis3lv02d_sysfs_poweron(lis3);
+
+	ret = kfifo_out(&lis_kfifo, tmp, FIFO_LENGTH); //clear old fifo
+	if(ret < 0){
+		pr_err("%s kfifo read err\n", __func__);
+		return ret;
+	}
+
+	memset(tmp,0,sizeof(tmp));
+	msleep(MDPS_POLL_INTERVAL * 10);//read 10 xyz position
+	ret = kfifo_out(&lis_kfifo, tmp, FIFO_LENGTH);
+	if(ret < 0){
+		pr_err("%s kfifo read err\n", __func__);
+		return ret;
+	}
+//	mutex_lock(&lis3->mutex);
+//	mutex_unlock(&lis3->mutex);
+
+	return sprintf(buf, "%s\n", tmp);
+}
+*/
 
 static ssize_t lis3lv02d_rate_show(struct device *dev,
 			struct device_attribute *attr, char *buf)
@@ -1079,8 +1206,9 @@ int lis3lv02d_init_dt(struct lis3lv02d *lis3)
 	if (of_property_read_s32(np, "st,axis-z", &sval) == 0)
 		pdata->axis_z = sval;
 
-	if (of_get_property(np, "st,default-rate", NULL))
-		pdata->default_rate = val;
+	if (of_property_read_s32(np, "st,default-rate", &sval) == 0){
+		pdata->default_rate = sval;
+	}
 
 	if (of_property_read_s32(np, "st,min-limit-x", &sval) == 0)
 		pdata->st_min_limits[0] = sval;
@@ -1153,6 +1281,8 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
 		lis3->odrs = lis3_3dc_rates;
 		lis3->odr_mask = CTRL1_ODR0|CTRL1_ODR1|CTRL1_ODR2|CTRL1_ODR3;
 		lis3->scale = LIS3_SENSITIVITY_8B;
+		lis3->regs = lis3dc_wai8_regs;
+		lis3->regs_size = ARRAY_SIZE(lis3dc_wai8_regs);
 		break;
 	case WAI_3DLH:
 		pr_info("16 bits lis331dlh sensor found\n");
@@ -1209,13 +1339,15 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
 		if (p->irq_cfg)
 			lis3->write(lis3, CTRL_REG3, p->irq_cfg);
 
-		if (p->default_rate)
+		if (p->default_rate){
 			lis3lv02d_set_odr(lis3, p->default_rate);
+			printk(KERN_ERR "lis3 set odr rate=%d\n", p->default_rate);
+		}
 	}
 
-	/* bail if we did not get an IRQ from the bus layer */
-	if (!lis3->irq) {
-		pr_debug("No IRQ. Disabling /dev/freefall\n");
+	/* fail if we did not get an IRQ from the bus layer */
+	if (!lis3->irq) {			//rokidme,irq is not used
+		printk(KERN_ERR "lis3 No IRQ. Disabling /dev/freefall\n");
 		goto out;
 	}
 
@@ -1230,6 +1362,7 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
 	 * io-apic is not configurable (and generates a warning) but I keep it
 	 * in case of support for other hardware.
 	 */
+	
 	if (lis3->pdata && lis3->whoami == WAI_8B)
 		thread_fn = lis302dl_interrupt_thread1_8b;
 	else
@@ -1251,7 +1384,9 @@ int lis3lv02d_init_device(struct lis3lv02d *lis3)
 	lis3->miscdev.fops	= &lis3lv02d_misc_fops;
 
 	if (misc_register(&lis3->miscdev))
-		pr_err("misc_register failed\n");
+		pr_err("lis3 misc_register failed\n");
+
+
 out:
 	return 0;
 }

@@ -43,17 +43,17 @@ static const char reg_vdd_io[] = "Vdd_IO";
 
 static int lis3_reg_ctrl(struct lis3lv02d *lis3, bool state)
 {
-	int ret;
+	//int ret;
 	if (state == LIS3_REG_OFF) {
-		ret = regulator_bulk_disable(ARRAY_SIZE(lis3->regulators),
-					lis3->regulators);
+		//ret = regulator_bulk_disable(ARRAY_SIZE(lis3->regulators),
+		//			lis3->regulators);
 	} else {
-		ret = regulator_bulk_enable(ARRAY_SIZE(lis3->regulators),
-					lis3->regulators);
+		//ret = regulator_bulk_enable(ARRAY_SIZE(lis3->regulators),
+		//			lis3->regulators);
 		/* Chip needs time to wakeup. Not mentioned in datasheet */
-		usleep_range(10000, 20000);
+		//usleep_range(10000, 20000);
 	}
-	return ret;
+	return 0;
 }
 
 static inline s32 lis3_i2c_write(struct lis3lv02d *lis3, int reg, u8 value)
@@ -105,13 +105,13 @@ static int lis3_i2c_init(struct lis3lv02d *lis3)
 static union axis_conversion lis3lv02d_axis_map =
 	{ .as_array = { LIS3_DEV_X, LIS3_DEV_Y, LIS3_DEV_Z } };
 
-#ifdef CONFIG_OF
+//#ifdef CONFIG_OF
 static const struct of_device_id lis3lv02d_i2c_dt_ids[] = {
 	{ .compatible = "st,lis3lv02d" },
 	{}
 };
 MODULE_DEVICE_TABLE(of, lis3lv02d_i2c_dt_ids);
-#endif
+//#endif
 
 static int lis3lv02d_i2c_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
@@ -119,7 +119,9 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 	int ret = 0;
 	struct lis3lv02d_platform_data *pdata = client->dev.platform_data;
 
-#ifdef CONFIG_OF
+	printk(KERN_ERR "%s,lis3 dev name is %s\n",dev_driver_string(&client->dev),dev_name(&client->dev));
+
+//#ifdef CONFIG_OF
 	if (of_match_device(lis3lv02d_i2c_dt_ids, &client->dev)) {
 		lis3_dev.of_node = client->dev.of_node;
 		ret = lis3lv02d_init_dt(&lis3_dev);
@@ -127,7 +129,7 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 			return ret;
 		pdata = lis3_dev.pdata;
 	}
-#endif
+//#endif
 
 	if (pdata) {
 		if ((pdata->driver_features & LIS3_USE_BLOCK_READ) &&
@@ -149,15 +151,17 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 
 		if (ret)
 			goto fail;
+	} else {
+		printk(KERN_ERR "%s,pdata is null\n",dev_driver_string(&client->dev));	
 	}
 
-	lis3_dev.regulators[0].supply = reg_vdd;
-	lis3_dev.regulators[1].supply = reg_vdd_io;
-	ret = regulator_bulk_get(&client->dev,
-				 ARRAY_SIZE(lis3_dev.regulators),
-				 lis3_dev.regulators);
-	if (ret < 0)
-		goto fail;
+	//lis3_dev.regulators[0].supply = reg_vdd;
+	//lis3_dev.regulators[1].supply = reg_vdd_io;
+	//ret = regulator_bulk_get(&client->dev,
+	//			 ARRAY_SIZE(lis3_dev.regulators),
+	//			 lis3_dev.regulators);
+	//if (ret < 0)
+	//	goto fail;
 
 	lis3_dev.pdata	  = pdata;
 	lis3_dev.bus_priv = client;
@@ -167,6 +171,7 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 	lis3_dev.irq	  = client->irq;
 	lis3_dev.ac	  = lis3lv02d_axis_map;
 	lis3_dev.pm_dev	  = &client->dev;
+	lis3_dev.reg_ctrl	  = lis3_reg_ctrl;
 
 	i2c_set_clientdata(client, &lis3_dev);
 
@@ -182,8 +187,8 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 	return 0;
 
 fail2:
-	regulator_bulk_free(ARRAY_SIZE(lis3_dev.regulators),
-				lis3_dev.regulators);
+	//regulator_bulk_free(ARRAY_SIZE(lis3_dev.regulators),
+	//			lis3_dev.regulators);
 fail:
 	if (pdata && pdata->release_resources)
 		pdata->release_resources();
@@ -201,15 +206,15 @@ static int lis3lv02d_i2c_remove(struct i2c_client *client)
 	lis3lv02d_joystick_disable(lis3);
 	lis3lv02d_remove_fs(&lis3_dev);
 
-	regulator_bulk_free(ARRAY_SIZE(lis3->regulators),
-			    lis3_dev.regulators);
+	//regulator_bulk_free(ARRAY_SIZE(lis3->regulators),
+	//		    lis3_dev.regulators);
 	return 0;
 }
 
 #ifdef CONFIG_PM_SLEEP
 static int lis3lv02d_i2c_suspend(struct device *dev)
 {
-	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct i2c_client *client = to_i2c_client(dev);
 	struct lis3lv02d *lis3 = i2c_get_clientdata(client);
 
 	if (!lis3->pdata || !lis3->pdata->wakeup_flags)
@@ -219,7 +224,7 @@ static int lis3lv02d_i2c_suspend(struct device *dev)
 
 static int lis3lv02d_i2c_resume(struct device *dev)
 {
-	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct i2c_client *client = to_i2c_client(dev);
 	struct lis3lv02d *lis3 = i2c_get_clientdata(client);
 
 	/*
@@ -238,7 +243,7 @@ static int lis3lv02d_i2c_resume(struct device *dev)
 #ifdef CONFIG_PM
 static int lis3_i2c_runtime_suspend(struct device *dev)
 {
-	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct i2c_client *client = to_i2c_client(dev);
 	struct lis3lv02d *lis3 = i2c_get_clientdata(client);
 
 	lis3lv02d_poweroff(lis3);
@@ -247,7 +252,7 @@ static int lis3_i2c_runtime_suspend(struct device *dev)
 
 static int lis3_i2c_runtime_resume(struct device *dev)
 {
-	struct i2c_client *client = container_of(dev, struct i2c_client, dev);
+	struct i2c_client *client = to_i2c_client(dev);
 	struct lis3lv02d *lis3 = i2c_get_clientdata(client);
 
 	lis3lv02d_poweron(lis3);
