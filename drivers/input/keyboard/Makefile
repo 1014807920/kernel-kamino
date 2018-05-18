@@ -64,4 +64,5 @@ obj-$(CONFIG_KEYBOARD_TWL4030)		+= twl4030_keypad.o
 obj-$(CONFIG_KEYBOARD_XTKBD)		+= xtkbd.o
 obj-$(CONFIG_KEYBOARD_W90P910)		+= w90p910_keypad.o
 obj-$(CONFIG_KEYBOARD_LEO)			+= nationalchip_keypad.o
+obj-$(CONFIG_KEYPAD_GPIO)			+= gpio_keypad.o
 obj-$(CONFIG_KEYBOARD_CAP1114)		+= cap1114_touchkey.o

@@ -49,6 +49,7 @@
 		regulator-max-microvolt = <3300000>;
 	};
 
+/*
 	a7_key:a7_key@0x2305008{
 		compatible = "nationalchip,LEO-keypad";
 		reg = <0x230501c 0x90>;
@@ -73,6 +74,27 @@
 			key_gpio = <21>;
 		};
 	};
+*/
+	gpio_keypad{
+		compatible = "amlogic, gpio_keypad";
+		status = "okay";
+		scan_period = <20>;
+
+		key_num = <5>;
+		key_name = "power", "volup", "voldown" , "mute", "lock";
+		key_code = <116 115 114 113 152>;
+
+		power-gpio =   <&ck_gpa0 20 GPIO_ACTIVE_LOW>;
+		volup-gpio =   <&ck_gpa0 8 GPIO_ACTIVE_LOW>;
+		voldown-gpio = <&ck_gpa0 21 GPIO_ACTIVE_LOW>;
+		mute-gpio =    <&ck_gpa0 7 GPIO_ACTIVE_LOW>;
+		lock-gpio =    <&ck_gpa0 18 GPIO_ACTIVE_LOW>;
+
+		gpio_high_z = <1>;
+		//irq_keyup = <6>;
+		//irq_keydown = <7>;
+	};
+
 	urat1_control{
 		compatible = "nationalchip,LEO_uart_control";
 		reg = <0x02308000 0x1000>;
