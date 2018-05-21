@@ -106,9 +106,9 @@
 	gxasoc-machine {
 		name = "gxasoc-machine";
 		compatible = "NationalChip,ASoc-Machine";
-		num_codecs = <3>;
-		codec-name     = "gxasoc-lodac", "nau8822", "npcp215x";
-		codec-dai-name = "gxasoc-lodac-dai", "nau8822-voice", "npcp215x-voice";
+		num_codecs = <2>;
+		codec-name     = "gxasoc-lodac", "npcp215x";
+		codec-dai-name = "gxasoc-lodac-dai", "npcp215x-voice";
 		platform-name  = "gxasoc-platform";
 		cup-dai-name   = "gxasoc-platform-dai";
 		status = "okay";
@@ -196,13 +196,13 @@
 		dsp_rst-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 		amp_pdn-gpio = <&ck_gpa1 3 GPIO_ACTIVE_HIGH>;
 	};
-
+/*
 	nau8822@1a {
 		compatible = "nau8822";
 		dev-name = "nau8822";
 		reg = <0x1a>;
 	};
-
+*/
 	lis331dlh: lis331dlh@18 {
 		compatible = "st,lis331dlh", "st,lis3lv02d";
 		reg = <0x18>;
