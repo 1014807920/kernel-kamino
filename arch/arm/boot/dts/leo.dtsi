@@ -906,16 +906,6 @@
 			status = "okay";
 		};
 
-		ck_i2c0: i2c@0205000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-i2c";
-			reg = <0x0205000 0x1000>;
-			clocks = <&apb0>;
-			interrupts = <23>;
-			status = "okay";
-		};
-
 		uart0: serial0@0x02309000 {
 			compatible = "snps,dw-apb-uart";
 			reg = <0x02309000 0x1000>;
