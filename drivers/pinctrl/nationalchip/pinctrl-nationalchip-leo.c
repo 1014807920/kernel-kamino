@@ -955,7 +955,7 @@ void nationalchip_gpio_set_imask(struct nationalchip_pinctrl_drv_data *drvdata, 
 	if (enable)
 		data |= (1 << offset);
 	else
-		data = ~(1 << offset);
+		data &= ~(1 << offset);
 	writel(data, irq_base + INTC_MASK);
 
 	spin_unlock_irqrestore(&bank->slock, flags);

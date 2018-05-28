@@ -15,11 +15,33 @@
 #include <config/gpiolib.h>
 
 #define CHAN_OFFS       0x04
-#define PWM_DUTY        (0x80 - 0x80)
-#define PWM_CYCLE       (0xc0 - 0x80)
-#define PWM_UPDATE      (0xe0 - 0x80)
-#define PWM_EN          (0xe4 - 0x80)
-#define PWM_DIV         (0xf0 - 0x80)
+#define PWM_DUTY        (0x80)
+#define PWM_CYCLE       (0xc0)
+#define PWM_CHANNEL_SEL (0x20)
+#define PWM_UPDATE      (0xe0)
+#define PWM_PORT_EN     (0x30)
+#define PWM_CHANNEL_EN  (0xe4)
+#define PWM_DIV         (0xf0)
+#define GROUP_GPIO_NUM 32
+#define PWM_CHANNEL_NUM                 0x8
+#define PWM_CHANNEL_SHIFT               0x8
+#define PWM_CHANNEL_MASK                0xf
+#define PWM_CHANNEL_WIDTH               0x4
+
+#define PWM_SEL_CHANGE(data, shift) (((data >> 3 * shift) & 0x7) << (shift * 4))
+#define PWM_SEL_READ(data) (PWM_SEL_CHANGE(data,0) | PWM_SEL_CHANGE(data,1) | PWM_SEL_CHANGE(data,2) | PWM_SEL_CHANGE(data,3) | PWM_SEL_CHANGE(data,4) | PWM_SEL_CHANGE(data,5) | PWM_SEL_CHANGE(data,6) | PWM_SEL_CHANGE(data,7))
+
+typedef struct {
+    int cycle;
+    int duty;
+    int counter;
+} PWM_CHANNEL_INFO;
+
+struct gpio_pwm_info{
+    int port_pwm_flag;
+    int s_gpio_to_channel[GROUP_GPIO_NUM];
+    PWM_CHANNEL_INFO s_pwm_channel_info[PWM_CHANNEL_NUM];
+};
 
 struct nationalchip_pwm {
 	void __iomem *base;
@@ -27,6 +49,7 @@ struct nationalchip_pwm {
 	struct clk *clk;
 	struct pwm_chip chip;
 	unsigned long rate;
+	struct gpio_pwm_info gpio_pwm_info;
 };
 
 static inline struct nationalchip_pwm *to_nationalchip_pwm(struct pwm_chip *chip)
@@ -38,8 +61,12 @@ static int nationalchip_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm
 			      int duty_ns, int period_ns)
 {
 	struct nationalchip_pwm *p = to_nationalchip_pwm(chip);
-	unsigned long pc, dc;
+	unsigned long pc, dc, data;
 	u64 rate, tmp;
+	int port = pwm->hwpwm;
+	struct gpio_pwm_info *gpio_pwm_info = &p->gpio_pwm_info;
+	int port_channel = 0;
+	int i, ret = -1;
 
 	rate = p->rate;
 
@@ -55,18 +82,59 @@ static int nationalchip_pwm_config(struct pwm_chip *chip, struct pwm_device *pwm
 		printk("This cycle is too big!");
 		return -1;
 	}
-	spin_lock(&p->lock);
-	writel(pc - 1, p->base + PWM_CYCLE + pwm->hwpwm * CHAN_OFFS);
-	writel(dc, p->base + PWM_DUTY + pwm->hwpwm *  CHAN_OFFS);
-	spin_unlock(&p->lock);
 
-	return 0;
+	// 寻找有一样频率和占空比的通道
+	for (i = 0; i < PWM_CHANNEL_NUM; i++) {
+		if (gpio_pwm_info->s_pwm_channel_info[i].cycle == period_ns
+				&& gpio_pwm_info->s_pwm_channel_info[i].duty == duty_ns
+				&& gpio_pwm_info->s_pwm_channel_info[i].counter != 0) {
+			ret = 0;
+			break;
+		}
+	}
+	//寻找空的通道
+	if (ret != 0){
+		for (i = 0; i < PWM_CHANNEL_NUM; i++) {
+			if (gpio_pwm_info->s_pwm_channel_info[i].counter == 0){
+				ret = 0;
+				break;
+			}
+		}
+	}
+	// 找到可通道
+	if (ret == 0){
+		if (gpio_pwm_info->s_gpio_to_channel[port] > 0){
+			port_channel = gpio_pwm_info->s_gpio_to_channel[port] -1;
+			gpio_pwm_info->s_pwm_channel_info[port_channel].counter -= 1;
+		}
+		gpio_pwm_info->s_pwm_channel_info[i].counter += 1;
+		gpio_pwm_info->s_gpio_to_channel[port] = i + 1;
+		gpio_pwm_info->s_pwm_channel_info[i].cycle = period_ns;
+		gpio_pwm_info->s_pwm_channel_info[i].duty = duty_ns;
+
+		spin_lock(&p->lock);
+		writel(pc - 1, p->base + PWM_CYCLE + i * CHAN_OFFS);
+		writel(dc, p->base + PWM_DUTY + i * CHAN_OFFS);
+		data = readl(p->base + PWM_CHANNEL_SEL + (port / PWM_CHANNEL_SHIFT) * PWM_CHANNEL_WIDTH);
+		data = PWM_SEL_READ(data);
+		data &= ~(PWM_CHANNEL_MASK << ((port % PWM_CHANNEL_SHIFT) * PWM_CHANNEL_WIDTH));
+		data |= (i << ((port % PWM_CHANNEL_SHIFT) * PWM_CHANNEL_WIDTH));
+		writel(data, p->base + PWM_CHANNEL_SEL +  (port / PWM_CHANNEL_SHIFT) * PWM_CHANNEL_WIDTH);
+		spin_unlock(&p->lock);
+	}
+
+	if (ret != 0){
+		gpio_pwm_info->s_pwm_channel_info[port_channel].counter += 1;
+		printk("No enough channel!\n");
+	}
+
+	return ret;
 }
 
 static inline void nationalchip_pwm_enable_set(struct nationalchip_pwm *p,
 					  unsigned int channel, bool enable)
 {
-	unsigned int offset = PWM_EN;
+	unsigned int offset = PWM_PORT_EN;
 	u32 value;
 
 	spin_lock(&p->lock);
@@ -143,11 +211,11 @@ static int nationalchip_pwm_probe(struct platform_device *pdev)
 	p->chip.dev       = &pdev->dev;
 	p->chip.ops       = &nationalchip_pwm_ops;
 	p->chip.base      = -1;
-	p->chip.npwm      = 8;
+	p->chip.npwm      = 32;
 	p->chip.can_sleep = true;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	p->base = devm_ioremap_resource(&pdev->dev, res);
+	p->base = ioremap(res->start, resource_size(res));
 	if (IS_ERR(p->base)) {
 		ret = PTR_ERR(p->base);
 		goto out_clk;
@@ -166,7 +234,7 @@ static int nationalchip_pwm_probe(struct platform_device *pdev)
 	p->rate = clk_get_rate(p->clk) / (div + 1);
 	writel(div, p->base + PWM_DIV);
 	//使能
-	writel(0xff, p->base + PWM_EN);
+	writel(0xff, p->base + PWM_CHANNEL_EN);
 	//更新占空比等寄存器
 	writel(0x00, p->base + PWM_UPDATE);
 

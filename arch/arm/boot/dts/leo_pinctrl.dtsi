@@ -26,7 +26,6 @@
 				nationalchip,pin-pwm_sel = <0x2>;
 				nationalchip,pin-pwm_en = <0x01>;
 			};
-			/* 需要什么管脚输出pwm再相应添加*/
 		};
 	pinctrl_1: pinctrl_1@0x2306000 {
 		compatible = "nationalchip,LEO_A7-pinctrl";
@@ -45,7 +44,6 @@
 				nationalchip,cfg_width   = <  1	   1	1	 4 	  1    1>;
 				nationalchip,nr_pins     = <32>;
 			};
-			/* 需要什么管脚输出pwm再相应添加*/
 	};
 
 	ck_pinctrl_0: ck_pinctrl_0@0x2305000 {
@@ -60,7 +58,6 @@
 				nationalchip,cfg_width   = <  1	   1	1	 4 	  1    1>;
 				nationalchip,nr_pins     = <32>;
 			};
-			/* 需要什么管脚输出pwm再相应添加*/
 	};
 
 	ck_pinctrl_1: ck_pinctrl_1@0x2306000 {
@@ -77,17 +74,17 @@
 			};
 	};
 
-	pwm0: pwm0@0x02305080 {
+	pwm0: pwm0@0x02305000 {
 		compatible = "nationalchip,LEO_A7-pwm";
-		reg = <0x02305080 0x7f>;
+		reg = <0x02305000 0xff>;
 		clocks = <&ahb>;
 		clock-frequency = <1000000>;
 		#pwm-cells = <2>;
 		status = "okay";
 	};
-	pwm1: pwm1@0x02306080 {
+	pwm1: pwm1@0x02306000 {
 		compatible = "nationalchip,LEO_A7-pwm";
-		reg = <0x02306080 0x7f>;
+		reg = <0x02306000 0xff>;
 		clocks = <&ahb>;
 		clock-frequency = <1000000>;
 		#pwm-cells = <2>;
