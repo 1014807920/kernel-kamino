@@ -75,7 +75,8 @@
 		};
 	};
 */
-	gpio_keypad{
+
+/*	gpio_keypad{
 		compatible = "amlogic, gpio_keypad";
 		status = "okay";
 		scan_period = <20>;
@@ -90,9 +91,37 @@
 		mute-gpio =    <&ck_gpa0 7 GPIO_ACTIVE_LOW>;
 		lock-gpio =    <&ck_gpa0 18 GPIO_ACTIVE_LOW>;
 
-		gpio_high_z = <1>;
+		//gpio_high_z = <1>;
 		//irq_keyup = <6>;
 		//irq_keydown = <7>;
+	};
+*/
+	gpio_keypad{
+		compatible = "amlogic, gpio_keypad";
+		status = "okay";
+		scan_period = <20>;
+
+		key_num = <4>;
+		key_name = "power", "volup", "voldown" , "mute";
+		key_code = <116 115 114 113>;
+
+		power-gpio =   <&ck_gpa0 20 GPIO_ACTIVE_LOW>;
+		volup-gpio =   <&ck_gpa0 8 GPIO_ACTIVE_LOW>;
+		voldown-gpio = <&ck_gpa0 21 GPIO_ACTIVE_LOW>;
+		mute-gpio =    <&ck_gpa0 7 GPIO_ACTIVE_LOW>;
+
+		//gpio_high_z = <1>;
+		//irq_keyup = <6>;
+		//irq_keydown = <7>;
+	};
+
+	switch_key{
+		compatible = "rokid, switch_key";
+		status = "okay";
+		switch_name = "lock";
+		switch_pin = <&ck_gpa0 18 GPIO_ACTIVE_LOW>;
+		switch-gpio-pull = <0>;//0: pull disable, 1: pull down, 2: pull up
+		debounce = <0>;
 	};
 
 	urat1_control{
