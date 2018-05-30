@@ -222,7 +222,7 @@ static int gpio_key_probe(struct platform_device *pdev)
 	int irq_keydown;
 #endif
 
-	int gpio_highz = 0;
+//	int gpio_highz = 0;
 
 	dev_info(&pdev->dev, "gpio test\n");
 	printk("%s\n", __func__);
@@ -244,12 +244,13 @@ static int gpio_key_probe(struct platform_device *pdev)
 		state = -EINVAL;
 		goto get_key_node_fail;
 	}
-
+/*
 	ret = of_property_read_bool(pdev->dev.of_node,  "gpio_high_z");
 	if (ret) {
 		gpio_highz = 1;
 		dev_info(&pdev->dev, "gpio request set to High-Z status\n");
 	}
+*/
 	pdata->key = kcalloc(key_size, sizeof(*(pdata->key)), GFP_KERNEL);
 	if (!(pdata->key)) {
 		dev_err(&pdev->dev,  "platform key is required!\n");
@@ -329,12 +330,13 @@ static int gpio_key_probe(struct platform_device *pdev)
 
 		gpio_request(pdata->key[i].pin,  MOD_NAME);
 		gpio_direction_input(pdata->key[i].pin);
-*/
+
 		if (!gpio_highz) {
-//ysh			gpiod_set_pull(desc, GPIOD_PULL_UP);
+			gpiod_set_pull(desc, GPIOD_PULL_UP);
 		} else {
-//ysh			gpiod_set_pull(desc, GPIOD_PULL_DIS);
+			gpiod_set_pull(desc, GPIOD_PULL_DIS);
 		}
+*/
 #ifdef USE_IRQ
 		gpio_for_irq(pdata->key[i].pin,
 		AML_GPIO_IRQ(irq_keyup,  FILTER_NUM7, IRQF_TRIGGER_RISING));

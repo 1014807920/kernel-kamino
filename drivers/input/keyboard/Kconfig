@@ -734,6 +734,12 @@ config KEYPAD_GPIO
 	help
 		Say Y here if you want to use keypad-gpio.
 
+config KEYPAD_GPIO_SWITCH
+	tristate "gpio keypad switch driver"
+	select INPUT_MATRIXKMAP
+	help
+		Say Y here if you want to use keypad-gpio-switch.
+
 config KEYBOARD_CAP1114
 	tristate "Microchip CAP1114 based touch sensors"
 	depends on OF && I2C
