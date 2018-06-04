@@ -1,3 +1,0 @@
-ifeq ($(CONFIG_NATIONALCHIP_GXALSA), y)
-	obj-$(CONFIG_NATIONALCHIP_GXALSA) += gxalsa.o
-endif

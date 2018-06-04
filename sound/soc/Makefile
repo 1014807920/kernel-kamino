@@ -47,4 +47,4 @@ obj-$(CONFIG_SND_SOC)	+= txx9/
 obj-$(CONFIG_SND_SOC)	+= ux500/
 obj-$(CONFIG_SND_SOC)	+= xtensa/
 obj-$(CONFIG_SND_SOC)	+= zte/
-obj-$(CONFIG_NATIONALCHIP_GXASOC)	+= nationalchip/
+obj-$(CONFIG_SND_SOC)	+= nationalchip/

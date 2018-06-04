@@ -1,8 +1,7 @@
-ifeq ($(CONFIG_NATIONALCHIP_GXASOC), y)
-	obj-$(CONFIG_NATIONALCHIP_GXASOC) += gx_asoc_platform.o
-	obj-$(CONFIG_NATIONALCHIP_GXASOC) += gx_asoc_platform_dai.o
-	obj-$(CONFIG_NATIONALCHIP_GXASOC) += gx_asoc_codec.o
-	obj-$(CONFIG_NATIONALCHIP_GXASOC) += gx_asoc_machine.o
-	obj-$(CONFIG_NATIONALCHIP_GXASOC) += gx_asoc_npcp215x.o
-	obj-$(CONFIG_NATIONALCHIP_GXASOC) += gx_asoc_nau8822.o
-endif
+snd-soc-gx-platform-objs := pcm.o core.o stream.o control.o
+snd-soc-gx-platform-dai-objs := dai.o
+snd-soc-gx-machine-objs := machine.o
+
+obj-$(CONFIG_SND_SOC_NATIONALCHIP) += snd-soc-gx-platform.o
+obj-$(CONFIG_SND_SOC_NATIONALCHIP) += snd-soc-gx-platform-dai.o
+obj-$(CONFIG_SND_SOC_NATIONALCHIP) += snd-soc-gx-machine.o
