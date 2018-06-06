@@ -52,7 +52,8 @@ struct gx_pm {
 };
 
 extern struct gx_pm *gx_pm_get(void);
-extern void leo_suspend(void);
+extern void do_gx_pm(enum reset_mode mode);
+int leo_pm_mode_enter(enum reset_mode mode);
 
 #ifdef CONFIG_SUSPEND
 void v7_cpu_resume(void);

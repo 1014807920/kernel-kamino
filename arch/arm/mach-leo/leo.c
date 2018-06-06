@@ -33,7 +33,7 @@ inline struct gx_pm *gx_pm_get(void)
 	return &pm_info;
 }
 
-static void do_gx_pm(enum reset_mode mode)
+void do_gx_pm(enum reset_mode mode)
 {
 	u32 tmp;
 	struct gx_pm *pm = gx_pm_get();
@@ -43,11 +43,6 @@ static void do_gx_pm(enum reset_mode mode)
 	tmp  = readl(pm->cpu_int_base + LEO_CPU_INT_ENABLE);
 	tmp |= 1 << pm->cpu_int_chan;
 	writel(tmp, pm->cpu_int_base + LEO_CPU_INT_ENABLE);
-}
-
-void leo_suspend(void)
-{
-	do_gx_pm(RESET_SUSPEND);
 }
 
 static void leo_power_off(void)
@@ -82,7 +77,7 @@ static void __init leo_init_irq(void)
 
 static void leo_restart(enum reboot_mode mode, const char *cmd)
 {
-	do_gx_pm(RESET_REBOOT);
+	leo_pm_mode_enter(RESET_REBOOT);
 }
 
 static const char *nationalchip_dt_match[] = {

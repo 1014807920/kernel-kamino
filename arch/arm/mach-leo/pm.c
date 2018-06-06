@@ -108,15 +108,13 @@ put_node:
 	return ret;
 }
 
-static int leo_pm_suspend(unsigned long arg)
+int leo_pm_mode_enter(enum reset_mode mode)
 {
 	u32 ret, tmp;
 	struct gx_pm *pm = gx_pm_get();
 
 	if (!pm->sdr_ctl_base_addr)
 		return -EFAULT;
-
-	writel(resume_addr, resume_base_addr);
 
 	/* flush cache back to ram */
 	flush_cache_all();
@@ -128,13 +126,18 @@ static int leo_pm_suspend(unsigned long arg)
 		"mcr    p15, 0, %0, c1, c0, 0\n\t"
 		: "=r" (tmp));
 
-	leo_suspend();
+	do_gx_pm(mode);
 	ret = leo_sdram_self_refresh_in_ocram((u32)pm->sdr_ctl_base_addr, (u32)resume_base_addr);
 
 	pr_debug("%s self-refresh loops request=%d exit=%d\n", __func__,
 			ret & 0xffff, (ret >> 16) & 0xffff);
-
 	return 0;
+}
+
+static int leo_pm_suspend(unsigned long arg)
+{
+	writel(resume_addr, resume_base_addr);
+	return leo_pm_mode_enter(RESET_SUSPEND);
 }
 
 static int leo_pm_enter(suspend_state_t state)
