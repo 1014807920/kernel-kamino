@@ -24,6 +24,7 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/cacheflush.h>
+#include <asm/outercache.h>
 
 #include "core.h"
 static struct gx_pm pm_info;
@@ -77,7 +78,48 @@ static void __init leo_init_irq(void)
 
 static void leo_restart(enum reboot_mode mode, const char *cmd)
 {
-	leo_pm_mode_enter(RESET_REBOOT);
+	u32 tmp = 0;
+	struct gx_pm *pm = gx_pm_get();
+
+	/* Set reboot mode */
+	writel(RESET_REBOOT, pm->cpu_int_msg_flag);
+
+	/* Flush cache back to ram */
+	flush_cache_all();
+	outer_flush_all();
+
+	/* Disable l2 cache */
+	outer_disable();
+
+	/* Disable l1 cache */
+	__asm__ __volatile__ (
+		"mrc    p15, 0, %0, c1, c0, 0\n\t"
+		"bic    %0, %0, #0x1000\n\t"
+		"bic    %0, %0, #0x4\n\t"
+		"mcr    p15, 0, %0, c1, c0, 0\n\t"
+		: "=r" (tmp));
+
+	/*
+	 * Enable A7 send interrupt to MCU
+	 * NOTE: Need to disable A7 interrupt first
+	 */
+	tmp  = readl(pm->cpu_int_base + LEO_CPU_INT_ENABLE);
+	tmp |= 1 << pm->cpu_int_chan;
+	writel(tmp, pm->cpu_int_base + LEO_CPU_INT_ENABLE);
+
+	/* Enter idle state */
+	__asm__ __volatile__ (
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"isb\n\t"
+		"dsb\n\t"
+		"dmb\n\t"
+		"wfi\n\t"
+		"nop\n\t"
+		"nop\n\t"
+		"nop\n\t");
 }
 
 static const char *nationalchip_dt_match[] = {

@@ -292,6 +292,7 @@ static void nc_irq_resume(void)
 }
 
 static struct syscore_ops ncirq_syscore_ops = {
+	.shutdown	= nc_irq_suspend,
 	.suspend	= nc_irq_suspend,
 	.resume		= nc_irq_resume,
 };
