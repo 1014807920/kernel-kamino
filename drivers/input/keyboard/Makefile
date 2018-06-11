@@ -67,3 +67,4 @@ obj-$(CONFIG_KEYBOARD_LEO)			+= nationalchip_keypad.o
 obj-$(CONFIG_KEYPAD_GPIO)			+= gpio_keypad.o
 obj-$(CONFIG_KEYPAD_GPIO_SWITCH)    += gpio_switch_key.o
 obj-$(CONFIG_KEYBOARD_CAP1114)		+= cap1114_touchkey.o
+obj-$(CONFIG_KEYBOARD_IT7236)		+= it7236_touchkey.o

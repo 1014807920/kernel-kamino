@@ -747,4 +747,12 @@ config KEYBOARD_CAP1114
 	help
 	  Say Y here to enable the CAP1114 touch sensor driver.
 
+config KEYBOARD_IT7236
+	tristate "Microchip IT7236 based touch sensors"
+	depends on OF && I2C
+	select REGMAP_I2C
+	help
+	  Say Y here to enable the IT7236 touch sensor driver.
+
+
 endif
