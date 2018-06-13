@@ -615,6 +615,9 @@
 			clocks = <&ahb_mmc1>, <&clk_mmc1>;
 			clock-names = "biu", "ciu";
 
+			non-removable;
+			keep-power-in-suspend;
+
 			status = "okay";
 		};
 
