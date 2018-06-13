@@ -164,3 +164,8 @@
 	status = "disabled";
 };
 
+&mmc1{
+    non-removable;
+    keep-power-in-suspend;
+};
+
