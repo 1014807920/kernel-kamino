@@ -294,6 +294,7 @@ void fbtft_write_reg16_bus16(struct fbtft_par *par, int len, ...);
 									   \
 static int fbtft_driver_probe_spi(struct spi_device *spi)                  \
 {                                                                          \
+	printk("tjt:[probe spi]........\n"); \
 	return fbtft_probe_common(_display, spi, NULL);                    \
 }                                                                          \
 									   \
@@ -306,6 +307,7 @@ static int fbtft_driver_remove_spi(struct spi_device *spi)                 \
 									   \
 static int fbtft_driver_probe_pdev(struct platform_device *pdev)           \
 {                                                                          \
+	printk("tjt:[probe pdev].........\n"); \
 	return fbtft_probe_common(_display, NULL, pdev);                   \
 }                                                                          \
 									   \
@@ -347,7 +349,9 @@ static int __init fbtft_driver_module_init(void)                           \
 {                                                                          \
 	int ret;                                                           \
 									   \
+printk("tjt:[fbtft_driver_module_init]+++++++++ \n"); \
 	ret = spi_register_driver(&fbtft_driver_spi_driver);               \
+printk("tjt:[fbtft_driver_module_init]--------f"); \
 	if (ret < 0)                                                       \
 		return ret;                                                \
 	return platform_driver_register(&fbtft_driver_platform_driver);    \

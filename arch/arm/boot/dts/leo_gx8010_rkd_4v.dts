@@ -84,9 +84,9 @@
 	gxasoc-machine {
 		name = "gxasoc-machine";
 		compatible = "NationalChip,ASoc-Machine";
-		num_codecs = <3>;
-		codec-name     = "gxasoc-lodac", "nau8822", "npcp215x";
-		codec-dai-name = "gxasoc-lodac-dai", "nau8822-voice", "npcp215x-voice";
+		num_codecs = <1>;
+		codec-name     = "gxasoc-lodac";
+		codec-dai-name = "gxasoc-lodac-dai";
 		platform-name  = "gxasoc-platform";
 		cup-dai-name   = "gxasoc-platform-dai";
 		status = "okay";
@@ -170,6 +170,26 @@
 	status = "disabled";
 };
 
+&spi1{
+       lcd0: st7796s@0{
+               compatible = "sitronix,st7796s";
+               reg = <0>;
+               status = "okay";
+               spi-max-frequency = <15000000>;
+               regwidth = <8>;
+               width = <320>;
+               height = <320>;
+               buswidth = <8>;
+               bpp = <16>;
+               bgr = <1>; 
+               /*init; */
+               dc-gpios = <&ck_gpa0 15 GPIO_ACTIVE_HIGH>;
+               reset-gpios = <&ck_gpa0 17 GPIO_ACTIVE_HIGH>;
+               led-gpios = <&ck_gpa0 16 GPIO_ACTIVE_HIGH>;
+               debug = <0x1>;
+       };
+};
+      
 &ck_i2c0{
 	npcp215x@73 {
 		compatible = "npcp215x";
