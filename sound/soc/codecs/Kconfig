@@ -921,6 +921,10 @@ config SND_SOC_NPCP215X
 	tristate "Nuvoton NPCP215X CODEC"
 	depends on I2C
 
+config SND_SOC_SMA1301
+	tristate "Silicon mitus SMA1301 Audio Amplifier"
+	depends on I2C
+
 config SND_SOC_GX_CODEC
 	tristate "Nationalchip LODAC CODEC"
 	depends on SND_SOC_NATIONALCHIP

@@ -230,6 +230,19 @@
 		amp_pdn-gpio = <&ck_gpa1 3 GPIO_ACTIVE_HIGH>;
 	};
 /*
+	sma1301@1e {
+		compatible = "siliconmitus,sma1301";
+		dev-name = "sma1301";
+		reg = <0x1e>;
+		init-vol = <0x30>;
+		//sck-pll-enable;
+		board-revision = "MVT1";
+		registers-of-amp = <0x46 0x20>,
+						   <0x47 0x00>,
+						   <0x48 0x02>;
+	};
+*/
+/*
 	nau8822@1a {
 		compatible = "nau8822";
 		dev-name = "nau8822";
