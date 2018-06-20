@@ -136,8 +136,8 @@
 		name = "gxasoc-machine";
 		compatible = "NationalChip,ASoc-Machine";
 		num_codecs = <2>;
-		codec-name     = "gxasoc-lodac", "npcp215x";
-		codec-dai-name = "gxasoc-lodac-dai", "npcp215x-voice";
+		codec-name     = "gxasoc-lodac", "sma1301";
+		codec-dai-name = "gxasoc-lodac-dai", "sma1301-voice";
 		platform-name  = "gxasoc-platform";
 		cup-dai-name   = "gxasoc-platform-dai";
 		status = "okay";
@@ -222,6 +222,18 @@
 };
 
 &ck_i2c0{
+	sma1301@1e {
+		compatible = "siliconmitus,sma1301";
+		dev-name = "sma1301";
+		reg = <0x1e>;
+		init-vol = <0x30>;
+		//sck-pll-enable;
+		board-revision = "MVT1";
+		registers-of-amp = <0x46 0x20>,
+						   <0x47 0x00>,
+						   <0x48 0x02>;
+		};
+/*
 	npcp215x@73 {
 		compatible = "npcp215x";
 		dev-name = "npcp215x";
@@ -229,6 +241,7 @@
 		dsp_rst-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 		amp_pdn-gpio = <&ck_gpa1 3 GPIO_ACTIVE_HIGH>;
 	};
+*/
 /*
 	nau8822@1a {
 		compatible = "nau8822";
