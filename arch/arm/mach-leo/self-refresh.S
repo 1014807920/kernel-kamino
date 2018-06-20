@@ -57,15 +57,15 @@ ENTRY(leo_sdram_self_refresh)
 	ldr	r3, [r0, #0x50]
 	ldr	r4, =0x00ffffff
 	and	r3, r3, r4
-	ldr	r4, =0x4a000000
+	ldr	r4, =0x6a000000
 	orr	r3, r3, r4
 	str	r3, [r0, #0x50]
 
-	/* Poll until DENALI_CTL_21 == 0x40 or hit max loops */
+	/* Poll until DENALI_CTL_21 == 0x07 or hit max loops */
 	mov	r4, #0
 while_ack_0:
 	ldr	r3, [r0, #0x54]
-	and	r3, r3, #0x7
+	and	r3, r3, #0x3f
 	cmp	r3, #0x7
 	beq	ack_1
 
