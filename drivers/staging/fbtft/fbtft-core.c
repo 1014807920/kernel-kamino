@@ -256,8 +256,6 @@ static int fbtft_backlight_update_status(struct backlight_device *bd)
 	else
 		gpio_set_value(par->gpio.led[0], !polarity);
 	
-	printk("+++++++++machao:led-gpio= %d\n",gpio_get_value(par->gpio.led[0]));
-	printk("+++++++++machao:led-gpio= %d\n",polarity);
 	return 0;
 }
 
@@ -874,7 +872,6 @@ struct fb_info *fbtft_framebuffer_alloc(struct fbtft_display *display,
 
 	/* use driver provided functions */
 	fbtft_merge_fbtftops(&par->fbtftops, &display->fbtftops);
-    printk(" machao %s -------",__func__);
 	return info;
 
 alloc_fail:
@@ -1375,8 +1372,6 @@ int fbtft_probe_common(struct fbtft_display *display,
 	par->spi = sdev;
 	par->pdev = pdev;
 
-	printk("[tjt]:[fbtft_probe_common];1111111111 \n"); 
-
 	if (display->buswidth == 0) {
 		dev_err(dev, "buswidth is not set\n");
 		return -EINVAL;
@@ -1397,9 +1392,6 @@ int fbtft_probe_common(struct fbtft_display *display,
 			"no default functions for regwidth=%d and buswidth=%d\n",
 			display->regwidth, display->buswidth);
 	}
-
-printk("[tjt]:[fbtft_probe_common];222222222 \n");
-
 
 	/* write_vmem() functions */
 	if (display->buswidth == 8)
@@ -1435,9 +1427,6 @@ printk("[tjt]:[fbtft_probe_common];222222222 \n");
 			par->fbtftops.write = fbtft_write_spi_emulate_9;
 		}
 	}
-
-printk("[tjt]:[fbtft_probe_common]:33333333333 \n");
-
 
 	if (!par->fbtftops.verify_gpios)
 		par->fbtftops.verify_gpios = fbtft_verify_gpios;

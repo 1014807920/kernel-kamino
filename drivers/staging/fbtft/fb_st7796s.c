@@ -114,7 +114,7 @@ static int init_display(struct fbtft_par *par)
 
 	write_reg(par, CSCON, 0xC3);
 	write_reg(par, CSCON, 0x96);
-	write_reg(par, MADCTL, 0x40); //0x48->0x40  bgr->rgb,0x40->0x0 column address order.
+	write_reg(par, MADCTL, 0x48); //0x48->0x40  bgr->rgb,0x40->0x0 column address order.
 	write_reg(par, COLMOD, 0x55); //0x66->0x55
 	write_reg(par, MODESEL, 0x02);
 
@@ -162,7 +162,6 @@ static int init_display(struct fbtft_par *par)
 	mdelay(120);           // Delay 120ms
 	write_reg(par, DISPON);	// Display ON
 
-	printk("machao +++++++++++%s....\n",__func__);
 	return 0;
 }
 
@@ -176,7 +175,7 @@ static int init_display(struct fbtft_par *par)
 static int set_var(struct fbtft_par *par)
 {
 	u8 madctl_par = 0;
-
+    /*
 	if (par->bgr)
 		madctl_par |= MADCTL_BGR;
 	switch (par->info->var.rotate) {
@@ -195,7 +194,8 @@ static int set_var(struct fbtft_par *par)
 		return -EINVAL;
 	}
 	write_reg(par, MIPI_DCS_SET_ADDRESS_MODE, madctl_par);
-    printk("machao +++++++++++%s....\n",__func__);
+        printk("#####rotate=%d,%s...MADCTL=%x .\n",par->info->var.rotate,__func__,madctl_par);
+    */
 	return 0;
 }
 
@@ -253,7 +253,6 @@ static int set_gamma(struct fbtft_par *par, unsigned long *curves)
 			curves[c + 9], curves[c + 10], curves[c + 11],
 			curves[c + 12], curves[c + 13]);
 	}
-    printk("machao +++++++++++%s....\n",__func__);
 	return 0;
 }
 
@@ -271,7 +270,6 @@ static int blank(struct fbtft_par *par, bool on)
 		write_reg(par, MIPI_DCS_SET_DISPLAY_OFF);
 	else
 		write_reg(par, MIPI_DCS_SET_DISPLAY_ON);
-    printk("machao +++++++++++%s....\n",__func__);
 	return 0;
 }
 
