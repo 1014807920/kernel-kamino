@@ -249,6 +249,7 @@
 		reg = <0x1a>;
 	};
 */
+#if 0
 	lis331dlh: lis331dlh@18 {
 		compatible = "st,lis331dlh", "st,lis3lv02d";
 		reg = <0x18>;
@@ -277,4 +278,5 @@
 		st,max-limit-z = <750>;
 		st,default-rate = <100>;
 	};
+#endif
 };
