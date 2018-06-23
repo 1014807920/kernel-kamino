@@ -55,3 +55,5 @@ obj-$(CONFIG_VIDEO_AM437X_VPFE)		+= am437x/
 obj-$(CONFIG_VIDEO_XILINX)		+= xilinx/
 
 ccflags-y += -I$(srctree)/drivers/media/i2c
+
+obj-$(CONFIG_VIDEO_GX_BT1120) += gx-bt1120/
