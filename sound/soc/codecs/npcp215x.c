@@ -1528,6 +1528,7 @@ static unsigned char MaxxAudio_Cmd_Relaxing_Alg[] = {
 static int npcp215x_codec_init(struct npcp215x_priv * npcp215x);
 static void npcp215x_codec_reset(struct npcp215x_priv *npcp215x);
 static int npcp215x_pwr_en(struct npcp215x_priv *npcp215x, bool enable);
+static int npcp215x_pa_mute(struct npcp215x_priv *npcp215x, int mute);
 
 static int i2c_write_bytes(struct i2c_client *client, uint8_t *data, uint16_t len)
 {
@@ -1754,8 +1755,8 @@ static int npcp215x_mute_put(struct snd_kcontrol *kcontrol,
 	npcp215x->mute_index = ucontrol->value.enumerated.item[0];
 	if (!npcp215x->is_init)
 		return 0;
-
-	return npcp215x_mute(npcp215x, npcp215x->mute_index);
+	return npcp215x_pa_mute(npcp215x, npcp215x->mute_index);
+	//return npcp215x_mute(npcp215x, npcp215x->mute_index);
 }
 
 static int npcp215x_playback_get(struct snd_kcontrol *kcontrol,
@@ -1863,6 +1864,53 @@ static int npcp215x_pwr_en(struct npcp215x_priv *npcp215x, bool enable)
 	return 0;
 }
 
+
+static int npcp215x_pa_close(struct npcp215x_priv * npcp215x)
+{
+	int ret;
+	unsigned char MaxxAudio_Cmd_pa [] =
+	{
+		0xFF, 0xAB, 0xF3,  // Set GPIO Selection 2
+		0x00, 0x09, 0xC0,
+	};
+
+	pr_info("%s \n", __func__);
+	ret = MaxxDSP_SendCmd (MaxxAudio_Cmd_pa, sizeof(MaxxAudio_Cmd_pa), npcp215x->i2c);
+	npcp215x->mute_index = 1;
+
+	return ret;
+}
+
+static int npcp215x_pa_enable(struct npcp215x_priv * npcp215x)
+{
+	int ret;
+	unsigned char MaxxAudio_Cmd_pa [] =
+	{
+		0xFF, 0xAB, 0xF3,  // Set GPIO Selection 2
+		0x00, 0x01, 0xC8,  // ==>  [GPIO16/nMUTE] -> nMUTE
+		0xFF, 0xAB, 0xF3,  // Set GPIO Selection 2
+		0x00, 0x09, 0xC8,  // ==>  [GPIO16/nMUTE] -> nMUTE,
+	};
+
+	pr_info("%s \n", __func__);
+	ret = MaxxDSP_SendCmd (MaxxAudio_Cmd_pa, sizeof(MaxxAudio_Cmd_pa), npcp215x->i2c);
+	npcp215x->mute_index = 0;
+
+	return ret;
+}
+
+static int npcp215x_pa_mute(struct npcp215x_priv *npcp215x, int mute)
+{
+	int ret;
+
+	if (mute) {
+		ret = npcp215x_pa_close(npcp215x);
+	} else {
+		ret = npcp215x_pa_enable(npcp215x);
+	}
+	return ret;
+}
+
 static int npcp215x_startup(struct snd_pcm_substream *substream,
 				struct snd_soc_dai *dai)
 {
@@ -1874,6 +1922,7 @@ static int npcp215x_startup(struct snd_pcm_substream *substream,
 		ret = npcp215x_codec_init(npcp215x);
 		dev_dbg(npcp215x->dev, "npcp215x_codec_init ret %d\n", ret);
 	}
+	npcp215x_pa_mute(npcp215x, 0);
 
 	return ret;
 }
@@ -1883,7 +1932,8 @@ static void npcp215x_shutdown(struct snd_pcm_substream *substream, struct snd_so
 	struct snd_soc_codec *codec = dai->codec;
 	struct npcp215x_priv *npcp215x = snd_soc_codec_get_drvdata(codec);
 
-	npcp215x_codec_reset(npcp215x);
+	npcp215x_pa_mute(npcp215x, 1);
+	return;
 }
 
 #define npcp215x_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | \
@@ -1920,8 +1970,7 @@ static int npcp215x_suspend(struct snd_soc_codec *codec)
 	struct npcp215x_priv *npcp215x = snd_soc_codec_get_drvdata(codec);
 
 	if (npcp215x->is_init) {
-		npcp215x_mute(npcp215x, 1);
-		npcp215x_codec_reset(npcp215x);
+		npcp215x_pa_mute(npcp215x, 1);
 	}
 
 	return 0;
@@ -1933,23 +1982,7 @@ static int npcp215x_resume(struct snd_soc_codec *codec)
 	int ret = 0;
 	int gpio_val = 0;
 
-	if (npcp215x->need_hp_det)
-		gpio_val = npcp215x_get_hp_det_gpio_val(npcp215x);
-
-	if (!npcp215x->is_init) {
-		ret = gpiod_direction_output(npcp215x->gpio_dsp_rst, 0);
-		if (ret != 0)
-			dev_err(npcp215x->dev, "unable to set direction gpio_dsp_rst \n");
-
-		ret = gpiod_direction_output(npcp215x->gpio_amp_pdn, 0);
-		if (ret != 0)
-			dev_err(npcp215x->dev, "unable to set direction gpio_amp_pdn \n");
-
-		if (npcp215x->need_init && gpio_val == 0) {
-			ret = npcp215x_codec_init(npcp215x);
-			dev_info(npcp215x->dev, "npcp215x_codec_init ret %d\n", ret);
-		}
-	}
+	npcp215x_pa_mute(npcp215x, 0);
 
 	return ret;
 }
@@ -2039,9 +2072,6 @@ static int npcp215x_codec_init(struct npcp215x_priv *npcp215x)
 	ret = npcp215x_i2c_config(npcp215x);
 	if (ret == 0) {
 		npcp215x->is_init = true;
-		npcp215x_set_alg(npcp215x);
-		npcp215x_set_vol(npcp215x);
-		npcp215x_mute(npcp215x, npcp215x->mute_index);
 	}
 
 	return ret;
@@ -2049,7 +2079,7 @@ static int npcp215x_codec_init(struct npcp215x_priv *npcp215x)
 
 static void npcp215x_codec_reset(struct npcp215x_priv *npcp215x)
 {
-	npcp215x_pwr_en(npcp215x, false);
+	//npcp215x_pwr_en(npcp215x, false);
 	gpiod_set_value(npcp215x->gpio_dsp_rst, 0);
 	if (gpiod_get_value(npcp215x->gpio_dsp_rst) != 0)
 		dev_warn(npcp215x->dev, "rest npcp215x error\n");
@@ -2091,7 +2121,7 @@ static int npcp215x_i2c_probe(struct i2c_client *client,
 		if (gpio_val == 1) {
 			npcp215x->playback_index = 0;
 			npcp215x->need_init = false;
-		} else if (gpio_val == 0){
+		} else if (gpio_val == 0) {
 			npcp215x->playback_index = 1;
 			npcp215x->need_init = true;
 		}
