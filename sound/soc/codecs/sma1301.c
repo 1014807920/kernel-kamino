@@ -27,6 +27,9 @@
 #include <linux/of_device.h>
 #include <linux/slab.h>
 #include <asm/div64.h>
+#include <linux/of_gpio.h>
+#include <linux/io.h>
+#include <linux/gpio.h>
 
 #include "sma1301.h"
 
@@ -2680,6 +2683,10 @@ static int sma1301_i2c_probe(struct i2c_client *client,
 	u32 value;
 	const char *str_value;
 	const char *dev_name = NULL;
+	struct gpio_desc *desc;
+	desc = devm_gpiod_get(&client->dev, "hpshutdown", GPIOD_OUT_LOW);
+	gpiod_direction_output(desc,1);
+	gpiod_set_value(desc,0);
 
 	dev_info(&client->dev, "%s is here\n", __func__);
 
