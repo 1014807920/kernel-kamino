@@ -298,7 +298,10 @@ struct ov2640_info {
 	int contrast_val;
 	int saturation_val;
 	int brightness_val;
+	int exposure_val;
 	int debug;
+	bool need_power;
+	bool need_streaming;
 };
 
 struct v4l2_fract ov2640_interval[] = {
@@ -460,9 +463,7 @@ struct regval_list ov2640_init_regs[] = {
 	{0x4a, 0x81},
 	{0x21, 0x99},
 
-	{0x24, 0x40},
-	{0x25, 0x38},
-	{0x26, 0x82},
+	{0x04, 0xa8},
 	{0x5c, 0x00},
 	{0x63, 0x00},
 	{0x61, 0x70},
@@ -702,6 +703,7 @@ static struct regval_list ov2640_uxga_mode_regs[] = {
 static int ov2640_set_contrast(struct ov2640_info *info, int val);
 static int ov2640_set_saturation(struct ov2640_info *info, int val);
 static int ov2640_set_brightness(struct ov2640_info *info, int val);
+static int ov2640_set_exposure(struct ov2640_info *info, int val);
 
 static inline struct ov2640_info *to_ov2640_info(struct v4l2_subdev *sd)
 {
@@ -712,7 +714,6 @@ static inline struct v4l2_subdev *ctrl_to_sd(struct v4l2_ctrl *ctrl)
 {
     return &container_of(ctrl->handler, struct ov2640_info, hdl)->subdev;
 }
-
 static int ov2640_write_array(struct i2c_client *client,
 			const struct regval_list *vals)
 {
@@ -744,7 +745,7 @@ static int ov2640_reset(struct i2c_client *client)
 
 	ret = ov2640_write_array(client, reset_seq);
 	if (ret)
-	  goto err;
+		goto err;
 
 	msleep(5);
 err:
@@ -786,8 +787,11 @@ static int ov2640_s_power(struct v4l2_subdev *sd, int on)
 			/* initialize the sensor with default data */
 			v4l_dbg(1, info->debug, info->client, "%s: Init default", __func__);
 			ret = ov2640_write_array(info->client, ov2640_init_regs);
-			if (ret < 0)
+			if (ret < 0) {
+				v4l_err(info->client, "ov2640 write init regs err\n");
+				mutex_unlock(&info->lock);
 				return ret;
+			}
 		}
 		info->power = on;
 	}
@@ -883,6 +887,7 @@ static int ov2640_set_params(struct ov2640_info *info, u32 code)
 	}
 
 	ov2640_set_timeperframe(info, info->fps);
+	ov2640_set_exposure(info, info->exposure_val);
 	if (info->win->width <= SVGA_WIDTH)
 		ret = ov2640_write_array(client, ov2640_svga_mode_regs);
 	else
@@ -1128,6 +1133,42 @@ static int ov2640_set_brightness(struct ov2640_info *info, int val)
 	return ov2640_write_array(info->client, ov2640_brightness_regs);
 }
 
+static int ov2640_set_exposure(struct ov2640_info *info, int val)
+{
+	struct regval_list ov2640_exposure_regs[] = {
+		{0xff, 0x01},
+		{0x24, 0x3e},
+		{0x25, 0x38},
+		{0x26, 0x81},
+		ENDMARKER,
+	};
+
+	switch (val) {
+		case -2:
+			ov2640_exposure_regs[1].value = 0x20;
+			ov2640_exposure_regs[2].value = 0x18;
+			ov2640_exposure_regs[3].value = 0x60;
+			break;
+		case -1:
+			ov2640_exposure_regs[1].value = 0x34;
+			ov2640_exposure_regs[2].value = 0x1c;
+			ov2640_exposure_regs[3].value = 0x00;
+			break;
+		case 1:
+			ov2640_exposure_regs[1].value = 0x48;
+			ov2640_exposure_regs[2].value = 0x40;
+			ov2640_exposure_regs[3].value = 0x81;
+			break;
+		case 2:
+			ov2640_exposure_regs[1].value = 0x58;
+			ov2640_exposure_regs[2].value = 0x50;
+			ov2640_exposure_regs[3].value = 0x92;
+			break;
+	}
+
+	return ov2640_write_array(info->client, ov2640_exposure_regs);
+}
+
 static int ov2640_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct v4l2_subdev *sd = ctrl_to_sd(ctrl);
@@ -1151,6 +1192,9 @@ static int ov2640_s_ctrl(struct v4l2_ctrl *ctrl)
 		case V4L2_CID_BRIGHTNESS:
 			info->brightness_val = ctrl->val;
 			return ov2640_set_brightness(info, ctrl->val);
+		case V4L2_CID_EXPOSURE:
+			info->exposure_val = ctrl->val;
+			return ov2640_set_exposure(info, ctrl->val);
 	}
 
 	return -1;
@@ -1195,25 +1239,25 @@ static int ov2640_config_gpio(struct ov2640_info *info, struct i2c_client *clien
 
 	info->gpio_rst = devm_gpiod_get(&client->dev, "reset", GPIOD_OUT_LOW);
 	if (IS_ERR(info->gpio_rst)) {
-		dev_err(&client->dev, "unable to get gpio_rst\n");
+		v4l_err(info->client, "unable to get gpio_rst\n");
 		info->gpio_rst = NULL;
 		return -1;
 	}
 
 	ret = gpiod_direction_output(info->gpio_rst, 0);
 	if (ret != 0)
-	  dev_err(&client->dev, "unable to set direction gpio_rst \n");
+		v4l_err(info->client, "unable to set direction gpio_rst \n");
 
 	info->gpio_pdn = devm_gpiod_get(&client->dev, "powerdown", GPIOD_OUT_LOW);
 	if (IS_ERR(info->gpio_pdn)) {
-		dev_err(&client->dev, "unable to get gpio_pdn\n");
+		v4l_err(info->client, "unable to get gpio_pdn\n");
 		info->gpio_pdn = NULL;
 		return -1;
 	}
 
 	ret = gpiod_direction_output(info->gpio_pdn, 0);
 	if (ret != 0)
-	  dev_err(&client->dev, "unable to set direction gpio_pdn \n");
+		v4l_err(info->client, "unable to set direction gpio_pdn \n");
 
 	gpiod_set_value(info->gpio_rst, 0);
 	gpiod_set_value(info->gpio_pdn, 0);
@@ -1229,11 +1273,11 @@ static int ov2640_probe(struct i2c_client *client,
 
 	v4l_info(client, "%s\n", __FUNCTION__);
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA))
-	  return -ENODEV;
+		return -ENODEV;
 
 	info = devm_kzalloc(&client->dev, sizeof(struct ov2640_info), GFP_KERNEL);
 	if (info == NULL)
-	  return -ENOMEM;
+		return -ENOMEM;
 
 	info->debug  = 1;
 	info->client = client;
@@ -1258,14 +1302,17 @@ static int ov2640_probe(struct i2c_client *client,
 	info->contrast_val = 1;
 	info->saturation_val = -1;
 	info->brightness_val = 0;
+	info->exposure_val = 0;
 
-	v4l2_ctrl_handler_init(&info->hdl, 3);
+	v4l2_ctrl_handler_init(&info->hdl, 4);
 	v4l2_ctrl_new_std(&info->hdl, &ov2640_ctrl_ops,
 				V4L2_CID_CONTRAST, -2, 2, 1, 1);
 	v4l2_ctrl_new_std(&info->hdl, &ov2640_ctrl_ops,
 				V4L2_CID_SATURATION, -2, 2, 1, -1);
 	v4l2_ctrl_new_std(&info->hdl, &ov2640_ctrl_ops,
 				V4L2_CID_BRIGHTNESS, -2, 2, 1, 0);
+	v4l2_ctrl_new_std(&info->hdl, &ov2640_ctrl_ops,
+				V4L2_CID_EXPOSURE, -2, 2, 1, 0);
 
 	info->subdev.ctrl_handler = &info->hdl;
 	if (info->hdl.error) {
@@ -1290,15 +1337,68 @@ static int ov2640_remove(struct i2c_client *client)
 	return 0;
 }
 
+static int ov2640_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov2640_info *info = to_ov2640_info(sd);
+
+	if (info->streaming) {
+		info->streaming = 0;
+		info->need_streaming = true;
+	} else {
+		info->need_streaming = false;
+	}
+
+	if (info->power) {
+		ov2640_s_power(sd, 0);
+		info->need_power = true;
+	} else {
+		info->need_power = false;
+	}
+
+	return 0;
+}
+
+static int ov2640_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov2640_info *info = to_ov2640_info(sd);
+	int ret = 0;
+
+	ret = gpiod_direction_output(info->gpio_rst, 0);
+	if (ret != 0)
+		v4l_err(info->client, "unable to set direction gpio_rst \n");
+
+	ret = gpiod_direction_output(info->gpio_pdn, 0);
+	if (ret != 0)
+		v4l_err(info->client, "unable to set direction gpio_rst \n");
+
+	if (info->need_power)
+		ov2640_s_power(sd, 1);
+
+	if (info->need_streaming)
+		ov2640_s_stream(sd, 1);
+
+	return 0;
+}
+
 static const struct i2c_device_id ov2640_id[] = {
 	{ "ov2640", 0 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, ov2640_id);
 
+static const struct dev_pm_ops ov2640_pm_ops = {
+	.suspend = ov2640_suspend,
+	.resume = ov2640_resume,
+};
+
 static struct i2c_driver ov2640_i2c_driver = {
 	.driver = {
 		.name = "ov2640",
+		.pm   = &ov2640_pm_ops,
 	},
 	.probe      = ov2640_probe,
 	.remove     = ov2640_remove,

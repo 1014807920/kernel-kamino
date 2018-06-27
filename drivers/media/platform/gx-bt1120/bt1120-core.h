@@ -171,6 +171,7 @@ struct bt1120_dev {
 
 	unsigned int            i2c_bus;
 	unsigned int            reqbufs_count;
+	bool                    is_open;
 };
 
 static inline void bt1120_idle_queue_add(struct bt1120_dev *bt1120,
@@ -211,5 +212,6 @@ extern int bt1120_register_sensor(struct bt1120_dev *bt1120);
 extern void bt1120_update_video_buf(unsigned long data);
 extern void gx_bt1120_clk_enable(struct bt1120_dev *bt1120);
 extern void gx_bt1120_clk_disable(struct bt1120_dev *bt1120);
+extern int gx_bt1120_hw_init(struct bt1120_dev *bt1120);
 
 #endif

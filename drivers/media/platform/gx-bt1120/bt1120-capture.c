@@ -62,6 +62,10 @@ static int gx_bt1120_open(struct file *file)
 	gx_bt1120_clk_enable(bt1120);
 	sensor_set_power(bt1120, 1);
 	frame->enable_crop = false;
+	frame->enable_scale = false;
+	bt1120->is_open = true;
+	INIT_LIST_HEAD(&bt1120->idle_buf_q);
+	INIT_LIST_HEAD(&bt1120->busy_buf_q);
 
 	return v4l2_fh_open(file);
 }
@@ -76,11 +80,14 @@ static int gx_bt1120_close(struct file *file)
 	sensor_set_power(bt1120, 0);
 	if (bt1120->owner == file->private_data) {
 		vb2_queue_release(&bt1120->vb_queue);
+		kfree(bt1120->hw_addr);
+		bt1120->hw_addr = NULL;
 		bt1120->owner = NULL;
 	}
 
 	gx_bt1120_clk_disable(bt1120);
 	ret = v4l2_fh_release(file);
+	bt1120->is_open = false;
 	mutex_unlock(&bt1120->lock);
 
 	return ret;
@@ -429,8 +436,8 @@ static int gx_bt1120_vidioc_s_crop(struct file *file, void *fh,
 	struct bt1120_frame *frame = &bt1120->out_frame;
 	int ret = 0;
 
-    if (vb2_is_busy(&bt1120->vb_queue))
-        return -EBUSY;
+	if (vb2_is_busy(&bt1120->vb_queue))
+		return -EBUSY;
 
 	ret = gx_bt1120_try_crop(bt1120, crop);
 	if (ret < 0)
@@ -535,7 +542,7 @@ static void gx_bt1120_buffer_queue(struct vb2_buffer *vb)
 	bt1120_idle_queue_add(bt1120, buf);
 }
 
-static int gx_bt1120_hw_init(struct bt1120_dev *bt1120)
+int gx_bt1120_hw_init(struct bt1120_dev *bt1120)
 {
 	int ret = 0;
 
@@ -550,6 +557,7 @@ static int gx_bt1120_hw_init(struct bt1120_dev *bt1120)
 	bt1120_set_interrupt_enable(bt1120);
 	bt1120_set_frame_done_hold(bt1120, true);
 	bt1120_run(bt1120);
+	bt1120_reg_refresh(bt1120->reg);
 
 	bt1120->state = BT1120_RUN;
 
@@ -637,6 +645,7 @@ static void gx_bt1120_stop_capture(struct bt1120_dev *bt1120)
 	bt1120_clr_raw_buffer_state(bt1120);
 	bt1120_clr_scale_buffer_state(bt1120);
 	bt1120_stop(bt1120);
+	bt1120_reg_refresh(bt1120->reg);
 
 	bt1120->state = BT1120_STOP;
 }

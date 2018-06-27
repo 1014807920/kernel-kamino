@@ -87,7 +87,10 @@ struct ov5640_info {
 	int saturation_val;
 	int brightness_val;
 	int sharpness_val;
+	int exposure_val;
 	int debug;
+	bool need_power;
+	bool need_streaming;
 };
 
 struct v4l2_fract ov5640_interval[] = {
@@ -493,6 +496,7 @@ static int ov5640_set_contrast(struct ov5640_info *info, int val);
 static int ov5640_set_saturation(struct ov5640_info *info, int val);
 static int ov5640_set_brightness(struct ov5640_info *info, int val);
 static int ov5640_set_sharpness(struct ov5640_info *info, int val);
+static int ov5640_set_exposure(struct ov5640_info *info, int val);
 
 int ov5640_read_i2c(struct i2c_client *client, u16 reg, u8 *val)
 {
@@ -655,9 +659,9 @@ static int ov5640_set_pll(struct ov5640_info *info, int xvclk, int pclk)
 {
 	int tmp_clk = 0, select = 0, save = 0;
 	int div = 0, val = 0;
-    unsigned int pre_div0[] = {1, 1, 2, 3, 4, 1, 6, 2,
+	unsigned int pre_div0[] = {1, 1, 2, 3, 4, 1, 6, 2,
 				8, 1, 1, 1, 1, 1, 1, 1};
-    unsigned int pclk_div[] = {1, 2, 4, 8};
+	unsigned int pclk_div[] = {1, 2, 4, 8};
 	static struct regval_list ov5640_pll_regs[] = {
 		{0x3108, 0x01},
 		{0x3824, 0x01},
@@ -767,6 +771,7 @@ static int ov5640_set_params(struct ov5640_info *info, u32 code)
 
 	ov5640_set_timeperframe(info, info->fps);
 
+	ov5640_set_exposure(info, info->exposure_val);
 	ov5640_set_contrast(info, info->contrast_val);
 	ov5640_set_saturation(info, info->saturation_val);
 	ov5640_set_brightness(info, info->brightness_val);
@@ -1124,6 +1129,59 @@ static int ov5640_set_sharpness(struct ov5640_info *info, int val)
 	return ret;
 }
 
+static int ov5640_set_exposure(struct ov5640_info *info, int val)
+{
+	struct regval_list ov5640_exposure_regs[] = {
+		{0x3212, 0x03},
+		{0x3a0f, 0x38},
+		{0x3a10, 0x30},
+		{0x3a1b, 0x61},
+		{0x3a1e, 0x38},
+		{0x3a11, 0x30},
+		{0x3a1f, 0x10},
+		{0x3212, 0x13},
+		{0x3212, 0xa3},
+		ENDMARKER,
+	};
+
+	switch (val) {
+		case -2:
+			ov5640_exposure_regs[1].value = 0x20;
+			ov5640_exposure_regs[2].value = 0x18;
+			ov5640_exposure_regs[3].value = 0x41;
+			ov5640_exposure_regs[4].value = 0x20;
+			ov5640_exposure_regs[5].value = 0x18;
+			ov5640_exposure_regs[6].value = 0x10;
+			break;
+		case -1:
+			ov5640_exposure_regs[1].value = 0x30;
+			ov5640_exposure_regs[2].value = 0x28;
+			ov5640_exposure_regs[3].value = 0x61;
+			ov5640_exposure_regs[4].value = 0x30;
+			ov5640_exposure_regs[5].value = 0x28;
+			ov5640_exposure_regs[6].value = 0x10;
+			break;
+		case 1:
+			ov5640_exposure_regs[1].value = 0x40;
+			ov5640_exposure_regs[2].value = 0x38;
+			ov5640_exposure_regs[3].value = 0x71;
+			ov5640_exposure_regs[4].value = 0x40;
+			ov5640_exposure_regs[5].value = 0x38;
+			ov5640_exposure_regs[6].value = 0x10;
+			break;
+		case 2:
+			ov5640_exposure_regs[1].value = 0x60;
+			ov5640_exposure_regs[2].value = 0x58;
+			ov5640_exposure_regs[3].value = 0xa0;
+			ov5640_exposure_regs[4].value = 0x60;
+			ov5640_exposure_regs[5].value = 0x58;
+			ov5640_exposure_regs[6].value = 0x20;
+			break;
+	}
+
+	return ov5640_write_array(info->client, ov5640_exposure_regs);
+}
+
 static int ov5640_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct v4l2_subdev *sd = ctrl_to_sd(ctrl);
@@ -1145,6 +1203,9 @@ static int ov5640_s_ctrl(struct v4l2_ctrl *ctrl)
 		case V4L2_CID_SHARPNESS:
 			info->sharpness_val = ctrl->val;
 			return ov5640_set_sharpness(info, ctrl->val);
+		case V4L2_CID_EXPOSURE:
+			info->exposure_val = ctrl->val;
+			return ov5640_set_exposure(info, ctrl->val);
 		default:
 			break;
 	}
@@ -1224,11 +1285,11 @@ static int ov5640_probe(struct i2c_client *client,
 
 	v4l_info(client, "%s\n", __FUNCTION__);
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA))
-	  return -ENODEV;
+		return -ENODEV;
 
 	info = devm_kzalloc(&client->dev, sizeof(struct ov5640_info), GFP_KERNEL);
 	if (info == NULL)
-	  return -ENOMEM;
+		return -ENOMEM;
 
 	info->debug  = 1;
 	info->client = client;
@@ -1254,8 +1315,9 @@ static int ov5640_probe(struct i2c_client *client,
 	info->saturation_val = -1;
 	info->brightness_val = 0;
 	info->sharpness_val = 33;
+	info->exposure_val = 2;
 
-	v4l2_ctrl_handler_init(&info->hdl, 3);
+	v4l2_ctrl_handler_init(&info->hdl, 4);
 	v4l2_ctrl_new_std(&info->hdl, &ov5640_ctrl_ops,
 				V4L2_CID_CONTRAST, -2, 2, 1, 1);
 	v4l2_ctrl_new_std(&info->hdl, &ov5640_ctrl_ops,
@@ -1264,6 +1326,8 @@ static int ov5640_probe(struct i2c_client *client,
 				V4L2_CID_BRIGHTNESS, -2, 2, 1, 0);
 	v4l2_ctrl_new_std(&info->hdl, &ov5640_ctrl_ops,
 				V4L2_CID_BRIGHTNESS, 0, 33, 1, 33);
+	v4l2_ctrl_new_std(&info->hdl, &ov5640_ctrl_ops,
+				V4L2_CID_EXPOSURE, -2, 2, 1, 0);
 
 	info->subdev.ctrl_handler = &info->hdl;
 	if (info->hdl.error) {
@@ -1288,15 +1352,68 @@ static int ov5640_remove(struct i2c_client *client)
 	return 0;
 }
 
+static int ov5640_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov5640_info *info = to_ov5640_info(sd);
+
+	if (info->streaming) {
+		info->streaming = 0;
+		info->need_streaming = true;
+	} else {
+		info->need_streaming = false;
+	}
+
+	if (info->power) {
+		ov5640_s_power(sd, 0);
+		info->need_power = true;
+	} else {
+		info->need_power = false;
+	}
+
+	return 0;
+}
+
+static int ov5640_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+	struct ov5640_info *info = to_ov5640_info(sd);
+	int ret = 0;
+
+	ret = gpiod_direction_output(info->gpio_rst, 0);
+	if (ret != 0)
+		v4l_err(info->client, "unable to set direction gpio_rst \n");
+
+	ret = gpiod_direction_output(info->gpio_pdn, 0);
+	if (ret != 0)
+		v4l_err(info->client, "unable to set direction gpio_rst \n");
+
+	if (info->need_power)
+		ov5640_s_power(sd, 1);
+
+	if (info->need_streaming)
+		ov5640_s_stream(sd, 1);
+
+	return 0;
+}
+
 static const struct i2c_device_id ov5640_id[] = {
 	{ "ov5640", 0 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, ov5640_id);
 
+static const struct dev_pm_ops ov5640_pm_ops = {
+	.suspend = ov5640_suspend,
+	.resume = ov5640_resume,
+};
+
 static struct i2c_driver ov5640_i2c_driver = {
 	.driver = {
 		.name = "ov5640",
+		.pm   = &ov5640_pm_ops
 	},
 	.probe      = ov5640_probe,
 	.remove     = ov5640_remove,

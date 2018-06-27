@@ -44,15 +44,22 @@ static inline void __set_field(int val, int mask, int offset, volatile long unsi
 	writel(tmp, reg);
 }
 
-static inline void bt1120_reg_refresh(struct bt1120_reg *reg)
+void bt1120_reg_refresh(struct bt1120_reg *reg)
 {
 	__set_bit(0, &reg->rBT1120_REGS_REFUSH);
 }
 
-int bt1120_hw_reset(struct bt1120_dev *bt1120)
+int bt1120_request_run(struct bt1120_dev *bt1120)
 {
 	struct bt1120_reg *reg = bt1120->reg;
-	struct bt1120_reset_reg *reset_reg = bt1120->reset_reg;
+	__clear_bit(0, &reg->rBT1120_WAIT_MODE);
+
+	return 0;
+}
+
+int bt1120_request_stop(struct bt1120_dev *bt1120)
+{
+	struct bt1120_reg *reg = bt1120->reg;
 	unsigned int retry = 0;
 
 	__set_bit(0, &reg->rBT1120_WAIT_MODE);
@@ -64,6 +71,15 @@ int bt1120_hw_reset(struct bt1120_dev *bt1120)
 			return -1;
 		}
 	}
+
+	return 0;
+}
+
+int bt1120_hw_reset(struct bt1120_dev *bt1120)
+{
+	struct bt1120_reset_reg *reset_reg = bt1120->reset_reg;
+
+	bt1120_request_stop(bt1120);
 
 	__set_bit(9, &reset_reg->rRESET);
 	mdelay(1);
@@ -109,7 +125,7 @@ int bt1120_set_zoom_coef(struct bt1120_dev *bt1120)
 }
 
 static inline void bt1120_set_sync_mode(struct bt1120_reg *reg,
-							enum bt1120_sync_mode mode)
+						enum bt1120_sync_mode mode)
 {
 	if (mode == SYNC_OUTSIDE)
 		__set_field(0x5, 0x7, 9, &reg->rBT1120_CTRL);
@@ -118,7 +134,7 @@ static inline void bt1120_set_sync_mode(struct bt1120_reg *reg,
 }
 
 static inline void bt1120_set_bit_width(struct bt1120_reg *reg,
-							enum bt1120_bit_width bit_width)
+						enum bt1120_bit_width bit_width)
 {
 	if (bit_width == INPUT_8BIT)
 		__clear_bit(8, &reg->rBT1120_CTRL);
@@ -180,7 +196,7 @@ static inline void bt1120_set_syuv_channel(struct bt1120_reg *reg, bool enable)
 }
 
 static inline void bt1120_set_y_size(struct bt1120_reg *reg,
-						unsigned int width, unsigned int height)
+					unsigned int width, unsigned int height)
 {
 	unsigned int value = width + (height << 16);
 
@@ -439,35 +455,37 @@ int bt1120_set_output_addr(struct bt1120_dev *bt1120)
 	struct bt1120_buffer *buffer = NULL;
 	int i = 0;
 
-	bt1120->hw_addr = kmalloc((sizeof(struct bt1120_hw_addr) * bt1120->reqbufs_count), GFP_KERNEL);
+	if (bt1120->hw_addr == NULL) {
+		bt1120->hw_addr = kmalloc((sizeof(struct bt1120_hw_addr) * bt1120->reqbufs_count), GFP_KERNEL);
 
-	for (i = 0; i < bt1120->reqbufs_count; i++) {
-		buffer = bt1120_idle_queue_pop(bt1120);
-		bt1120->hw_addr[i].virt_addr.y_addr = phys_to_virt((phys_addr_t)buffer->phys_addr.y_addr);
-		bt1120->hw_addr[i].virt_addr.u_addr = phys_to_virt((phys_addr_t)buffer->phys_addr.u_addr);
-		bt1120->hw_addr[i].virt_addr.v_addr = phys_to_virt((phys_addr_t)buffer->phys_addr.v_addr);
+		for (i = 0; i < bt1120->reqbufs_count; i++) {
+			buffer = bt1120_idle_queue_pop(bt1120);
+			bt1120->hw_addr[i].virt_addr.y_addr = phys_to_virt((phys_addr_t)buffer->phys_addr.y_addr);
+			bt1120->hw_addr[i].virt_addr.u_addr = phys_to_virt((phys_addr_t)buffer->phys_addr.u_addr);
+			bt1120->hw_addr[i].virt_addr.v_addr = phys_to_virt((phys_addr_t)buffer->phys_addr.v_addr);
 
-		bt1120->hw_addr[i].align_virt_addr.y_addr = _align_8_bytes(bt1120->hw_addr[i].virt_addr.y_addr);
-		if (bt1120->hw_addr[i].virt_addr.y_addr != bt1120->hw_addr[i].align_virt_addr.y_addr)
-			bt1120->hw_addr[i].y_need_align = true;
-		else
-			bt1120->hw_addr[i].y_need_align = false;
+			bt1120->hw_addr[i].align_virt_addr.y_addr = _align_8_bytes(bt1120->hw_addr[i].virt_addr.y_addr);
+			if (bt1120->hw_addr[i].virt_addr.y_addr != bt1120->hw_addr[i].align_virt_addr.y_addr)
+				bt1120->hw_addr[i].y_need_align = true;
+			else
+				bt1120->hw_addr[i].y_need_align = false;
 
-		bt1120->hw_addr[i].align_virt_addr.u_addr = _align_8_bytes(bt1120->hw_addr[i].virt_addr.u_addr);
-		if (bt1120->hw_addr[i].virt_addr.u_addr != bt1120->hw_addr[i].align_virt_addr.u_addr)
-			bt1120->hw_addr[i].u_need_align = true;
-		else
-			bt1120->hw_addr[i].u_need_align = false;
+			bt1120->hw_addr[i].align_virt_addr.u_addr = _align_8_bytes(bt1120->hw_addr[i].virt_addr.u_addr);
+			if (bt1120->hw_addr[i].virt_addr.u_addr != bt1120->hw_addr[i].align_virt_addr.u_addr)
+				bt1120->hw_addr[i].u_need_align = true;
+			else
+				bt1120->hw_addr[i].u_need_align = false;
 
-		bt1120->hw_addr[i].align_virt_addr.v_addr = _align_8_bytes(bt1120->hw_addr[i].virt_addr.v_addr);
-		if (bt1120->hw_addr[i].virt_addr.v_addr != bt1120->hw_addr[i].align_virt_addr.v_addr)
-			bt1120->hw_addr[i].v_need_align = true;
-		else
-			bt1120->hw_addr[i].v_need_align = false;
+			bt1120->hw_addr[i].align_virt_addr.v_addr = _align_8_bytes(bt1120->hw_addr[i].virt_addr.v_addr);
+			if (bt1120->hw_addr[i].virt_addr.v_addr != bt1120->hw_addr[i].align_virt_addr.v_addr)
+				bt1120->hw_addr[i].v_need_align = true;
+			else
+				bt1120->hw_addr[i].v_need_align = false;
 
-		bt1120->hw_addr[i].index = i;
-		bt1120->hw_addr[i].full  = false;
-		bt1120_idle_queue_add(bt1120, buffer);
+			bt1120->hw_addr[i].index = i;
+			bt1120->hw_addr[i].full  = false;
+			bt1120_idle_queue_add(bt1120, buffer);
+		}
 	}
 
 	bt1120_set_hw_buffer_num(reg, ZOOM_FRAME, bt1120->reqbufs_count);
@@ -492,7 +510,7 @@ static inline void bt1120_set_interrupt_frame_done(struct bt1120_reg *reg, bool 
 	if (enable)
 		__set_bit(0, &reg->rBT1120_INI_EN);
 	else
-		__clear_bit(1, &reg->rBT1120_INI_EN);
+		__clear_bit(0, &reg->rBT1120_INI_EN);
 }
 
 static inline void bt1120_set_interrupt_frame_size_change(struct bt1120_reg *reg, bool enable)

@@ -24,6 +24,7 @@
 #include <media/videobuf2-dma-contig.h>
 
 #include "bt1120-core.h"
+#include "bt1120-reg.h"
 
 static struct bt1120_clk_info gx_bt1120_clk_info = {
 	.num = 2,
@@ -175,7 +176,9 @@ static int gx_bt1120_probe(struct platform_device *pdev)
 		goto err_regiseter_nodes;
 	}
 
+	bt1120->is_open = false;
 	gx_bt1120_clk_disable(bt1120);
+
 	return 0;
 
 err_regiseter_nodes:
@@ -203,6 +206,32 @@ static int gx_bt1120_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static int gx_bt1120_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	struct bt1120_dev *bt1120 = platform_get_drvdata(pdev);
+
+	if (bt1120->is_open) {
+		bt1120_request_stop(bt1120);
+		bt1120_stop(bt1120);
+		gx_bt1120_clk_disable(bt1120);
+	}
+
+	return 0;
+}
+
+static int gx_bt1120_resume(struct platform_device *pdev)
+{
+	struct bt1120_dev *bt1120 = platform_get_drvdata(pdev);
+
+	if (bt1120->is_open) {
+		gx_bt1120_clk_enable(bt1120);
+		bt1120_request_run(bt1120);
+		gx_bt1120_hw_init(bt1120);
+	}
+
+	return 0;
+}
+
 static const struct of_device_id gx_bt1120_device_match[] = {
 	{
 		.compatible = "NationalChip,BT1120-Video",
@@ -213,6 +242,8 @@ static const struct of_device_id gx_bt1120_device_match[] = {
 static struct platform_driver gx_bt1120_driver = {
 	.probe  = gx_bt1120_probe,
 	.remove = gx_bt1120_remove,
+	.suspend = gx_bt1120_suspend,
+	.resume = gx_bt1120_resume,
 	.driver = {
 		.name           = GX_BT1120_DRIVER_NAME,
 		.of_match_table = gx_bt1120_device_match,
