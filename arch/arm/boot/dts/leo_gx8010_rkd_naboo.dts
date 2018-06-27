@@ -164,6 +164,14 @@
 		compatible = "NationalChip,ASoc-Platform_Dai";
 		status = "okay";
 	};
+
+	bt-dev{
+		compatible = "rokid, bt-dev";
+		dev_name = "bt-dev";
+		status = "okay";
+		reset-gpio = <&gpa1 0 GPIO_ACTIVE_HIGH>;
+	};
+
 };
 
 &ck_i2c0{
@@ -220,6 +228,7 @@
 &mmc0{
 	status = "disabled";
 };
+
 
 &ck_i2c0{
 	npcp215x@73 {
