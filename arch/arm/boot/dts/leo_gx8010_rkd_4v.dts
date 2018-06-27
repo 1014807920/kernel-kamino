@@ -113,27 +113,6 @@
 		compatible = "NationalChip,ASoc-Platform_Dai";
 		status = "okay";
 	};
-
-	v4l2 {
-		compatible = "NationalChip,BT1120-Video";
-		i2c_bus = <0>;
-		reset-gpio = <&gpa0 5 GPIO_ACTIVE_HIGH>;
-		powerdown-gpio = <&gpa0 12 GPIO_ACTIVE_HIGH>;
-		clocks = <&clk_bt1120>,
-			<&bt1120_div>,
-			<&bt1120_ddr>;
-		clock-names = "xvclk",
-			"gx.bt1120_div.clk",
-			"gx.bt1120_ddr.clk";
-
-		reg = <0x04d00000 0x1bc>,
-			<0x0230a000 0x1c>;
-		reg-names = "gx.bt1120.regs",
-			"gx.bt1120.reset_regs";
-		interrupts = <47>;
-		interrupt-names = "gx.bt1120.irqs";
-		status = "okay";
-	};
 };
 
 &ck_i2c0{
@@ -225,4 +204,11 @@
 		dev-name = "nau8822";
 		reg = <0x1a>;
 	};
+};
+
+&v4l2{
+    i2c_bus = <0>;
+    reset-gpio = <&gpa0 5 GPIO_ACTIVE_HIGH>;
+    powerdown-gpio = <&gpa0 12 GPIO_ACTIVE_HIGH>;
+    status = "okay";
 };
