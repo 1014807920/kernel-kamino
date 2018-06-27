@@ -106,7 +106,7 @@ static int gx_bt1120_dt_parse(struct bt1120_dev *bt1120, struct platform_device 
 	}
 
 	ret = of_property_read_u32(np, "i2c_bus", &bt1120->i2c_bus);
-	if (ret == 0)
+	if (ret != 0)
 		bt1120->i2c_bus = 0;
 
 	return 0;

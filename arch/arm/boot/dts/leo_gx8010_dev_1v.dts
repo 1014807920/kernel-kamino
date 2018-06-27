@@ -114,6 +114,7 @@
 
 	v4l2 {
 		compatible = "NationalChip,BT1120-Video";
+		i2c_bus = <0>;
 		reset-gpio = <&gpa0 5 GPIO_ACTIVE_HIGH>;
 		powerdown-gpio = <&gpa0 2 GPIO_ACTIVE_HIGH>;
 		clocks = <&clk_bt1120>,
