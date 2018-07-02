@@ -30,11 +30,16 @@
 #include <linux/of_gpio.h>
 #include <linux/io.h>
 #include <linux/gpio.h>
+#include <sound/jack.h>
 
 #include "sma1301.h"
 
 /* register dump to Linux console for EV board */
 #define SMA1301_REGISTER_DUMP
+
+#define HP_DETECT_DELAY             20
+
+int is_mute_setted = 0;
 
 enum sma1301_type {
 	SMA1301,
@@ -51,6 +56,14 @@ struct sma1301_priv {
 	uint32_t reg_array_len;
 	char board_rev[10];
 	int i2s_mode;
+
+	struct gpio_desc *gpio_hp_det;
+	struct gpio_desc *gpio_hp_pa_shdn;
+	struct snd_soc_jack jack;
+	struct timer_list timer;
+	unsigned int gpio_val;
+	bool         need_hp_det;
+	struct snd_soc_codec *soc_codec;
 };
 
 /* Initial register value - {register, value} 2018.01.17
@@ -2473,6 +2486,7 @@ static int sma1301_resume(struct snd_soc_codec *codec)
 	dev_info(codec->dev, "%s\n", __func__);
 
 	sma1301_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
+	sma1301_set_bias_level(codec, SND_SOC_BIAS_PREPARE);
 	return 0;
 }
 
@@ -2569,12 +2583,77 @@ static int sma1301_reset(struct snd_soc_codec *codec)
 	return 0;
 }
 
+void sma1301_hp_detect(unsigned long data)
+{
+	int gpio_val = 0;
+	struct sma1301_priv *sma1301 = (struct sma1301_priv *)data;
+	gpio_val = gpiod_get_value(sma1301->gpio_hp_det);
+	if (gpio_val != sma1301->gpio_val) {
+		if (gpio_val) {									//hp in
+			dev_info(sma1301->soc_codec->dev, "%s, Headphone is plug in\n", __func__);
+			snd_soc_jack_report(&sma1301->jack, 1, 0xff);
+			sma1301_set_bias_level(sma1301->soc_codec, SND_SOC_BIAS_OFF);
+			regcache_mark_dirty(sma1301->regmap);
+			if(!is_mute_setted)
+				gpiod_set_value(sma1301->gpio_hp_pa_shdn,1);
+		} else {											//hp out
+			dev_info(sma1301->soc_codec->dev, "%s, Headphone is plug out\n", __func__);
+			snd_soc_jack_report(&sma1301->jack, 0, 0xff);
+			gpiod_set_value(sma1301->gpio_hp_pa_shdn,0);
+			if(!is_mute_setted)
+				sma1301_set_bias_level(sma1301->soc_codec, SND_SOC_BIAS_PREPARE);
+		}
+
+		sma1301->gpio_val = gpio_val;
+	}
+
+	mod_timer(&sma1301->timer, (jiffies + HP_DETECT_DELAY));
+}
+
 static int sma1301_probe(struct snd_soc_codec *codec)
 {
-	dev_info(codec->dev, "%s\n", __func__);
+	struct sma1301_priv *sma1301 = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_card *card = codec->component.card;
+	int ret;
+
+	dev_info(codec->dev, "%s in\n", __func__);
 
 	sma1301_reset(codec);
 	sma1301_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
+	sma1301_set_bias_level(codec, SND_SOC_BIAS_PREPARE);
+
+	if (sma1301->need_hp_det) {
+		ret = snd_soc_card_jack_new(card, "Headset", SND_JACK_HEADPHONE,
+					&sma1301->jack, NULL, 0);
+		if (ret != 0) {
+			dev_err(codec->dev, "Failed to new jack: %d\n", ret);
+			return ret;
+		}
+
+		sma1301->gpio_hp_det = devm_gpiod_get(codec->dev, "hp_det", GPIOD_IN);
+		if (IS_ERR(sma1301->gpio_hp_det)) {
+			dev_err(codec->dev, "unable to get gpio_hp_det\n");
+			sma1301->gpio_hp_det = NULL;
+			return -1;
+		}
+		gpiod_direction_input(sma1301->gpio_hp_det);
+
+		sma1301->gpio_hp_pa_shdn = devm_gpiod_get(codec->dev, "hp_pa_shdn", GPIOD_OUT_LOW);
+		if (IS_ERR(sma1301->gpio_hp_det)) {
+			dev_err(codec->dev, "unable to get gpio_hp_det\n");
+			sma1301->gpio_hp_det = NULL;
+			return -1;
+		}
+		gpiod_direction_output(sma1301->gpio_hp_pa_shdn,0);
+		gpiod_set_value(sma1301->gpio_hp_pa_shdn,0);
+
+		sma1301->soc_codec = codec;
+		init_timer(&sma1301->timer);
+		sma1301->timer.data = (unsigned long)sma1301;
+		sma1301->timer.function = sma1301_hp_detect;
+		sma1301->timer.expires = jiffies + HP_DETECT_DELAY;
+		add_timer(&sma1301->timer);
+	}
 
 	return 0;
 }
@@ -2591,7 +2670,7 @@ static struct snd_soc_codec_driver soc_codec_dev_sma1301 = {
 	.remove = sma1301_remove,
 	.suspend = sma1301_suspend,
 	.resume = sma1301_resume,
-	.set_bias_level = sma1301_set_bias_level,
+	//.set_bias_level = sma1301_set_bias_level,
 	.component_driver = {
 		.controls = sma1301_snd_controls,
 		.num_controls = ARRAY_SIZE(sma1301_snd_controls),
@@ -2683,10 +2762,6 @@ static int sma1301_i2c_probe(struct i2c_client *client,
 	u32 value;
 	const char *str_value;
 	const char *dev_name = NULL;
-	struct gpio_desc *desc;
-	desc = devm_gpiod_get(&client->dev, "hpshutdown", GPIOD_OUT_LOW);
-	gpiod_direction_output(desc,1);
-	gpiod_set_value(desc,0);
 
 	dev_info(&client->dev, "%s is here\n", __func__);
 
@@ -2702,6 +2777,14 @@ static int sma1301_i2c_probe(struct i2c_client *client,
 		dev_err(&client->dev,
 			"Failed to allocate register map: %d\n", ret);
 		return ret;
+	}
+
+	if (of_property_read_bool(np, "hp_det-gpio") == true){
+		sma1301->need_hp_det = true;
+//		sma1301->need_hp_det = false;
+		sma1301->gpio_val = 0xFF;
+	} else{
+		sma1301->need_hp_det = false;
 	}
 
 	if (np) {
