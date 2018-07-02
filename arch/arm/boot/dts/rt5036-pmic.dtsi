@@ -1,0 +1,198 @@
+/* Copyright (c) 2014, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+	&ck_i2c0 {
+		status = "ok";
+		rt5036@38 {
+			compatible = "rt,rt5036";
+			reg = <0x38>;
+			rt5036_dcdc1: regulator_0 {
+				compatible = "rt,rt5036-dcdc1";
+				cell-index = <0>;
+				regulator-name = "rt5036-dcdc1";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-dcdc1", "";
+			};
+			rt5036_dcdc2: regulator_1 {
+				compatible = "rt,rt5036-dcdc2";
+				cell-index = <1>;
+				regulator-name = "rt5036-dcdc2";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-dcdc2", "";
+			};
+			rt5036_dcdc3: regulator_2 {
+				compatible = "rt,rt5036-dcdc3";
+				cell-index = <2>;
+				regulator-name = "rt5036-dcdc3";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-dcdc3", "";
+			};
+			rt5036_dcdc4: regulator_3 {
+				compatible = "rt,rt5036-dcdc4";
+				cell-index = <3>;
+				regulator-name = "rt5036-dcdc4";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-dcdc4", "";
+			};
+			rt5036_ldo1: regulator_4 {
+				supply-regulator = "rt5036-dcdc3";
+				compatible = "rt,rt5036-ldo1";
+				cell-index = <4>;
+				regulator-name = "rt5036-ldo1";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-ldo1", "";
+			};
+			rt5036_ldo2: regulator_5 {
+				supply-regulator = "rt5036-dcdc3";
+				compatible = "rt,rt5036-ldo2";
+				cell-index = <5>;
+				regulator-name = "rt5036-ldo2";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-ldo2", "";
+			};
+			rt5036_ldo3: regulator_6 {
+				supply-regulator = "rt5036-dcdc3";
+				compatible = "rt,rt5036-ldo3";
+				cell-index = <6>;
+				regulator-name = "rt5036-ldo3";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-ldo3", "";
+			};
+			rt5036_ldo4: regulator_7 {
+				supply-regulator = "rt5036-dcdc3";
+				compatible = "rt,rt5036-ldo4";
+				cell-index = <7>;
+				regulator-name = "rt5036-ldo4";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-ldo4", "";
+			};
+			rt5036_lsw1: regulator_8 {
+				supply-regulator = "rt5036-dcdc3";
+				compatible = "rt,rt5036-lsw1";
+				cell-index = <8>;
+				regulator-name = "rt5036-lsw1";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-lsw1", "";
+			};
+			rt5036_lsw2: regulator_9 {
+				supply-regulator = "rt5036-dcdc3";
+				compatible = "rt,rt5036-lsw2";
+				cell-index = <9>;
+				regulator-name = "rt5036-lsw2";
+				regulator-min-microvolt = < 800000>;
+				regulator-max-microvolt = <3300000>;
+				rt,nramp_sel = <0x00>;
+				rt,sramp_sel = <0x00>;
+				rt,allow_mode_mask;
+				//rt,standby_vol = <xxx>; unit:uV
+				rt,standby_enabled;
+				//rt,standby_disabled;
+				qcom,consumer-supplies = "rt5036-lsw2", "";
+			};
+			rt5036-charger {
+				compatible = "rt,rt5036-charger";
+				rt,te_en;
+				rt,iprec = <0x2>;
+				rt,ieoc = <0x3>;
+				rt,vprec = <0xA>;
+				rt,batlv = <0x4>;
+				rt,vrechg = <1>;
+				rt,chg_volt = <4200>;
+				rt,otg_volt = <5025>;
+				rt,acchg_icc = <2000>;
+				rt,usbtachg_icc = <2000>;
+				rt,usbchg_icc = <900>;/*
+				rt,acdet_gpio = <&msmgpio 59 0x00>;
+				rt,usbdet_gpio = <&msmgpio 65 0x00>;*/
+			};
+			rt5036-rtc {
+				compatible = "rt,rt5036-rtc";
+			};
+			rt5036-misc {
+				compatible = "rt,rt5036-misc";
+				rt,shdn_press = <0x1>;
+				rt,stb_en = <0>;
+				rt,lp_enshdn;
+				rt,vsysuvlo = <0x2>;
+				rt,syslv_enshdn;
+			};
+			rt5036-irq {
+				compatible = "rt,rt5036-irq";
+				rt,irq_gpio = <&ck_gpa0 5 GPIO_ACTIVE_HIGH>;
+			};
+			rt5036-debug {
+				compatible = "rt,rt5036-debug";
+			};
+		};
+	};

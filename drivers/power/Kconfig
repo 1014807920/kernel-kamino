@@ -507,6 +507,41 @@ config AXP20X_POWER
 	help
 	  This driver provides support for the power supply features of
 	  AXP20x PMIC.
+config CHARGER_RT5036
+	bool "RT5036 charger support"
+	depends on MFD_RT5036
+	default n
+	help
+	  Say Y here to enable support for RT5036 chip charger subdevice.
+
+config CHARGER_RT5036_VMID_HDMI
+	bool "RT5036 charger VMID HDMI support"
+	depends on CHARGER_RT5036
+	default n
+	help
+	  Say Y here to enable support for RT5036 charger VMID HDMI Boost.
+
+config RT_POWER
+	bool "RT PMIC cable report"
+	depends on CHARGER_RT5036 || CHARGER_RT5025
+	default n
+	help
+	  Enable AC/USB report.
+
+config RT_SUPPORT_ACUSB_DUALIN
+	bool "RT AC/USB Dualin Option"
+	depends on RT_POWER
+	default n
+	help
+	  Say Y here to enable dualin, otherwise
+	  N is just singlein.
+
+config RT_BATTERY
+	bool "RT Test Battery"
+	depends on CHARGER_RT5036
+	default n
+	help
+	  Enable Test Battery report.
 
 source "drivers/power/reset/Kconfig"
 
