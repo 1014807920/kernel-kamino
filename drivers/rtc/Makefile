@@ -164,3 +164,4 @@ obj-$(CONFIG_RTC_DRV_X1205)	+= rtc-x1205.o
 obj-$(CONFIG_RTC_DRV_XGENE)	+= rtc-xgene.o
 obj-$(CONFIG_RTC_DRV_ZYNQMP)	+= rtc-zynqmp.o
 obj-$(CONFIG_RTC_DRV_LEO)       += rtc-nationalchip.o
+obj-$(CONFIG_RTC_RT5036)	+= rt5036-rtc.o

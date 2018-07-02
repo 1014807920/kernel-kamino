@@ -10,6 +10,49 @@ config MFD_CORE
 	select IRQ_DOMAIN
 	default n
 
+config MFD_RT5036
+	bool "Richtek RT5036 PMIC support"
+	select MFD_CORE
+	default n
+	help
+	  Enable the RT5036 MFD driver.
+
+config MFD_RT5036_DBGINFO
+	bool "Richtek RT5036 debug message enable."
+	depends on MFD_RT5036
+	default n
+	help
+	  Enable the RT5036 debug log.
+
+config MISC_RT5036
+	bool "Richtek RT5036 MISC option driver support"
+	depends on MFD_RT5036
+	default n
+	help
+	  Enable the RT5036 Misc option driver support.
+
+config MISC_RT5036_PWRKEY
+	bool "Richtek RT5036 Power key report in Misc module"
+	depends on MISC_RT5036
+	default n
+	help
+	  Enable the RT5036 Power Key report in Misc module.
+
+config IRQ_RT5036
+	bool "Richtek RT5036 irq option driver support"
+	depends on MFD_RT5036
+	default n
+	help
+	  Enable the Rt5036 IRQ option driver support.
+
+config DEBUG_RT5036
+	bool "Richtek RT5036 PMIC DEBUGFS Support"
+	depends on DEBUG_FS && MFD_RT5036
+	default n
+	help
+	  Enable the RT5036 debugfs node that support
+	  read/write registers.
+
 config MFD_CS5535
 	tristate "AMD CS5535 and CS5536 southbridge core functions"
 	select MFD_CORE

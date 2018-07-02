@@ -20,7 +20,7 @@
 /* /memreserve/ 0x00000000 0x0001000; */
 
 #include "leo.dtsi"
-
+#include "rt5036-pmic.dtsi"
 / {
 	model = "nationalchip leo_gx8010_rkd_4v SoC";
 	compatible = "nationalchip,leo_gx8010_rkd_4v_1v", "nationalchip,leo";
