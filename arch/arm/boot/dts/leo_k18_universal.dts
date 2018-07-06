@@ -211,7 +211,7 @@
 		compatible = "siliconmitus,sma1301";
 		dev-name = "sma1301";
 		reg = <0x1e>;
-		init-vol = <0x30>;
+		init-vol = <0x3e>;
 		//sck-pll-enable;
 		board-revision = "MVT1";
 		registers-of-amp = <0x46 0x20>,
