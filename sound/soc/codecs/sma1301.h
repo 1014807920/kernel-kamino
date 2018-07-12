@@ -19,6 +19,7 @@
 #define  SMA1301_EXTERNAL_CLOCK_19_2	0x00
 #define  SMA1301_EXTERNAL_CLOCL_24_576	0x01
 
+#define SMA1301_DEVICE_ID 0x09
 /*
  * SMA1301 Register Definition
  */
