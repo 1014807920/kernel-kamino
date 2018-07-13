@@ -292,7 +292,7 @@ static int gpio_key_probe(struct platform_device *pdev)
 #endif
 
 	for (i = 0; i < key_size; i++) {
-		desc = devm_gpiod_get(&pdev->dev, pdata->key[i].name, GPIOD_IN);
+		desc = devm_gpiod_get(&pdev->dev, pdata->key[i].name, GPIOD_OUT_LOW);
 		if (IS_ERR(desc)){
 			printk("%s gpio test5-1 %s\n", __func__, pdata->key[i].name);
 			return PTR_ERR(desc);
