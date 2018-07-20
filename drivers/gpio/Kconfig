@@ -202,6 +202,14 @@ config GPIO_GENERIC_PLATFORM
 	help
 	  Say yes here to support basic platform_device memory-mapped GPIO controllers.
 
+config GPIO_NATIONALCHIP
+	tristate "NationalChip GPIO controller support"
+	default y
+	select GPIO_GENERIC
+	select GENERIC_IRQ_CHIP
+	help
+	  Say yes here to support NationalChip GPIO controllers.
+
 config GPIO_GRGPIO
 	tristate "Aeroflex Gaisler GRGPIO support"
 	depends on OF
