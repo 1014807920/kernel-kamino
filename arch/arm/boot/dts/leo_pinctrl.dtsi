@@ -2,16 +2,78 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
-#define MUX_MODE0   0
-#define MUX_MODE1   1
-#define MUX_MODE2   2
-#define MUX_MODE3   3
-#define MUX_MODE4   4
-#define MUX_MODE5   5
-#define MUX_MODE6   6
-#define MUX_MODE7   7
-
 / {
+	pinctrl_0: pinctrl_0@0x2305000 {
+		compatible = "nationalchip,LEO_A7-pinctrl";
+		reg = <0x2305000 0x60>;
+		interrupt-parent = <&intc>;
+		interrupts = <13>;
+			gpa0: gpa0 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-parent = <&intc>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+
+				nationalchip,base_offset = <0x0>;
+				nationalchip,reg_offset  = <0x0 0x10 0x1c 0x20 0x30 0x3c>;
+				nationalchip,cfg_width   = <  1	   1	1	 4 	  1    1>;
+				nationalchip,nr_pins     = <32>;
+			};
+			pwm0_group: pwm0_group {
+				nationalchip,pins = "gpa0-28", "gpa0-29";
+				nationalchip,pin-dir = <0x01>;
+				nationalchip,pin-pwm_sel = <0x2>;
+				nationalchip,pin-pwm_en = <0x01>;
+			};
+		};
+	pinctrl_1: pinctrl_1@0x2306000 {
+		compatible = "nationalchip,LEO_A7-pinctrl";
+		reg = <0x2306000 0x60>;
+		interrupt-parent = <&intc>;
+		interrupts = <29>;
+			gpa1: gpa1 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				interrupt-parent = <&intc>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+
+				nationalchip,base_offset = <0x0>;
+				nationalchip,reg_offset  = <0x0 0x10 0x1c 0x20 0x30 0x3c>;
+				nationalchip,cfg_width   = <  1	   1	1	 4 	  1    1>;
+				nationalchip,nr_pins     = <32>;
+			};
+	};
+
+	ck_pinctrl_0: ck_pinctrl_0@0x2305000 {
+		compatible = "nationalchip,LEO_A7-pinctrl";
+		reg = <0x305000 0x60>;
+			ck_gpa0: ck_gpa0 {
+				gpio-controller;
+				#gpio-cells = <2>;
+
+				nationalchip,base_offset = <0x0>;
+				nationalchip,reg_offset  = <0x0 0x10 0x1c 0x20 0x30 0x3c>;
+				nationalchip,cfg_width   = <  1	   1	1	 4 	  1    1>;
+				nationalchip,nr_pins     = <32>;
+			};
+	};
+
+	ck_pinctrl_1: ck_pinctrl_1@0x2306000 {
+		  compatible = "nationalchip,LEO_A7-pinctrl";
+		  reg = <0x306000 0x60>;
+			ck_gpa1: ck_gpa1 {
+				gpio-controller;
+				#gpio-cells = <2>;
+
+				nationalchip,base_offset = <0x0>;
+				nationalchip,reg_offset  = <0x0 0x10 0x1c 0x20 0x30 0x3c>;
+				nationalchip,cfg_width   = <  1    1    1 4    1    1>;
+				nationalchip,nr_pins     = <32>;
+			};
+	};
+
 	pwm0: pwm0@0x02305000 {
 		compatible = "nationalchip,LEO_A7-pwm";
 		reg = <0x02305000 0xff>;
@@ -27,307 +89,5 @@
 		clock-frequency = <1000000>;
 		#pwm-cells = <2>;
 		status = "okay";
-	};
-
-	a7_pinctrl: pinctrl@0x230a140 {
-		compatible = "NationalChip-pinctrl";
-		reg = <0x230a140 0x10>;
-
-		/* 数据来源于uboot/arch/arm/mach-leo/padmux.c中的padmux_table[]关于pin gpio模式的定义 */
-		/* 数据内容：pin base, nr_pins, gpio mode */
-		pinctrl-nc,gpio-range = <
-			&a7_range  0  9 MUX_MODE1
-			&a7_range  9  3 MUX_MODE3
-			&a7_range 12  1 MUX_MODE5
-			&a7_range 13  8 MUX_MODE1
-			&a7_range 21 14 MUX_MODE3
-			&a7_range 35  1 MUX_MODE1
-		>;
-		a7_range: a7_gpio-range {
-			#pinctrl-nc,gpio-range-cells = <3>;
-		};
-
-		bt1120_mux: bt1120_mux {
-			pinctrl-nc,pins = <
-				 0 MUX_MODE0
-				 1 MUX_MODE0
-				 2 MUX_MODE0
-				 3 MUX_MODE0
-				 4 MUX_MODE0
-				 5 MUX_MODE0
-				 6 MUX_MODE0
-				 7 MUX_MODE0
-				 8 MUX_MODE0
-				 9 MUX_MODE0
-				10 MUX_MODE0
-				11 MUX_MODE0
-				12 MUX_MODE0
-				13 MUX_MODE0
-				14 MUX_MODE0
-				15 MUX_MODE0
-				16 MUX_MODE0
-				17 MUX_MODE0
-				18 MUX_MODE0
-				19 MUX_MODE0
-				20 MUX_MODE0
-			>;
-		};
-
-		i2c2_mux_1: i2c2_mux_1 {
-			pinctrl-nc,pins = <
-				 9 MUX_MODE1
-				10 MUX_MODE1
-			>;
-		};
-
-		i2c2_mux_2: i2c2_mux_2 {
-			pinctrl-nc,pins = <
-				28 MUX_MODE1
-				29 MUX_MODE1
-			>;
-		};
-
-		i2c3_mux: i2c3_mux {
-			pinctrl-nc,pins = <
-				21 MUX_MODE2
-				22 MUX_MODE2
-			>;
-		};
-
-		uart2_mux: uart2_mux {
-			pinctrl-nc,pins = <
-				11 MUX_MODE1
-				12 MUX_MODE1
-			>;
-		};
-
-		uart3_mux: uart3_mux {
-			pinctrl-nc,pins = <
-				21 MUX_MODE0
-				22 MUX_MODE0
-			>;
-		};
-
-		spi1_mux_1: spi1_mux_1 {
-			pinctrl-nc,pins = <
-				 9 MUX_MODE2
-				10 MUX_MODE2
-				11 MUX_MODE2
-				12 MUX_MODE2
-			>;
-		};
-
-		spi1_mux_2: spi1_mux_2 {
-			pinctrl-nc,pins = <
-				30 MUX_MODE2
-				31 MUX_MODE2
-				32 MUX_MODE2
-				33 MUX_MODE2
-			>;
-		};
-
-		spi2_mux_1: spi2_mux_1 {
-			pinctrl-nc,pins = <
-				23 MUX_MODE2
-				24 MUX_MODE2
-				25 MUX_MODE2
-				26 MUX_MODE2
-			>;
-		};
-
-		spi2_mux_2: spi2_mux_2 {
-			pinctrl-nc,pins = <
-				34 MUX_MODE0
-				35 MUX_MODE0
-				36 MUX_MODE0
-				37 MUX_MODE0
-			>;
-		};
-
-		sd0_mux: sd0_mux {
-			pinctrl-nc,pins = <
-				38 MUX_MODE0
-				39 MUX_MODE0
-				40 MUX_MODE0
-				41 MUX_MODE0
-				42 MUX_MODE0
-				43 MUX_MODE0
-				44 MUX_MODE0
-			>;
-		};
-
-		sd1_mux_0: sd1_mux_0 {
-			pinctrl-nc,pins = <
-				45 MUX_MODE0
-				46 MUX_MODE0
-				47 MUX_MODE0
-				48 MUX_MODE0
-				49 MUX_MODE0
-				50 MUX_MODE0
-				51 MUX_MODE0
-			>;
-		};
-
-		sd1_mux_1: sd1_mux_1 {
-			pinctrl-nc,pins = <
-				21 MUX_MODE1
-				22 MUX_MODE1
-				23 MUX_MODE1
-				24 MUX_MODE1
-				25 MUX_MODE1
-				26 MUX_MODE1
-				27 MUX_MODE1
-			>;
-		};
-	};
-
-	ck_pinctrl: ck_pinctrl@0x30a140 {
-		compatible = "NationalChip-pinctrl";
-		reg = <0x30a140 0x10>;
-		nc,in-csky-domain;
-
-		/* 数据来源于scpu/arch/csky/mach-leo/padmux.c的padmux_table[]关于pin gpio模式的定义 */
-		/* 数据内容：pin base, nr_pins, gpio mode */
-		pinctrl-nc,gpio-range = <
-			&ck_range  1  4 MUX_MODE1
-			&ck_range  5  2 MUX_MODE3
-			&ck_range  7  3 MUX_MODE4
-			&ck_range 11  3 MUX_MODE1
-			&ck_range 14  1 MUX_MODE3
-			&ck_range 15  1 MUX_MODE2
-			&ck_range 16  4 MUX_MODE1
-			&ck_range 20  6 MUX_MODE2
-			&ck_range 26  4 MUX_MODE1
-			&ck_range 30  3 MUX_MODE2
-			&ck_range 33  2 MUX_MODE3
-			&ck_range 35  1 MUX_MODE1
-		>;
-
-		ck_range: ck_gpio-range {
-			#pinctrl-nc,gpio-range-cells = <3>;
-		};
-
-		ck_uart0_mux: ck_uart0_mux {
-			pinctrl-nc,pins = <
-				2 MUX_MODE0
-				3 MUX_MODE0
-			>;
-		};
-
-		ck_uart1_mux: ck_uart1_mux {
-			pinctrl-nc,pins = <
-				18 MUX_MODE0
-				19 MUX_MODE0
-			>;
-		};
-
-		ck_i2c0_mux: ck_i2c0_mux {
-			pinctrl-nc,pins = <
-				26 MUX_MODE0
-				27 MUX_MODE0
-			>;
-		};
-
-		ck_i2c1_mux: ck_i2c1_mux {
-			pinctrl-nc,pins = <
-				28 MUX_MODE0
-				29 MUX_MODE0
-			>;
-		};
-
-		ck_powerdown_mux: ck_powerdown_mux {
-			pinctrl-nc,pins = <
-				 1 MUX_MODE0
-			>;
-		};
-
-		ck_ir_mux: ck_ir_mux {
-			pinctrl-nc,pins = <
-				35 MUX_MODE0
-			>;
-		};
-
-	};
-
-	gpio0: a7_gpio0@0x2305000 {
-		compatible = "NationalChip-gpio";
-		reg = <0x2305000 0x60>;
-		interrupt-parent = <&intc>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		gpa0: gpa0 {
-			compatible = "NationalChip-gpio-port";
-			reg = <0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			/* gpio_chip base */
-			nc,base-gpios = <0>;
-			nc,nr-gpios = <32>;
-			/* [0]:pinctrl dev, [1]:gpio offset in this domain, [2]:pin offset in pinctrl domain, [3]:nr_pins */
-			gpio-ranges = <&a7_pinctrl 0 0 32>;
-
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts = <13>;
-		};
-	};
-
-	gpio1: a7_gpio1@0x2306000 {
-		compatible = "NationalChip-gpio";
-		reg = <0x2306000 0x60>;
-		interrupt-parent = <&intc>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		gpa1: gpa1 {
-			compatible = "NationalChip-gpio-port";
-			reg = <0>;
-			#gpio-cells = <2>;
-			gpio-controller;
-
-			nc,base-gpios = <32>;
-			nc,nr-gpios = <15>;
-			/* [0]:pinctrl dev, [1]:gpio offset in this domain, [2]:pin offset in pinctrl domain, [3]:nr_pins */
-			gpio-ranges = <&a7_pinctrl 0 32 15>;
-
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts = <29>;
-		};
-	};
-
-	ck_gpio0: ck_gpio0@0x305000 {
-		compatible = "NationalChip-gpio";
-		reg = <0x305000 0x60>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		ck_gpa0: ck_gpa0 {
-			compatible = "NationalChip-gpio-port";
-			reg = <0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			nc,base-gpios = <64>;
-			nc,nr-gpios = <32>;
-			gpio-ranges = <&ck_pinctrl 0 0 32>;
-		};
-	};
-
-	ck_gpio1: ck_gpio1@0x306000 {
-		compatible = "NationalChip-gpio";
-		reg = <0x306000 0x60>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		ck_gpa1: ck_gpa1 {
-			compatible = "NationalChip-gpio-port";
-			reg = <0>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			nc,base-gpios = <96>;
-			nc,nr-gpios = <4>;
-			gpio-ranges = <&ck_pinctrl 0 32 4>;
-		};
 	};
 };
