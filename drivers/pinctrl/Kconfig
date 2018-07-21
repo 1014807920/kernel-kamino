@@ -136,6 +136,16 @@ config PINCTRL_ROCKCHIP
 	select GENERIC_IRQ_CHIP
 	select MFD_SYSCON
 
+config PINCTRL_NATIONALCHIP
+	tristate "NationalChip pin controller driver"
+	default y
+	depends on OF
+	select PINMUX
+	select PINCONF
+	select GENERIC_PINCONF
+	help
+	  This selects the new NationalChip pin controller driver.
+
 config PINCTRL_SINGLE
 	tristate "One-register-per-pin type device tree based pinctrl driver"
 	depends on OF
@@ -260,7 +270,6 @@ source "drivers/pinctrl/sunxi/Kconfig"
 source "drivers/pinctrl/uniphier/Kconfig"
 source "drivers/pinctrl/vt8500/Kconfig"
 source "drivers/pinctrl/mediatek/Kconfig"
-source "drivers/pinctrl/nationalchip/Kconfig"
 
 config PINCTRL_XWAY
 	bool
