@@ -38,7 +38,7 @@ static unsigned char MaxxAudio_Cmd_FULL_Init[] = {
  	0x00, 0x00, 0x00,  // M6 - SDI1 to UnProcessing path (-inf)
  	0x00, 0x00, 0x00,  // M7 - SDI2 to UnProcessing path (-inf)
  	0x00, 0x01, 0x4A,  // M8 - SDI3 to UnProcessing path (ADC) (-70.10 dB)
- 	0x7F, 0xFF, 0xFF,  // M9 - SDO0 from Processed path (0.00 dB)
+ 	0x72, 0x9B, 0x4F,  // M9 - SDO0 from Processed path (-0.96 dB)
  	0x00, 0x00, 0x00,  // M10- SDO1 from Processed path (-inf)
  	0x60, 0x35, 0x2D,  // M11- SDO3 from Processed path (DAC1/AMP) (-2.48 dB)
  	0x00, 0x00, 0x00,  // M12- SDO0 from UnProcessed path (-inf)
