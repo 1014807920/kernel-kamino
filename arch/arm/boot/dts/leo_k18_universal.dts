@@ -92,7 +92,7 @@
 		//irq_keyup = <6>;
 		//irq_keydown = <7>;
 	};
-
+/*
 	switch_key{
 		compatible = "rokid, switch_key";
 		status = "okay";
@@ -101,7 +101,7 @@
 		switch-gpio-pull = <0>;//0: pull disable, 1: pull down, 2: pull up
 		debounce = <0>;
 	};
-
+*/
 	urat1_control{
 		compatible = "nationalchip,LEO_uart_control";
 		reg = <0x02308000 0x1000>;
