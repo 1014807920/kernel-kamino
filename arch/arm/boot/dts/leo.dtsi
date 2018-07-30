@@ -590,6 +590,7 @@
 			bus-width = <4>;
 			cap-mmc-highspeed;
 			cap-sd-highspeed;
+			cap-sdio-irq;
 
 			clocks = <&ahb_mmc0>, <&clk_mmc0>;
 			clock-names = "biu", "ciu";
@@ -611,6 +612,7 @@
 			bus-width = <4>;
 			cap-mmc-highspeed;
 			cap-sd-highspeed;
+			cap-sdio-irq;
 
 			clocks = <&ahb_mmc1>, <&clk_mmc1>;
 			clock-names = "biu", "ciu";
