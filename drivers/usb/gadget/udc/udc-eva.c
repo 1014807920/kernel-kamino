@@ -2686,6 +2686,18 @@ static int evaudc_remove(struct platform_device *pdev)
 	return 0;
 }
 
+void evaudc_shutdown(struct platform_device *dev)
+{
+	struct evausb_udc *udc = platform_get_drvdata(dev);
+	u32 crtlreg;
+
+	crtlreg = udc->read_fn(udc->addr + UDC_USB_CTRL_REG_ADDR);
+	crtlreg |= EVAUSB_CONTROL_USB_READY_MASK;
+	udc->write_fn(udc->addr, UDC_USB_CTRL_REG_ADDR, crtlreg);
+
+
+	return ;
+}
 /* Match table for of_platform binding */
 static const struct of_device_id usb_of_match[] = {
 	{ .compatible = "gx-eva,gx-eva-usb2-device", },
@@ -2700,6 +2712,7 @@ static struct platform_driver evaudc_driver = {
 	},
 	.probe = evaudc_probe,
 	.remove = evaudc_remove,
+	.shutdown = evaudc_shutdown,
 };
 
 module_platform_driver(evaudc_driver);
