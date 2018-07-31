@@ -64,7 +64,7 @@ static inline u32 ncgpio_read(struct ncgpio_gpio *gpio, unsigned int offset)
     struct bgpio_chip *bgc  = &gpio->ports[0].bgc;
     void __iomem *reg_base  = gpio->regs;
 
-    return bgc->read_reg(reg_base + offset);
+	return bgc->read_reg(reg_base + offset);
 }
 
 static inline void ncgpio_write(struct ncgpio_gpio *gpio, unsigned int offset,
@@ -87,10 +87,10 @@ static int ncgpio_gpio_to_irq(struct gpio_chip *gc, unsigned offset)
 /*
  * 中断相关函数
  * */
-#define NCGPIO_INTEx 0x40		//mask/unmask的功能
+#define NCGPIO_INTEx 0x40
 #define NCGPIO_ACK 0x44			// 写1清楚中断标志
 #define NCGPIO_INTSx 0x44		// 读可以获得中断状态
-#define NCGPIO_INTMx 0x48		//enable/disable的功能
+#define NCGPIO_INTMx 0x48		// “置 1 表示不产生中断,也不产生 INTSx 位,相当于 HIINTx、LOINTx、RINTx 和 FINTx 全为 0。”
 #define NCGPIO_HIINTx 0x50
 #define NCGPIO_LOINTx 0x54
 #define NCGPIO_RINTx 0x58
@@ -166,9 +166,9 @@ static void ncgpio_irq_enable(struct irq_data *d)
     u32 val;
 
     spin_lock_irqsave(&bgc->lock, flags);
-    val = ncgpio_read(gpio, NCGPIO_INTMx);
+    val = ncgpio_read(gpio, NCGPIO_INTEx);
     val |= BIT(d->hwirq);
-    ncgpio_write(gpio, NCGPIO_INTMx, val);
+    ncgpio_write(gpio, NCGPIO_INTEx, val);
     spin_unlock_irqrestore(&bgc->lock, flags);
 }
 
@@ -181,9 +181,9 @@ static void ncgpio_irq_disable(struct irq_data *d)
     u32 val;
 
     spin_lock_irqsave(&bgc->lock, flags);
-    val = ncgpio_read(gpio, NCGPIO_INTMx);
+    val = ncgpio_read(gpio, NCGPIO_INTEx);
     val &= ~BIT(d->hwirq);
-    ncgpio_write(gpio, NCGPIO_INTMx, val);
+    ncgpio_write(gpio, NCGPIO_INTEx, val);
     spin_unlock_irqrestore(&bgc->lock, flags);
 }
 
@@ -258,7 +258,7 @@ static void ncgpio_configure_irqs(struct ncgpio_gpio *gpio,
         ct->chip.irq_request_resources = ncgpio_irq_reqres;
         ct->chip.irq_release_resources = ncgpio_irq_relres;
         ct->regs.ack = NCGPIO_ACK;
-        ct->regs.mask = NCGPIO_INTEx;
+        ct->regs.mask = NCGPIO_INTMx;
     }
 
     irq_gc->chip_types[0].type = IRQ_TYPE_LEVEL_MASK;
