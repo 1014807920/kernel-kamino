@@ -149,6 +149,17 @@
 		status = "okay";
 		reset-gpio = <&gpa1 2 GPIO_ACTIVE_HIGH>;
 	};
+
+	thermal-zones {
+		board_thermal: board_thermal {
+			polling-delay-passive = <1250>; /* milliseconds */
+			polling-delay = <1500>; /* milliseconds */
+
+			/* sensor ID */
+			thermal-sensors = <&tmp103 0>;
+		};
+	};
+
 };
 
 &ck_i2c0{
@@ -200,6 +211,7 @@
 			rootfs {	reg = <0xa00000 0x7600000>;};
 		};
 	};
+
 };
 
 &mmc0{
@@ -220,6 +232,17 @@
 		hp_det-gpio = <&gpa1 8 GPIO_ACTIVE_HIGH>;
 		hp_pa_shdn-gpio = <&ck_gpa0 20 GPIO_ACTIVE_HIGH>;
 		};
+
+	tmp103: tmp103@70 {
+		compatible = "ti,tmp103";
+		reg = <0x70>;
+		//pinctrl-names = "default";
+		//pinctrl-0 = <&tmp102_pins_default>;
+		//interrupt-parent = <&gpio7>;
+		//interrupts = <16 IRQ_TYPE_LEVEL_LOW>;
+		#thermal-sensor-cells = <0>;
+	};
+
 /*
 	npcp215x@73 {
 		compatible = "npcp215x";
@@ -267,3 +290,4 @@
 	};
 #endif
 };
+

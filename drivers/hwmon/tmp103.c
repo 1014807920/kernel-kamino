@@ -30,6 +30,8 @@
 #include <linux/device.h>
 #include <linux/jiffies.h>
 #include <linux/regmap.h>
+#include <linux/thermal.h>
+#include <linux/of.h>
 
 #define TMP103_TEMP_REG		0x00
 #define TMP103_CONF_REG		0x01
@@ -59,6 +61,20 @@ static inline int tmp103_reg_to_mc(s8 val)
 static inline u8 tmp103_mc_to_reg(int val)
 {
 	return DIV_ROUND_CLOSEST(val, 1000);
+}
+
+static int tmp103_read_temp(void *dev, int *temp)
+{
+	struct regmap *regmap = dev_get_drvdata(dev);
+	unsigned int regval;
+	int ret;
+
+	ret = regmap_read(regmap, TMP103_TEMP_REG, &regval);
+	if (ret < 0)
+		return ret;
+
+	*temp = tmp103_reg_to_mc(regval);
+	return 0;
 }
 
 static ssize_t tmp103_show_temp(struct device *dev,
@@ -123,13 +139,24 @@ static const struct regmap_config tmp103_regmap_config = {
 	.volatile_reg = tmp103_regmap_is_volatile,
 };
 
+static const struct thermal_zone_of_device_ops tmp103_of_thermal_ops = {
+	.get_temp = tmp103_read_temp,
+};
+
 static int tmp103_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
 	struct device *dev = &client->dev;
 	struct device *hwmon_dev;
+	struct thermal_zone_device *tz;
 	struct regmap *regmap;
 	int ret;
+
+	tz = devm_kzalloc(dev, sizeof(*tz), GFP_KERNEL);
+	if (!tz){
+		dev_err(dev, "Fail to devm_kzalloc\n");
+		return -ENOMEM;
+	}
 
 	regmap = devm_regmap_init_i2c(client, &tmp103_regmap_config);
 	if (IS_ERR(regmap)) {
@@ -147,7 +174,19 @@ static int tmp103_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, regmap);
 	hwmon_dev = devm_hwmon_device_register_with_groups(dev, client->name,
 						      regmap, tmp103_groups);
-	return PTR_ERR_OR_ZERO(hwmon_dev);
+	if (IS_ERR(hwmon_dev)) {
+		dev_err(dev, "unable to register hwmon device\n");
+		return PTR_ERR(hwmon_dev);
+	}
+
+	tz = thermal_zone_of_sensor_register(hwmon_dev, 0, hwmon_dev,
+						     &tmp103_of_thermal_ops);
+	if (IS_ERR(tz)){
+		dev_err(dev, "unable to register thermal_zone err=%d\n", tz);
+		tz = NULL;
+	}
+
+	return 0;
 }
 
 #ifdef CONFIG_PM
@@ -168,13 +207,13 @@ static int tmp103_resume(struct device *dev)
 }
 
 static const struct dev_pm_ops tmp103_dev_pm_ops = {
-	.suspend	= tmp103_suspend,
-	.resume		= tmp103_resume,
+	.suspend = tmp103_suspend,
+	.resume  = tmp103_resume,
 };
 
 #define TMP103_DEV_PM_OPS (&tmp103_dev_pm_ops)
 #else
-#define	TMP103_DEV_PM_OPS NULL
+#define TMP103_DEV_PM_OPS NULL
 #endif /* CONFIG_PM */
 
 static const struct i2c_device_id tmp103_id[] = {
@@ -183,10 +222,17 @@ static const struct i2c_device_id tmp103_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, tmp103_id);
 
+static const struct of_device_id tmp103_of_match[] = {
+	{ .compatible = "ti,tmp103" },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, tmp103_of_match);
+
 static struct i2c_driver tmp103_driver = {
 	.driver = {
 		.name	= "tmp103",
 		.pm	= TMP103_DEV_PM_OPS,
+		.of_match_table = of_match_ptr(tmp103_of_match),
 	},
 	.probe		= tmp103_probe,
 	.id_table	= tmp103_id,
@@ -197,3 +243,4 @@ module_i2c_driver(tmp103_driver);
 MODULE_AUTHOR("Heiko Schocher <hs@denx.de>");
 MODULE_DESCRIPTION("Texas Instruments TMP103 temperature sensor driver");
 MODULE_LICENSE("GPL");
+
