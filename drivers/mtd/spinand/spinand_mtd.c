@@ -24,12 +24,15 @@
 enum {
 	NAND_1G_PAGE2K_OOB64 = 0,
 	NAND_2G_PAGE2K_OOB64,
+	NAND_1G_PAGE2K_OOB128,
+	NAND_2G_PAGE2K_OOB128,
 	NAND_4G_PAGE4K_OOB256,
 };
 
 enum {
-	ECC_LAYOUT_DEFAULT_OOB64,
+	ECC_LAYOUT_DEFAULT_OOB64 = 0,
 	ECC_LAYOUT_GD_OOB64,
+	ECC_LAYOUT_GD_OOB128,
 	ECC_LAYOUT_GD_OOB256,
 	ECC_LAYOUT_W25ND_OOB64,
 	ECC_LAYOUT_TC58CV_OOB64,
@@ -40,6 +43,7 @@ enum {
 	ECC_LAYOUT_PN26G_OOB64,
 	ECC_LAYOUT_XT26G_OOB64,
 	ECC_LAYOUT_ZD35X_OOB64,
+	ECC_LAYOUT_FORESEE_OOB64,
 };
 
 static struct nand_ecclayout s_ecclayout[] = {
@@ -75,6 +79,23 @@ static struct nand_ecclayout s_ecclayout[] = {
 			{.offset = 52,	.length = 8},
 		}
 	},
+	[ECC_LAYOUT_GD_OOB128] = {
+		.eccbytes = 64,
+		.eccpos = {
+			64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+			80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+			96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+			112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+		},
+		.oobavail = 48,
+		.oobfree = {
+			{.offset = 4,	.length = 12},
+			{.offset = 20,	.length = 12},
+			{.offset = 36,	.length = 12},
+			{.offset = 52,	.length = 12},
+		}
+	},
+
 	[ECC_LAYOUT_GD_OOB256] = {
 		.eccbytes = 128,
 		.eccpos = {
@@ -162,7 +183,7 @@ static struct nand_ecclayout s_ecclayout[] = {
 		}
 	},
 	[ECC_LAYOUT_F50LXX41LB_OOB64] = {
-		.eccbytes = 28,
+		.eccbytes = 32,
 		.eccpos = {
 			8 , 9 , 10, 11, 12, 13, 14, 15,
 			24, 25, 26, 27, 28, 29, 30, 31,
@@ -227,70 +248,148 @@ static struct nand_ecclayout s_ecclayout[] = {
 			{.offset = 52,	.length = 4},
 		}
 	},
+	[ECC_LAYOUT_FORESEE_OOB64] = {
+		.eccbytes = 32,
+		.eccpos = {
+			8 , 9 , 10, 11, 12, 13, 14, 15,
+			24, 25, 26, 27, 28, 29, 30, 31,
+			40, 41, 42, 43, 44, 45, 46, 47,
+			56, 57, 58, 59, 60, 61, 62, 63,
+		},
+		.oobavail = 30,
+		.oobfree = {
+			{.offset = 2,	.length = 6},
+			{.offset = 16,	.length = 8},
+			{.offset = 32,	.length = 8},
+			{.offset = 48,	.length = 8},
+		}
+	}
 };
+
+/* page info */
+#define PAGE_MAIN_SIZE_2K          2048
+#define PAGE_MAIN_SIZE_4K          4096
+#define PAGE_SPARE_SIZE_64B        64
+#define PAGE_SPARE_SIZE_128B       128
+#define PAGE_SPARE_SIZE_256B       256
+#define PAGE_SIZE_2K_64B           (PAGE_MAIN_SIZE_2K + PAGE_SPARE_SIZE_64B)
+#define PAGE_SIZE_2K_128B          (PAGE_MAIN_SIZE_2K + PAGE_SPARE_SIZE_128B)
+#define PAGE_SIZE_4K_256B          (PAGE_MAIN_SIZE_4K + PAGE_SPARE_SIZE_256B)
+#define PAGE_NUM_PER_BLOCK_64      64
+/* block info */
+#define BLOCK_MAIN_SIZE_128K       (PAGE_MAIN_SIZE_2K * PAGE_NUM_PER_BLOCK_64)
+#define BLOCK_MAIN_SIZE_256K       (PAGE_MAIN_SIZE_2K * PAGE_NUM_PER_BLOCK_64)
+#define BLOCK_SIZE_128K_4K         (PAGE_SIZE_2K_64B * PAGE_NUM_PER_BLOCK_64)
+#define BLOCK_SIZE_128K_8K         (PAGE_SIZE_2K_128B * PAGE_NUM_PER_BLOCK_64)
+#define BLOCK_SIZE_256K_16K        (PAGE_SIZE_4K_256B * PAGE_NUM_PER_BLOCK_64)
+#define BLOCK_NUM_PER_CHIP_1024    1024
+#define BLOCK_NUM_PER_CHIP_2048    2048
+/* nand info */
+#define NAND_MAIN_SIZE_128M        (BLOCK_MAIN_SIZE_128K * BLOCK_NUM_PER_CHIP_1024)
+#define NAND_MAIN_SIZE_256M        (BLOCK_MAIN_SIZE_128K * BLOCK_NUM_PER_CHIP_2048)
+#define NAND_MAIN_SIZE_512M        (BLOCK_MAIN_SIZE_256K * BLOCK_NUM_PER_CHIP_2048)
+#define NAND_SIZE_128M_4M          (BLOCK_SIZE_128K_4K * BLOCK_NUM_PER_CHIP_1024)
+#define NAND_SIZE_128M_8M          (BLOCK_SIZE_128K_8K * BLOCK_NUM_PER_CHIP_1024)
+#define NAND_SIZE_256M_8M          (BLOCK_SIZE_128K_4K * BLOCK_NUM_PER_CHIP_2048)
+#define NAND_SIZE_256M_16M         (BLOCK_SIZE_128K_8K * BLOCK_NUM_PER_CHIP_2048)
+#define NAND_SIZE_512M_32M         (BLOCK_SIZE_256K_16K * BLOCK_NUM_PER_CHIP_2048)
+/* other info */
+#define BLOCK_SHIFT_128K           (17)
+#define BLOCK_SHIFT_256K           (18)
+#define BLOCK_MASK_128K            (BLOCK_MAIN_SIZE_128K - 1)
+#define BLOCK_MASK_256K            (BLOCK_MAIN_SIZE_256K - 1)
+#define PAGE_SHIFT_2K              (11)
+#define PAGE_SHIFT_4K              (12)
+#define PAGE_MASK_2K               (PAGE_MAIN_SIZE_2K - 1)
+#define PAGE_MASK_4K               (PAGE_MAIN_SIZE_4K - 1)
 
 static struct spinand_info s_nand_info[] = {
-	/**
-	 *  0x112c 0x122c 0x132c 0xc8f1 0xf1c8 0xc8d1
-	 *  0xd1c8 0xaaef 0x21C8 0xc298 0x12c2 0xe1a1
-	 */
 	[NAND_1G_PAGE2K_OOB64] = {
-		.nand_size		= 1024 * 64 * 2112,
-		.usable_size		= 1024 * 64 * 2048,
-		.block_size		= 2112*64,
-		.block_main_size	= 2048*64,
-		.block_num_per_chip	= 1024,
-		.page_size		= 2112,
-		.page_main_size		= 2048,
-		.page_spare_size	= 64,
-		.page_num_per_block	= 64,
-		.block_shift		= 17,
-		.block_mask		= 0x1ffff,
-		.page_shift		= 11,
-		.page_mask		= 0x7ff,
+		.nand_size		= NAND_SIZE_128M_4M,
+		.usable_size		= NAND_MAIN_SIZE_128M,
+		.block_size		= BLOCK_SIZE_128K_4K,
+		.block_main_size	= BLOCK_MAIN_SIZE_128K,
+		.block_num_per_chip	= BLOCK_NUM_PER_CHIP_1024,
+		.page_size		= PAGE_SIZE_2K_64B,
+		.page_main_size		= PAGE_MAIN_SIZE_2K,
+		.page_spare_size	= PAGE_SPARE_SIZE_64B,
+		.page_num_per_block	= PAGE_NUM_PER_BLOCK_64,
+		.block_shift		= BLOCK_SHIFT_128K,
+		.block_mask		= BLOCK_MASK_128K,
+		.page_shift		= PAGE_SHIFT_2K,
+		.page_mask		= PAGE_MASK_2K,
 	},
-	[NAND_2G_PAGE2K_OOB64] = { // 0xc8f2
-		.nand_size		= (2048 * 64 * 2112),
-		.usable_size		= (2048 * 64 * 2048),
-		.block_size		= (2112*64),
-		.block_main_size	= (2048*64),
-		.block_num_per_chip	= 2048,
-		.page_size		= 2112,
-		.page_main_size		= 2048,
-		.page_spare_size	= 64,
-		.page_num_per_block	= 64,
-		.block_shift		= 17,
-		.block_mask		= 0x1ffff,
-		.page_shift		= 11,
-		.page_mask		= 0x7ff,
+	[NAND_2G_PAGE2K_OOB64] = {
+		.nand_size		= NAND_SIZE_256M_8M,
+		.usable_size		= NAND_MAIN_SIZE_256M,
+		.block_size		= BLOCK_SIZE_128K_4K,
+		.block_main_size	= BLOCK_MAIN_SIZE_128K,
+		.block_num_per_chip	= BLOCK_NUM_PER_CHIP_2048,
+		.page_size		= PAGE_SIZE_2K_64B,
+		.page_main_size		= PAGE_MAIN_SIZE_2K,
+		.page_spare_size	= PAGE_SPARE_SIZE_64B,
+		.page_num_per_block	= PAGE_NUM_PER_BLOCK_64,
+		.block_shift		= BLOCK_SHIFT_128K,
+		.block_mask		= BLOCK_MASK_128K,
+		.page_shift		= PAGE_SHIFT_2K,
+		.page_mask		= PAGE_MASK_2K,
 	},
-	[NAND_4G_PAGE4K_OOB256] = { // 0xd4c8
-		.nand_size		= (2048 * 64 * 4352),
-		.usable_size		= (2048 * 64 * 4096),
-		.block_size		= (4352*64),
-		.block_main_size	= (4096*64),
-		.block_num_per_chip	= 2048,
-		.page_size		= 4352,
-		.page_main_size		= 4096,
-		.page_spare_size	= 256,
-		.page_num_per_block	= 64,
-		.block_shift		= 18,
-		.block_mask		= 0x3ffff,
-		.page_shift		= 12,
-		.page_mask		= 0xfff,
+	[NAND_1G_PAGE2K_OOB128] = {
+		.nand_size		= NAND_SIZE_128M_8M,
+		.usable_size		= NAND_MAIN_SIZE_128M,
+		.block_size		= BLOCK_SIZE_128K_8K,
+		.block_main_size	= BLOCK_MAIN_SIZE_128K,
+		.block_num_per_chip	= BLOCK_NUM_PER_CHIP_2048,
+		.page_size		= PAGE_SIZE_2K_128B,
+		.page_main_size		= PAGE_MAIN_SIZE_2K,
+		.page_spare_size	= PAGE_SPARE_SIZE_128B,
+		.page_num_per_block	= PAGE_NUM_PER_BLOCK_64,
+		.block_shift		= BLOCK_SHIFT_128K,
+		.block_mask		= BLOCK_MASK_128K,
+		.page_shift		= PAGE_SHIFT_2K,
+		.page_mask		= PAGE_MASK_2K,
+	},
+	[NAND_2G_PAGE2K_OOB128] = {
+		.nand_size		= NAND_SIZE_256M_16M,
+		.usable_size		= NAND_MAIN_SIZE_256M,
+		.block_size		= BLOCK_SIZE_128K_8K,
+		.block_main_size	= BLOCK_MAIN_SIZE_128K,
+		.block_num_per_chip	= BLOCK_NUM_PER_CHIP_2048,
+		.page_size		= PAGE_SIZE_2K_128B,
+		.page_main_size		= PAGE_MAIN_SIZE_2K,
+		.page_spare_size	= PAGE_SPARE_SIZE_128B,
+		.page_num_per_block	= PAGE_NUM_PER_BLOCK_64,
+		.block_shift		= BLOCK_SHIFT_128K,
+		.block_mask		= BLOCK_MASK_128K,
+		.page_shift		= PAGE_SHIFT_2K,
+		.page_mask		= PAGE_MASK_2K,
+	},
+	[NAND_4G_PAGE4K_OOB256] = {
+		.nand_size		= NAND_SIZE_512M_32M,
+		.usable_size		= NAND_MAIN_SIZE_512M,
+		.block_size		= BLOCK_SIZE_256K_16K,
+		.block_main_size	= BLOCK_MAIN_SIZE_256K,
+		.block_num_per_chip	= PAGE_MAIN_SIZE_2K,
+		.page_size		= PAGE_SIZE_4K_256B,
+		.page_main_size		= PAGE_MAIN_SIZE_4K,
+		.page_spare_size	= PAGE_SPARE_SIZE_256B,
+		.page_num_per_block	= PAGE_NUM_PER_BLOCK_64,
+		.block_shift		= BLOCK_SHIFT_256K,
+		.block_mask		= BLOCK_MASK_256K,
+		.page_shift		= PAGE_SHIFT_4K,
+		.page_mask		= PAGE_MASK_4K,
 	},
 };
-
 
 static struct spinand_index s_id_table[] = {
 	/* GD spi nand flash */
-	ID_TABLE_FILL(0xF1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1GQ4UAYIG"),
-	ID_TABLE_FILL(0xD1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1GQ4U"),
-	ID_TABLE_FILL(0xC1C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F1GQ4R"),
-	ID_TABLE_FILL(0xD2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2GQ4U"),
-	ID_TABLE_FILL(0xC2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2GQ4R"),
-	ID_TABLE_FILL(0xF2C8, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_GD_OOB64,	"GD5F2GQ4RAYIG"),
-	ID_TABLE_FILL(0xD4C8, NAND_4G_PAGE4K_OOB256,ECC_LAYOUT_GD_OOB256,	"GD5F4G"),
+	ID_TABLE_FILL(0xF1C8, NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_GD_OOB64,	"GD5F1GQ4UAYIG"),
+	ID_TABLE_FILL(0xF2C8, NAND_2G_PAGE2K_OOB64,  ECC_LAYOUT_GD_OOB64,	"GD5F2GQ4RAYIG"),
+	ID_TABLE_FILL(0xD1C8, NAND_1G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	"GD5F1GQ4U"),
+	ID_TABLE_FILL(0xD2C8, NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	"GD5F2GQ4U"),
+	ID_TABLE_FILL(0xC1C8, NAND_1G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	"GD5F1GQ4R"),
+	ID_TABLE_FILL(0xC2C8, NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	"GD5F2GQ4R"),
+	ID_TABLE_FILL(0xD4C8, NAND_4G_PAGE4K_OOB256, ECC_LAYOUT_GD_OOB256,	"GD5F4G"),
 	/* TOSHIBA spi nand flash */
 	ID_TABLE_FILL(0xC298, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_TC58CV_OOB64,	"TC58CVG053HRA1G"),
 	/* Micron spi nand flash */
@@ -311,6 +410,8 @@ static struct spinand_index s_id_table[] = {
 	ID_TABLE_FILL(0xAAEF, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_W25ND_OOB64,	"W25N01GV"),
 	/* Mxic spi nand flash */
 	ID_TABLE_FILL(0x12C2, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MX35LF_OOB64,	"MX35LF1GE4AB"),
+	/* foresee spi nand flash */
+	ID_TABLE_FILL(0xa1cd, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_FORESEE_OOB64,	"FS35ND01G"),
 	ID_TABLE_FILL(0x0001, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_DEFAULT_OOB64,	"General flash"),
 };
 
@@ -504,17 +605,15 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 		main_left = ops->len;
 		main_offset = page_offset;
 	/* for oob */
-	}else if(ops->oobbuf){
-		oob_num  = (ops->ooblen + info->ecclayout->oobavail -1) /
-						info->ecclayout->oobavail;
+	}
+	if(unlikely(ops->oobbuf)){
+		oobsize = ops->mode == MTD_OPS_AUTO_OOB ?
+			info->ecclayout->oobavail : info->page_spare_size;
+		oob_num = (ops->ooblen + oobsize -1) / oobsize;
 		oob_left = ops->ooblen;
-		oobsize  = ops->mode == MTD_OPS_AUTO_OOB ?
-				info->ecclayout->oobavail : info->page_spare_size;
 
 		if(ops->ooboffs >= oobsize)
 			return -EINVAL;
-	}else{
-		return -EINVAL;
 	}
 
 	while (count < page_num || count < oob_num){
@@ -640,17 +739,16 @@ static int spinand_write_ops(struct mtd_info *mtd, loff_t to, struct mtd_oob_ops
 		main_left = ops->len;
 		main_offset = page_offset;
 
-	}else if(ops->oobbuf){
-		oob_num = (ops->ooblen + info->ecclayout->oobavail -1) /
-						info->ecclayout->oobavail;
-		oob_left = ops->ooblen;
+	}
+
+	if(unlikely(ops->oobbuf)){
 		oobsize = ops->mode == MTD_OPS_AUTO_OOB ?
 			info->ecclayout->oobavail : info->page_spare_size;
+		oob_num = (ops->ooblen + oobsize -1) / oobsize;
+		oob_left = ops->ooblen;
 
 		if((ops->ooblen + ops->ooboffs) > oobsize || ops->ooboffs >= oobsize)
 			return -EINVAL;
-	}else{
-		return -EINVAL;
 	}
 
 	while (count < page_num || count < oob_num){
