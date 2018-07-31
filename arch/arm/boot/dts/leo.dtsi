@@ -984,6 +984,7 @@
 			compatible  = "NationalChip,Alsa-Audio";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			channels = <2>;
 			reg = <0x01200000 0xf4>,
 				<0x0030a1a0 0xc>,
 				<0x0030a274 0x8>;

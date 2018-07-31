@@ -55,8 +55,17 @@
 		autorepeat;
 
 		key1:key1{
+			key_code  = <KEY_MUTE>;
+			key_gpio = <23>;
+		};
+
+        key2:key2{
+			key_code  = <KEY_VOLUMEDOWN>;
+			key_gpio = <24>;
+		};
+        key3:key3{
 			key_code  = <KEY_VOLUMEUP>;
-			key_gpio = <0>;
+			key_gpio = <25>;
 		};
 	};
 
@@ -65,19 +74,11 @@
 		reg = <0x30501c 0x90>;
 		autorepeat;
 
-        key5:key2{
-			key_code  = <KEY_VOLUMEDOWN>;
-			key_gpio = <12>;
-		};
-        key6:key3{
-			key_code  = <KEY_MUTE>;
-			key_gpio = <13>;
-		};
-        key7:key4{
+        key4:key4{
 			key_code  = <KEY_HOME>;
-			key_gpio = <14>;
+			key_gpio = <0>;
 		};
-	};
+    };
 
 	gxasoc-machine {
 		name = "gxasoc-machine";
@@ -160,6 +161,11 @@
 	};
 };
 
+&mmc0{
+    non-removable;
+    keep-power-in-suspend;
+};
+
 &mmc1{
-	status = "disabled";
+       status = "disabled";
 };
