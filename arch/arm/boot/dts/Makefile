@@ -562,12 +562,6 @@ dtb-$(CONFIG_ARCH_SOCFPGA) += \
 	socfpga_cyclone5_sockit.dtb \
 	socfpga_cyclone5_socrates.dtb \
 	socfpga_vt.dtb
-dtb-$(CONFIG_ARCH_LEO_MPW) += \
-	leo_mpw_dev_1v.dtb \
-	leo_mpw_dev_2v.dtb \
-	leo_mpw_evb_1v.dtb \
-	leo_mpw_ssd_1v.dtb \
-	leo_mpw_toy_1v.dtb
 
 dtb-$(CONFIG_ARCH_LEO) += \
 	leo_fpga_1v.dtb       \
