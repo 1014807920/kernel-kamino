@@ -29,9 +29,11 @@
 #define STATUS_E_FAIL			(1 << 2)
 #define STATUS_P_FAIL_MASK		(0x08  )
 #define STATUS_P_FAIL			(1 << 3)
-#define STATUS_ECC_MASK			(0x30  )
+#define STATUS_COMMON_ECC_MASK		(0x30  )
+#define STATUS_FORESEE_ECC_MASK		(0x70  )
 #define STATUS_ECC_1BIT_CORRECTED	(1 << 4)
-#define STATUS_ECC_ERROR		(2 << 4)
+#define STATUS_COMMON_ECC_ERROR		(2 << 4)
+#define STATUS_FORESEE_ECC_ERROR	(7 << 4)
 #define STATUS_ECC_RESERVED		(3 << 4)
 
 /*ECC enable defines*/

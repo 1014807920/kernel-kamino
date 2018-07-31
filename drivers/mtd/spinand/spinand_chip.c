@@ -170,11 +170,20 @@ static int spinand_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u
 	spinand_read_page_to_cache(chip, page_id);
 	spinand_wait_ready(chip, status);
 
-	if((status & STATUS_ECC_MASK) == STATUS_ECC_ERROR){
-		dev_dbg(&chip->spi->dev, "spi nand page read error, "
-			"status = 0x%x, page_id = %d\n", status, page_id);
-		return -status;
+	if (chip->info->id != 0xa1cd){
+		if((status & STATUS_COMMON_ECC_MASK) == STATUS_COMMON_ECC_ERROR){
+			dev_dbg(&chip->spi->dev, "spi nand page read error, "
+				"status = 0x%x, page_id = %d\n", status, page_id);
+			return -status;
+		}
+	}else{  // 处理Foresee spi nand ecc 错误标志位特异性
+		if((status & STATUS_FORESEE_ECC_MASK) == STATUS_FORESEE_ECC_ERROR){
+			dev_dbg(&chip->spi->dev, "spi nand page read error, "
+				"status = 0x%x, page_id = %d\n", status, page_id);
+			return -status;
+		}
 	}
+
 
 	spinand_read_from_cache(chip, offs, len, rbuf);
 
