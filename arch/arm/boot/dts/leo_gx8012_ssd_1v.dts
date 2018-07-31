@@ -22,8 +22,8 @@
 #include "leo.dtsi"
 
 / {
-	model = "nationalchip leo_gx8010_mkt_1v SoC";
-	compatible = "nationalchip,leo_fpga_1v", "nationalchip,leo";
+	model = "nationalchip leo_gx8012_ssd_1v SoC";
+	compatible = "nationalchip,leo_gx8012_ssd_1v", "nationalchip,leo";
 
 	chosen {
 		bootargs = "earlyprintk";
@@ -53,76 +53,46 @@
 		compatible = "nationalchip,LEO-keypad";
 		reg = <0x230501c 0x90>;
 		autorepeat;
+
+        key5:key2{
+			key_code  = <KEY_VOLUMEDOWN>;
+			key_gpio = <23>;
+		};
+        key6:key3{
+			key_code  = <KEY_MUTE>;
+			key_gpio = <24>;
+		};
+        key7:key4{
+			key_code  = <KEY_HOME>;
+			key_gpio = <25>;
+		};
 	};
 
 	csky_key:csky_key@0x305004{
 		compatible = "nationalchip,LEO-keypad";
 		reg = <0x30501c 0x90>;
 		autorepeat;
-        key6:key6{
-			key_code  = <KEY_POWER>;
-			key_gpio = <20>;
+
+		key1:key1{
+			key_code  = <KEY_VOLUMEUP>;
+			key_gpio = <0>;
 		};
 	};
 
-	touchkey {
-		compatible = "nationalchip,mk-touchkey";
-		status = "okay";
-		ck-gpio = <&ck_gpa0 30 GPIO_ACTIVE_LOW>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		tsm_i2c {
-			 compatible = "nationalchip, tsm12_i2c";
-			 i2c_bus = <2>;
-			 interrupt = <6>;
-			 reg = <0x78>;
-			 status = "okay";
-			 };
+    uart1_control{
+		compatible = "nationalchip,LEO_uart_control";
+		reg = <0x02308000 0x1000>;
+		val = <0x01>;
+		cts-gpio = <&gpa0 9 GPIO_ACTIVE_HIGH>;
+		rts-gpio = <&gpa0 10 GPIO_ACTIVE_HIGH>;
 	};
-
-	gxasoc-machine {
-		name = "gxasoc-machine";
-		compatible = "NationalChip,ASoc-Machine";
-		num_codecs = <1>;
-		codec-name     = "gxasoc-lodac";
-		codec-dai-name = "gxasoc-lodac-dai";
-		platform-name  = "gxasoc-platform";
-		cup-dai-name   = "gxasoc-platform-dai";
-		status = "okay";
-	};
-
-	gxasoc-platform {
-		dev-name   = "gxasoc-platform";
-		compatible = "NationalChip,ASoc-Platform";
-		reg = <0x01200000 0xf4>;
-		reg-names = "gxasoc.aout.regs";
-		status = "okay";
-	};
-
-	gxasoc-codec {
-		dev-name   = "gxasoc-lodac";
-		compatible = "NationalChip,ASoc-Lodac";
-		reg = <0x0030a1a0 0xc>;
-		reg-names = "gxasoc.lodac.regs";
-		status = "okay";
-	};
-
-	gxasoc-platform_dai {
-		dev-name   = "gxasoc-platform-dai";
-		compatible = "NationalChip,ASoc-Platform_Dai";
-		status = "okay";
-	};
-};
-
-&ck_i2c1{
-	status = "okay";
 };
 
 &spi0{
 	status = "okay";
 
 	/* spi nor flash */
-	/*M25P@0 {
+	M25P@0 {
 		compatible = "jedec,spi-nor";
 		spi-max-frequency = <85000000>;
 		reg = <1>;
@@ -140,7 +110,7 @@
 			kernel_dtb {	reg = <0x280000 0x80000>;  };
 			kernel {	reg = <0x300000 0x500000>; };
 		};
-	};*/
+	};
 
 	/* spi nand flash */
 	spinand_mcu@0 {
@@ -165,7 +135,11 @@
 	};
 };
 
-&mmc0{
+&mmc1{
 	status = "disabled";
 };
 
+&mmc0{
+    non-removable;
+    keep-power-in-suspend;
+};

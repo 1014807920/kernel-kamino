@@ -77,7 +77,7 @@
 			key_gpio = <9>;
 		};
 	};
-	urat1_control{
+	uart1_control{
 		compatible = "nationalchip,LEO_uart_control";
 		reg = <0x02308000 0x1000>;
 		val = <0x01>;
