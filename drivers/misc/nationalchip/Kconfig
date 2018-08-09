@@ -16,6 +16,12 @@ config NATIONALCHIP_UART_MCTRL
 	help
 	  This driver allows you to use gpio to simulate uart flow control.
 
+config NATIONALCHIP_OTP
+	tristate "nationalchip otp"
+	default	n
+	help
+	  This driver allows you to use otp.
+
 menuconfig NATIONALCHIP_GXAVDEV
 	tristate "nationalchip gxavdev modules select"
 	default	n

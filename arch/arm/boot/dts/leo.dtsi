@@ -1096,5 +1096,18 @@
 			interrupt-names = "gx.bt1120.irqs";
 			status = "disabled";
 		};
+
+		multicore_lock: multicore_lock@0x0030a2f0 {
+			compatible = "NationalChip,multicore_lock";
+			reg = <0x0030a2f0 0x04>,
+				<0x0030a2f4 0x04>;
+			reg-names = "mlock.mcu_lock",
+					"mlock.cpu_lock";
+		};
+
+		otp{
+			compatible = "nationalchip,leo_otp";
+			reg = <0x00a80000 0x11af>, <0x0030a018 0x04>, <0x011000c8 0x04>;
+		};
 	};
 };

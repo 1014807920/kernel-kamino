@@ -1,0 +1,8 @@
+menu "MultiCore Lock Support"
+
+config MULTICORE_LOCK
+	bool "Enable support for NationChip Leo MultiCore Lock"
+	default y
+	depends on ARCH_LEO
+
+endmenu
