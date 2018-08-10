@@ -23,6 +23,14 @@
 #include <linux/leds_pwm.h>
 #include <linux/slab.h>
 #include <linux/workqueue.h>
+#include <linux/delay.h>
+#include <linux/timer.h>
+#include <linux/jiffies.h>
+
+struct timer_list prob_timer;
+#define DEFAULT_DELAY_MS 6000
+
+struct device *led_dev;
 
 struct led_pwm_data {
 	struct led_classdev	cdev;
@@ -55,7 +63,6 @@ static void led_pwm_work(struct work_struct *work)
 {
 	struct led_pwm_data *led_dat =
 		container_of(work, struct led_pwm_data, work);
-
 	__led_pwm_set(led_dat);
 }
 
@@ -93,6 +100,9 @@ static void led_pwm_cleanup(struct led_pwm_priv *priv)
 		led_classdev_unregister(&priv->leds[priv->num_leds].cdev);
 		if (priv->leds[priv->num_leds].can_sleep)
 			cancel_work_sync(&priv->leds[priv->num_leds].work);
+
+		//struct device *dev = container_of(&priv, struct device, driver_data);
+		devm_pwm_put(led_dev, priv->leds[priv->num_leds].pwm);
 	}
 }
 
@@ -168,6 +178,11 @@ static int led_pwm_create_of(struct device *dev, struct led_pwm_priv *priv)
 	return ret;
 }
 
+static void prob_timer_fun(unsigned long data)
+{
+	led_pwm_cleanup(data);
+}
+
 static int led_pwm_probe(struct platform_device *pdev)
 {
 	struct led_pwm_platform_data *pdata = dev_get_platdata(&pdev->dev);
@@ -205,6 +220,15 @@ static int led_pwm_probe(struct platform_device *pdev)
 	}
 
 	platform_set_drvdata(pdev, priv);
+	led_dev = &pdev->dev;
+
+	unsigned int msecs_tmp;
+	if(of_property_read_s32((&pdev->dev)->of_node, "default-keep-ms", &msecs_tmp) != 0){
+		msecs_tmp = DEFAULT_DELAY_MS;
+	}
+
+	setup_timer(&prob_timer,  prob_timer_fun,  (unsigned long)priv);
+	mod_timer(&prob_timer,  jiffies+msecs_to_jiffies(msecs_tmp));
 
 	return 0;
 }
@@ -214,7 +238,7 @@ static int led_pwm_remove(struct platform_device *pdev)
 	struct led_pwm_priv *priv = platform_get_drvdata(pdev);
 
 	led_pwm_cleanup(priv);
-
+	del_timer(&prob_timer);
 	return 0;
 }
 
