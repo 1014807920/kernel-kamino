@@ -18,6 +18,7 @@ config NATIONALCHIP_UART_MCTRL
 
 config NATIONALCHIP_OTP
 	tristate "nationalchip otp"
+	select MULTICORE_LOCK
 	default	n
 	help
 	  This driver allows you to use otp.
