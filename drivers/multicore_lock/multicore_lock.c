@@ -41,7 +41,7 @@ int multicore_lock(MULTICORE_LOCK lock)
 	tmp = readl(mlock.cpu_lock) | lock;
 	writel(tmp, mlock.cpu_lock);
 
-	if (readl(mlock.mcu_lock) & lock) {
+	while (readl(mlock.mcu_lock) & lock) {
 		tmp = readl(mlock.cpu_lock) & ~lock;
 		writel(tmp, mlock.cpu_lock);
 
