@@ -44,8 +44,18 @@ struct led_pwm_data {
 
 struct led_pwm_priv {
 	int num_leds;
+#if defined(CONFIG_LEDS_OTA)
+    struct work_struct ota_light_work;
+#endif
 	struct led_pwm_data leds[0];
 };
+
+#if defined(CONFIG_LEDS_OTA)
+static struct led_pwm_priv *g_priv;
+static int ota_light_start = 0;
+static int ota_light_end = 0;
+static struct kobject *ota_light_kobj;
+#endif
 
 static void __led_pwm_set(struct led_pwm_data *led_dat)
 {
@@ -180,8 +190,104 @@ static int led_pwm_create_of(struct device *dev, struct led_pwm_priv *priv)
 
 static void prob_timer_fun(unsigned long data)
 {
+#if !defined(CONFIG_LEDS_OTA)
 	led_pwm_cleanup(data);
+#endif
 }
+
+#if defined(CONFIG_LEDS_OTA)
+static void ota_light_workfunc(struct work_struct *work)
+{
+    int count = 0;
+    if(ota_light_start){
+        for (count = 0;count < 4;count++)
+                led_pwm_set(&g_priv->leds[count].cdev, 128);
+
+        while(ota_light_start) {
+            for (count = 0;count < 4;count++) {
+                led_pwm_set(&g_priv->leds[count].cdev, 255);
+                msleep(200);
+                led_pwm_set(&g_priv->leds[count].cdev, 128);
+                msleep(200);
+            }
+            if (!ota_light_start || ota_light_end)
+                break;
+        }
+    }
+
+    if (ota_light_end) {
+        for (count = 0;count < 4;count++)
+            led_pwm_set(&g_priv->leds[count].cdev, 255);
+        msleep(1000);
+        for (count = 0;count < 4;count++)
+            led_pwm_set(&g_priv->leds[count].cdev, 0);
+    }
+}
+
+static ssize_t ota_light_start_show(struct kobject *kobj, struct kobj_attribute *attr,
+        char *buf)
+{
+    return sprintf(buf, "%d\n", ota_light_start);
+}
+
+static ssize_t ota_light_start_store(struct kobject *kobj, struct kobj_attribute *attr,
+        const char *buf, size_t count)
+{
+    char *after;
+    unsigned long status = simple_strtoul(buf, &after, 10);
+
+    ota_light_start = (int) status;
+    if (ota_light_start) {
+        ota_light_end = 0;
+        schedule_work(&g_priv->ota_light_work);
+    }
+
+    return count;
+}
+
+static ssize_t ota_light_end_show(struct kobject *kobj, struct kobj_attribute *attr,
+        char *buf)
+{
+    return sprintf(buf, "%d\n", ota_light_end);
+}
+
+static ssize_t ota_light_end_store(struct kobject *kobj, struct kobj_attribute *attr,
+        const char *buf, size_t count)
+{
+    char *after;
+    unsigned long status = simple_strtoul(buf, &after, 10);
+
+    ota_light_end = (int) status;
+    if (ota_light_end) {
+        ota_light_start = 0;
+        schedule_work(&g_priv->ota_light_work);
+    }
+
+    return count;
+}
+
+struct kobj_attribute ota_light_start_attr = {
+    .attr = {"ota_start", 0660},
+    .show = &ota_light_start_show,
+    .store = &ota_light_start_store,
+};
+
+struct kobj_attribute ota_light_end_attr = {
+    .attr = {"ota_end", 0660},
+    .show = &ota_light_end_show,
+    .store = &ota_light_end_store,
+};
+
+static struct attribute *ota_light_attr[] = {
+    &ota_light_start_attr.attr,
+    &ota_light_end_attr.attr,
+    NULL,
+};
+
+static struct attribute_group ota_light_attr_group = {
+    .attrs = ota_light_attr,
+};
+#endif
 
 static int led_pwm_probe(struct platform_device *pdev)
 {
@@ -227,6 +333,15 @@ static int led_pwm_probe(struct platform_device *pdev)
 		msecs_tmp = DEFAULT_DELAY_MS;
 	}
 
+#if defined(CONFIG_LEDS_OTA)
+    g_priv = priv;
+    ota_light_kobj = kobject_create_and_add("ota_light", NULL);
+    if (ota_light_kobj) {
+        ret = sysfs_create_group(ota_light_kobj, &ota_light_attr_group);
+    }
+    INIT_WORK(&priv->ota_light_work, ota_light_workfunc);
+#endif
+
 	setup_timer(&prob_timer,  prob_timer_fun,  (unsigned long)priv);
 	mod_timer(&prob_timer,  jiffies+msecs_to_jiffies(msecs_tmp));
 
@@ -239,6 +354,7 @@ static int led_pwm_remove(struct platform_device *pdev)
 
 	led_pwm_cleanup(priv);
 	del_timer(&prob_timer);
+
 	return 0;
 }
 
