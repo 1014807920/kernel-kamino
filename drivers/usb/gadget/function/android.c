@@ -1115,6 +1115,13 @@ static struct device_attribute *android_usb_attributes[] = {
 
 /*-------------------------------------------------------------------------*/
 /* Composite driver */
+static char i_serial[32] = {0};
+static int __init setup_android_get_sn(char *str)
+{
+    strncpy(i_serial, str, sizeof(i_serial) - 1);
+}
+
+__setup("serialno=", setup_android_get_sn);
 
 static int android_bind_config(struct usb_configuration *c)
 {
@@ -1180,6 +1187,9 @@ static int android_bind(struct usb_composite_dev *cdev)
     /* 16bytes is enough for serial number*/
 	for (i = 0; i < min(sizeof(uuid.b)/2, sizeof(serial_string)/2 - 1); i++)
 		sprintf (&serial_string[i*2], "%02x", uuid.b[i]);
+
+    if((i_serial != NULL) && (strlen(i_serial) != 0))
+        strncpy(serial_string, i_serial, sizeof(serial_string) - 1);
 
 	id = usb_string_id(cdev);
 	if (id < 0)
