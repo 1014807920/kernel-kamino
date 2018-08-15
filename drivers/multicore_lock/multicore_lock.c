@@ -33,6 +33,25 @@ static int __init multicore_lock_init(void)
 	return 0;
 }
 
+int multicore_trylock(MULTICORE_LOCK lock)
+{
+	int ret = 0;
+	unsigned int tmp = 0;
+
+	mutex_lock(&multi_lock);
+	tmp = readl(mlock.cpu_lock) | lock;
+	writel(tmp, mlock.cpu_lock);
+
+	if (readl(mlock.mcu_lock) & lock) {
+		tmp = readl(mlock.cpu_lock) & ~lock;
+		writel(tmp, mlock.cpu_lock);
+		ret = -1;
+	}
+	mutex_unlock(&multi_lock);
+
+	return ret;
+}
+
 int multicore_lock(MULTICORE_LOCK lock)
 {
 	unsigned int tmp = 0;

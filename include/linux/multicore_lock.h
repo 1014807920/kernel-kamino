@@ -5,6 +5,7 @@ typedef enum {
 	MULTICORE_LOCK_OTP = (1 << 0),
 } MULTICORE_LOCK;
 
+int multicore_trylock(MULTICORE_LOCK lock);
 int multicore_lock(MULTICORE_LOCK lock);
 int multicore_unlock(MULTICORE_LOCK lock);
 
