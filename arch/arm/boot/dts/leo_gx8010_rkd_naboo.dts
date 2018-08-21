@@ -135,9 +135,9 @@
 	gxasoc-machine {
 		name = "gxasoc-machine";
 		compatible = "NationalChip,ASoc-Machine";
-		num_codecs = <2>;
-		codec-name     = "gxasoc-lodac", "npcp215x";
-		codec-dai-name = "gxasoc-lodac-dai", "npcp215x-voice";
+		num_codecs = <1>;
+		codec-name     = "npcp215x";
+		codec-dai-name = "npcp215x-voice";
 		platform-name  = "gxasoc-platform";
 		cup-dai-name   = "gxasoc-platform-dai";
 		status = "okay";
@@ -156,7 +156,7 @@
 		compatible = "NationalChip,ASoc-Lodac";
 		reg = <0x0030a1a0 0xc>;
 		reg-names = "gxasoc.lodac.regs";
-		status = "okay";
+		status = "disabled";
 	};
 
 	gxasoc-platform_dai {
