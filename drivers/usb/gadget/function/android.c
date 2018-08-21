@@ -1115,10 +1115,14 @@ static struct device_attribute *android_usb_attributes[] = {
 
 /*-------------------------------------------------------------------------*/
 /* Composite driver */
-static char i_serial[32] = {0};
+static char i_serial[32] = "";
+#define SN_LEN 16
 static int __init setup_android_get_sn(char *str)
 {
+    if (strlen(str) > SN_LEN)
+        return -1;
     strncpy(i_serial, str, sizeof(i_serial) - 1);
+    return 0;
 }
 
 __setup("serialno=", setup_android_get_sn);
