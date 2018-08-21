@@ -1151,8 +1151,6 @@ static int android_bind(struct usb_composite_dev *cdev)
 	struct android_dev *dev = _android_dev;
 	struct usb_gadget	*gadget = cdev->gadget;
 	int			id, ret;
-	int i;
-	uuid_le uuid;
 
 	/*
 	 * Start disconnected. Userspace will connect the gadget once
@@ -1179,7 +1177,6 @@ static int android_bind(struct usb_composite_dev *cdev)
 	strings_dev[STRING_PRODUCT_IDX].id = id;
 	device_desc.iProduct = id;
 
-	uuid_le_gen(&uuid);
 
 	memset (manufacturer_string, 0, sizeof(manufacturer_string));
 	memset (product_string, 0, sizeof(product_string));
@@ -1188,9 +1185,7 @@ static int android_bind(struct usb_composite_dev *cdev)
 	/* Default strings - should be updated by userspace */
 	strncpy(manufacturer_string, "Android", sizeof(manufacturer_string)-1);
 	strncpy(product_string, "Android", sizeof(product_string) - 1);
-    /* 16bytes is enough for serial number*/
-	for (i = 0; i < min(sizeof(uuid.b)/2, sizeof(serial_string)/2 - 1); i++)
-		sprintf (&serial_string[i*2], "%02x", uuid.b[i]);
+	strncpy(serial_string, "0123456789ABCDEF", sizeof(serial_string) - 1);
 
     if((i_serial != NULL) && (strlen(i_serial) != 0))
         strncpy(serial_string, i_serial, sizeof(serial_string) - 1);
