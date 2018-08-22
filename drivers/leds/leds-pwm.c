@@ -204,11 +204,12 @@ static void ota_light_workfunc(struct work_struct *work)
                 led_pwm_set(&g_priv->leds[count].cdev, 128);
 
         while(ota_light_start) {
-            for (count = 0;count < 4;count++) {
-                led_pwm_set(&g_priv->leds[count].cdev, 255);
-                msleep(200);
-                led_pwm_set(&g_priv->leds[count].cdev, 128);
-                msleep(200);
+            for (count = 4;count > 0;count--) {
+                led_pwm_set(&g_priv->leds[count % 4].cdev, 255);
+                led_pwm_set(&g_priv->leds[(count - 1) % 4].cdev, 192);
+                msleep(220);
+                led_pwm_set(&g_priv->leds[count % 4].cdev, 128);
+                led_pwm_set(&g_priv->leds[(count - 1) % 4].cdev, 128);
             }
             if (!ota_light_start || ota_light_end)
                 break;
