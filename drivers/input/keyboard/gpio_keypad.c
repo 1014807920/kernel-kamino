@@ -69,7 +69,7 @@ struct kp {
 	struct device *config_dev;
 	struct gpio_key *keys;
 	int key_num;
-	struct work_struct work_update;
+	struct delayed_work work_update;
 };
 
 static struct kp *gp_kp;
@@ -112,11 +112,12 @@ static void kp_work(struct kp *kp)
 	}
 }
 
-static void update_work_func(struct work_struct *work)
+static void update_work_func(struct delayed_work *work)
 {
 	struct kp *kp_data = container_of(work, struct kp, work_update);
 
 	kp_work(kp_data);
+	schedule_delayed_work(&(kp_data->work_update), msecs_to_jiffies(25));
 }
 
 /*
@@ -152,7 +153,7 @@ static irqreturn_t kp_isr(int irq,  void *data)
 {
 	struct kp *kp_data = (struct kp *)data;
 
-	schedule_work(&(kp_data->work_update));
+	//schedule_work(&(kp_data->work_update));
 
 	/* if (!deep_suspend_flag)
 	 *	clr_pwr_key();
@@ -165,8 +166,8 @@ void kp_timer_sr(unsigned long data)
 {
 	struct kp *kp_data = (struct kp *)data;
 
-	schedule_work(&(kp_data->work_update));
-	mod_timer(&kp_data->timer, jiffies+msecs_to_jiffies(25));
+	//schedule_work(&(kp_data->work_update));
+	//mod_timer(&kp_data->timer, jiffies+msecs_to_jiffies(25));
 }
 #endif
 static int gpio_key_config_open(struct inode *inode,  struct file *file)
@@ -356,7 +357,7 @@ static int gpio_key_probe(struct platform_device *pdev)
 	gp_kp = kp;
 	platform_set_drvdata(pdev,  pdata);
 	kp->input = input_dev;
-	INIT_WORK(&(kp->work_update),  update_work_func);
+	INIT_DELAYED_WORK(&(kp->work_update),  update_work_func);
 #ifdef USE_IRQ
 	if (request_irq(irq_keyup, kp_isr, IRQF_DISABLED,
 			 "irq_keyup",  kp)) {
@@ -376,9 +377,11 @@ static int gpio_key_probe(struct platform_device *pdev)
 		goto get_key_param_failed;
 	}
 #else
-	dev_info(&pdev->dev, "start setup_timer");
-	setup_timer(&kp->timer,  kp_timer_sr,  (unsigned long) kp);
-	mod_timer(&kp->timer,  jiffies+msecs_to_jiffies(100));
+	//dev_info(&pdev->dev, "start setup_timer");
+	//setup_timer(&kp->timer,  kp_timer_sr,  (unsigned long) kp);
+	//mod_timer(&kp->timer,  jiffies+msecs_to_jiffies(100));
+	dev_info(&pdev->dev, "start schedule_delayed_work\n");
+	schedule_delayed_work(&(kp->work_update), msecs_to_jiffies(100));
 #endif
 	/* setup input device */
 	set_bit(EV_KEY,  input_dev->evbit);
