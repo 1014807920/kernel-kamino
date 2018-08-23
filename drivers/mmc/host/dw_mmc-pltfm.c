@@ -22,9 +22,13 @@
 #include <linux/mmc/dw_mmc.h>
 #include <linux/of.h>
 #include <linux/clk.h>
+#include <linux/delay.h>
+#include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
 
 #include "dw_mmc.h"
 #include "dw_mmc-pltfm.h"
+struct gpio_desc *wlan_on_desc =NULL;
 
 static void dw_mci_pltfm_prepare_command(struct dw_mci *host, u32 *cmdr)
 {
@@ -77,13 +81,24 @@ EXPORT_SYMBOL_GPL(dw_mci_pltfm_register);
 static int dw_mci_pltfm_suspend(struct device *dev)
 {
 	struct dw_mci *host = dev_get_drvdata(dev);
-
+    printk("####%s... ",__func__);
+    if (wlan_on_desc){
+        gpiod_set_value(wlan_on_desc, 1);
+        printk("####%s... wlan_on=%d",__func__,gpiod_get_value(wlan_on_desc));
+    }
 	return dw_mci_suspend(host);
 }
 
 static int dw_mci_pltfm_resume(struct device *dev)
 {
 	struct dw_mci *host = dev_get_drvdata(dev);
+    printk("####%s... ",__func__);
+    if (wlan_on_desc){
+        gpiod_set_value(wlan_on_desc, 1);
+        mdelay(2);
+        gpiod_set_value(wlan_on_desc, 1);
+        printk("####%s... wlan_on=%d",__func__,gpiod_get_value(wlan_on_desc));
+    }
 
 	return dw_mci_resume(host);
 }
@@ -111,6 +126,20 @@ static int dw_mci_pltfm_probe(struct platform_device *pdev)
 		match = of_match_node(dw_mci_pltfm_match, pdev->dev.of_node);
 		drv_data = match->data;
 	}
+    wlan_on_desc = devm_gpiod_get(&pdev->dev, "wlan_on", GPIOD_OUT_HIGH);
+    if (IS_ERR(wlan_on_desc)) {
+		dev_err(&pdev->dev, "######unable to get gpio_wlan_on\n");
+		wlan_on_desc = NULL;
+	}
+    if (wlan_on_desc){
+	gpiod_set_value(wlan_on_desc, 1);
+	mdelay(20);
+        gpiod_set_value(wlan_on_desc, 0);
+        printk("####%s... wlan_on=%d\n",__func__,gpiod_get_value(wlan_on_desc));
+        mdelay(20);
+        gpiod_set_value(wlan_on_desc, 1);
+        printk("####%s... wlan_on=%d\n",__func__,gpiod_get_value(wlan_on_desc));
+    }
 
 	return dw_mci_pltfm_register(pdev, drv_data);
 }
