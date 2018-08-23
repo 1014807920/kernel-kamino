@@ -28,7 +28,7 @@
 #include "spinand.h"
 
 #define DRIVER_NAME	"SPINAND"
-
+#define PAGES_PER_BLOCK            64
 #define spinand_read_page_to_cache(_chip, _pid) do{\
 	struct spinand_cmd _cmd = {\
 		.cmd_len = 4,\
@@ -167,10 +167,16 @@ static int spinand_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u
 {
 	u8 status = 0;
 
+	//针对Dosilicon的DS35Q2GA做特殊处理,DS35Q2GA只有一个die,每个die有两个plane.
+	//当block number为奇数,选择另外一个plane.
+	if((chip->info->id == 0x72e5) && ((page_id / PAGES_PER_BLOCK) % 2)){
+		offs |= (0x1 << 12);
+	}
+
 	spinand_read_page_to_cache(chip, page_id);
 	spinand_wait_ready(chip, status);
 
-	if (chip->info->id != 0xa1cd){
+	if (((chip->info->id)&0xff) != 0xcd){
 		if((status & STATUS_COMMON_ECC_MASK) == STATUS_COMMON_ECC_ERROR){
 			dev_dbg(&chip->spi->dev, "spi nand page read error, "
 				"status = 0x%x, page_id = %d\n", status, page_id);
@@ -193,6 +199,12 @@ static int spinand_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u
 static int spinand_program_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* wbuf)
 {
 	u8 status;
+
+	//针对Dosilicon的DS35Q2GA做特殊处理,DS35Q2GA只有一个die,每个die有两个plane.
+	//当block number为奇数,选择另外一个plane.
+	if((chip->info->id == 0x72e5) && ((page_id / PAGES_PER_BLOCK) % 2)){
+		offs |= (0x1 << 12);
+	}
 
 	spinand_write_enable(chip);
 	spinand_program_data_to_cache(chip, offs, len, wbuf);

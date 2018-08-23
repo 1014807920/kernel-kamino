@@ -845,6 +845,12 @@ static const struct flash_info spi_nor_ids[] = {
 	{ "cat25c09", CAT25_INFO( 128, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "cat25c17", CAT25_INFO( 256, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "cat25128", CAT25_INFO(2048, 8, 64, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+
+	/* 芯天下 -- xt25f "blocks" are 32/64K, "sectors" are 4KB */
+	{ "xt25f04b", INFO(0x0b4013, 0, 4 * 1024,  128,  SECT_4K) },
+	{ "xt25f08b", INFO(0x0b4014, 0, 4 * 1024,  256,  SECT_4K) },
+	{ "xt25f16b", INFO(0x0b4015, 0, 4 * 1024,  512,  SECT_4K) },
+	{ "xt25f32b", INFO(0x0b4016, 0, 4 * 1024, 1024,  SECT_4K) },
 	{ },
 };
 
