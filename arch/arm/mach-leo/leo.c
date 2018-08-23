@@ -81,6 +81,8 @@ static void leo_restart(enum reboot_mode mode, const char *cmd)
 	u32 tmp = 0;
 	struct gx_pm *pm = gx_pm_get();
 
+	printk("leo restart\n");
+
 	/* Set reboot mode */
 	writel(RESET_REBOOT, pm->cpu_int_msg_flag);
 
