@@ -228,6 +228,12 @@ static inline bool aout_cpu_axi_get_status(struct aout_reg *reg)
 	return (REG_GET_BIT(&(reg->INT), 20))?true:false;
 }
 
+static inline void aout_cold_reset(unsigned int *rst_reg)
+{
+	REG_SET_BIT(rst_reg, 1);
+	REG_CLR_BIT(rst_reg, 1);
+}
+
 static inline void aout_cpu_set_reset_enable(struct aout_reg *reg, bool enable)
 {
 	if (enable)

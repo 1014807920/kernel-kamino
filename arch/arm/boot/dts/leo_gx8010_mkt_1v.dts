@@ -94,8 +94,10 @@
 	gxasoc-platform {
 		dev-name   = "gxasoc-platform";
 		compatible = "NationalChip,ASoc-Platform";
-		reg = <0x01200000 0xf4>;
-		reg-names = "gxasoc.aout.regs";
+		reg = <0x01200000 0xf4>,
+			<0x0030a000 0x04>;
+		reg-names = "gxasoc.aout.regs",
+			"gxasoc.aout.cold_rst_regs";
 		status = "okay";
 	};
 

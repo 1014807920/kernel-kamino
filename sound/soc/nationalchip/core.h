@@ -91,6 +91,7 @@ struct aout_params {
 
 struct aout_stream {
 	struct aout_reg   *optReg;
+	unsigned int      *rstReg;
 #if defined(CONFIG_ARCH_LEO_MPW)
 	struct aout_irq   *irqReg;
 #endif

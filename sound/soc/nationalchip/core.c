@@ -95,24 +95,27 @@ static unsigned int aout_substream_get_max_dev(void)
 
 static struct aout_reg_des regDes = {
 #if defined(CONFIG_ARCH_LEO)
-	.num   = 1,
-#elif defined(CONFIG_ARCH_LEO_MPW)
 	.num   = 2,
+#elif defined(CONFIG_ARCH_LEO_MPW)
+	.num   = 3,
 #endif
 	.name  = {
 		"gxasoc.aout.regs",
+		"gxasoc.aout.cold_rst_regs",
 #if defined(CONFIG_ARCH_LEO_MPW)
 		"gxasoc.aout.irq.regs",
 #endif
 	},
 	.baseAddr = {
 		0x01200000,
+		0x0030a000,
 #if defined(CONFIG_ARCH_LEO_MPW)
 		0x0030a274,
 #endif
 	},
 	.length = {
 		sizeof(struct aout_reg),
+		sizeof(unsigned int),
 #if defined(CONFIG_ARCH_LEO_MPW)
 		sizeof(struct aout_irq),
 #endif
@@ -187,20 +190,24 @@ struct aout_stream *gxasoc_core_int(struct platform_device *dev)
 	if (stream->optReg == NULL)
 		goto err1;
 
+	stream->rstReg = (unsigned int*)ioremap(regDes.baseAddr[1], regDes.length[1]);
+	if (stream->rstReg == NULL)
+		goto err1;
+
 #if defined(CONFIG_ARCH_LEO_MPW)
-	stream->irqReg = (struct aout_irq*)ioremap(regDes.baseAddr[1], regDes.length[1]);
+	stream->irqReg = (struct aout_irq*)ioremap(regDes.baseAddr[2], regDes.length[2]);
 	if (stream->irqReg == NULL)
 		goto err1;
 #endif
 
+	gxasoc_stream_init(stream, aout_substream_search, aout_substream_get_max_dev);
+
 	for (i = 0; i < irqDes.num; i++) {
 		if (0 != request_irq(irqDes.irq[i],
-					gxasoc_core_interrupt, irqDes.irqFlags[i], "gxalsa", (void*)stream)) {
+					gxasoc_core_interrupt, irqDes.irqFlags[i], "gxasoc", (void*)stream)) {
 			goto err2;
 		}
 	}
-
-	gxasoc_stream_init(stream, aout_substream_search, aout_substream_get_max_dev);
 
 	return stream;
 
@@ -212,6 +219,11 @@ err1:
 	if (stream->optReg) {
 		iounmap(stream->optReg);
 		stream->optReg = NULL;
+	}
+
+	if (stream->rstReg) {
+		iounmap(stream->rstReg);
+		stream->rstReg = NULL;
 	}
 
 #if defined(CONFIG_ARCH_LEO_MPW)
@@ -238,6 +250,11 @@ void gxasoc_core_unit(struct aout_stream *stream)
 	if (stream->optReg) {
 		iounmap(stream->optReg);
 		stream->optReg = NULL;
+	}
+
+	if (stream->rstReg) {
+		iounmap(stream->rstReg);
+		stream->rstReg = NULL;
 	}
 
 #if defined(CONFIG_ARCH_LEO_MPW)

@@ -210,6 +210,7 @@ int gxasoc_stream_init(struct aout_stream *stream,
 		struct aout_substream* (*search_substream_callback)(enum aout_subdevice subdev),
 		unsigned int (*max_subdev_callback)(void))
 {
+	aout_cold_reset    (stream->rstReg);
 	aout_spd_set_mode  (stream->optReg, SPD_PLAY_OFF);
 	aout_spd_set_enable(stream->optReg, false);
 	aout_spd_set_mute  (stream->optReg, false);
@@ -258,14 +259,7 @@ int gxasoc_stream_uninit(struct aout_stream *stream)
 	recordBuffer.writeAddr = 0;
 #endif
 
-#if defined(CONFIG_ARCH_LEO_MPW)
-	aout_irq_set_enable(stream->irqReg, false);
-#endif
-#if defined(CONFIG_ARCH_LEO)
-	aout_dev_set_i2s_enable(stream->optReg, false);
-#endif
-	aout_spd_set_enable(stream->optReg, false);
-
+	aout_cold_reset(stream->rstReg);
 
 	return 0;
 }
