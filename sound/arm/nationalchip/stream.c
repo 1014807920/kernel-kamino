@@ -27,53 +27,55 @@
 static struct aout_buffer  recordBuffer;
 #endif
 
-#define MAX_DB_VALUE (19)
-#define MIN_DB_VALUE (-24)
+#define MAX_DB_VALUE (18)
+#define MIN_DB_VALUE (-25)
 #define DAC_MAX_DB_VALUE  (6)
 #define DAC_MIN_DB_VALUE  (-100)
 #define DAC_INIT_DB_VALUE (-2)
 #define DAC_MAX_DB_INDEX  (0x7f)
 
-struct stream_db_table {
-	unsigned int dbIndex;
-	long     int dbValue;
+#define MAP_DB_COEFFICIENT(dB)  (dB*96/100)
+
+struct stream_dB_table {
+	unsigned int dBIndex;
+	long     int dBValue;
 };
 
-struct stream_db_table dbTable[] = {
-	{0  , -24}, {1  , -23}, {2  , -22}, {4  , -21}, {6  , -20},
-	{8  , -19}, {11 , -18}, {16 , -17}, {18 , -16}, {20 , -15},
-	{23 , -14}, {25 , -13}, {28 , -12}, {32 , -11}, {36 , -10},
-	{40 ,  -9}, {45 ,  -8}, {51 ,  -7}, {57 ,  -6}, {64 ,  -5},
-	{72 ,  -4}, {81 ,  -3}, {91 ,  -2}, {102,  -1}, {114,   0},
-	{128,   1}, {144,   2}, {162,   3}, {181,   4}, {203,   5},
-	{228,   6}, {256,   7}, {288,   8}, {323,   9}, {362,  10},
-	{407,  11}, {460,  12}, {512,  13}, {576,  14}, {646,  15},
-	{725,  16}, {814,  17}, {913,  18}, {1023, 19}
+struct stream_dB_table dBTable[] = {
+	{0  , -25}, {1  , -24}, {2  , -23}, {4  , -22}, {6  , -21},
+	{8  , -20}, {11 , -19}, {16 , -18}, {18 , -17}, {20 , -16},
+	{23 , -15}, {25 , -14}, {28 , -13}, {32 , -12}, {36 , -11},
+	{40 , -10}, {45 ,  -9}, {51 ,  -8}, {57 ,  -7}, {64 ,  -6},
+	{72 ,  -5}, {81 ,  -4}, {91 ,  -3}, {102,  -2}, {114,  -1},
+	{128,   0}, {144,   1}, {162,   2}, {181,   3}, {203,   4},
+	{228,   5}, {256,   6}, {288,   7}, {323,   8}, {362,   9},
+	{407,  10}, {460,  11}, {512,  12}, {576,  13}, {646,  14},
+	{725,  15}, {814,  16}, {913,  17}, {1023, 18}
 };
 
-static unsigned int _map_dbIndex(long int dbValue)
+static unsigned int _map_dBIndex(long int dBValue)
 {
 	int i = 0;
 
-	dbValue = (dbValue > MAX_DB_VALUE) ? MAX_DB_VALUE : dbValue;
-	dbValue = (dbValue < MIN_DB_VALUE) ? MIN_DB_VALUE : dbValue;
+	dBValue = (dBValue > MAX_DB_VALUE) ? MAX_DB_VALUE : dBValue;
+	dBValue = (dBValue < MIN_DB_VALUE) ? MIN_DB_VALUE : dBValue;
 
-	for (i = 0; i < sizeof(dbTable)/sizeof(struct stream_db_table); i++) {
-		if (dbTable[i].dbValue  == dbValue)
+	for (i = 0; i < sizeof(dBTable)/sizeof(struct stream_dB_table); i++) {
+		if (dBTable[i].dBValue  == dBValue)
 			break;
 	}
 
-	return dbTable[i].dbIndex;
+	return MAP_DB_COEFFICIENT(dBTable[i].dBIndex);
 }
 
-static int _set_loadec_volume(struct aout_stream *stream, long int dbValue)
+static int _set_loadec_volume(struct aout_stream *stream, long int dBValue)
 {
-	int dbIndex = DAC_MAX_DB_INDEX - (DAC_MAX_DB_VALUE - dbValue);
+	int dBIndex = DAC_MAX_DB_INDEX - (DAC_MAX_DB_VALUE - dBValue);
 
-	REG_SET_VAL(&(stream->lodecReg->LODEC), ((0x3<<12)|(dbIndex<<4)|(0x1<<2)|(0x1<<0)));
+	REG_SET_VAL(&(stream->lodecReg->LODEC), ((0x3<<12)|(dBIndex<<4)|(0x1<<2)|(0x1<<0)));
 	REG_SET_BIT(&(stream->lodecReg->LODEC), 1);
 	REG_CLR_BIT(&(stream->lodecReg->LODEC), 1);
-	stream->globalDacDBValue = dbValue;
+	stream->globalDacDBValue = dBValue;
 
 	return 0;
 }
@@ -97,7 +99,7 @@ static int _set_loadec_mute(struct aout_stream *stream, bool enable)
 
 static int _set_loadec(struct aout_stream *stream)
 {
-	int dbIndex = DAC_MAX_DB_INDEX - (DAC_MAX_DB_VALUE - DAC_INIT_DB_VALUE);
+	int dBIndex = DAC_MAX_DB_INDEX - (DAC_MAX_DB_VALUE - DAC_INIT_DB_VALUE);
 
 	REG_SET_BIT(&(stream->lodecReg->LODEC), 0);
 
@@ -132,7 +134,7 @@ static int _set_loadec(struct aout_stream *stream)
 	REG_SET_BIT(&(stream->lodecReg->LODEC), 1);
 	REG_CLR_BIT(&(stream->lodecReg->LODEC), 1);
 
-	REG_SET_VAL(&(stream->lodecReg->LODEC), ((0x3<<12)|(dbIndex<<4)|(0x1<<2)|(0x1<<0))); //-2db
+	REG_SET_VAL(&(stream->lodecReg->LODEC), ((0x3<<12)|(dBIndex<<4)|(0x1<<2)|(0x1<<0))); //-2dB
 	REG_SET_BIT(&(stream->lodecReg->LODEC), 1);
 	REG_CLR_BIT(&(stream->lodecReg->LODEC), 1);
 
@@ -469,30 +471,30 @@ int gx8010_stream_interrupt(struct aout_stream *stream)
 	return completeFlags;
 }
 
-int gx8010_stream_set_global_volume(struct aout_stream *stream, long int dbValue)
+int gx8010_stream_set_global_volume(struct aout_stream *stream, long int dBValue)
 {
 	enum aout_subdevice subdev = AOUT_PLAYBACK0;
 
 	for (subdev = 0; subdev < stream->max_subdev_callback(); subdev++) {
 		struct aout_substream *substream = stream->search_substream_callback(subdev);
-		unsigned int dbIndex = 0;
+		unsigned int dBIndex = 0;
 
 		if (substream == NULL)
 			continue;
 
-		dbIndex = _map_dbIndex(substream->dbValue + dbValue);
-		aout_dev_set_volume(stream->optReg, (0x1<<subdev), dbIndex);
+		dBIndex = _map_dBIndex(substream->dBValue + dBValue);
+		aout_dev_set_volume(stream->optReg, (0x1<<subdev), dBIndex);
 	}
 
-	stream->globalDBValue = dbValue;
+	stream->globalDBValue = dBValue;
 
 	return 0;
 }
 
-int gx8010_stream_get_global_volume(struct aout_stream *stream, long int *dbValue)
+int gx8010_stream_get_global_volume(struct aout_stream *stream, long int *dBValue)
 {
-	if (dbValue)
-		*dbValue = stream->globalDBValue;
+	if (dBValue)
+		*dBValue = stream->globalDBValue;
 
 	return 0;
 }
@@ -571,7 +573,7 @@ int gx8010_stream_open(struct aout_substream *substream,
 		void *priv)
 {
 	struct aout_stream *stream = substream->stream;
-	unsigned int dbIndex = 0;
+	unsigned int dBIndex = 0;
 
 #if defined(CONFIG_ARCH_LEO_MPW)
 	substream->optIrq = 0;
@@ -579,14 +581,14 @@ int gx8010_stream_open(struct aout_substream *substream,
 
 	substream->currentVolume = 0;
 	substream->targetVolume  = 0;
-	substream->dbValue       = 0;
-	dbIndex = _map_dbIndex(substream->dbValue + stream->globalDBValue);
+	substream->dBValue       = 0;
+	dBIndex = _map_dBIndex(substream->dBValue + stream->globalDBValue);
 
 	aout_dev_set_mono     (stream->optReg, (0x1<<substream->subdev), false);
 	aout_dev_set_mix      (stream->optReg, (0x1<<substream->subdev), false);
 	aout_dev_set_work     (stream->optReg, (0x1<<substream->subdev), false);
 	aout_dev_set_source   (stream->optReg, (0x1<<substream->subdev), DEV_SRC_OFF);
-	aout_dev_set_volume   (stream->optReg, (0x1<<substream->subdev), dbIndex);
+	aout_dev_set_volume   (stream->optReg, (0x1<<substream->subdev), dBIndex);
 	aout_dev_set_r_channel(stream->optReg, (0x1<<substream->subdev), CHANNEL_1);
 	aout_dev_set_l_channel(stream->optReg, (0x1<<substream->subdev), CHANNEL_0);
 	aout_dev_set_r_mute   (stream->optReg, (0x1<<substream->subdev), false);
@@ -863,20 +865,20 @@ unsigned int gx8010_stream_free_space(struct aout_substream *substream)
 	return _free_space(substream);
 }
 
-int gx8010_stream_set_volume(struct aout_substream *substream, long int dbValue)
+int gx8010_stream_set_volume(struct aout_substream *substream, long int dBValue)
 {
 	struct aout_stream *stream = substream->stream;
-	unsigned int dbIndex = _map_dbIndex(dbValue + stream->globalDBValue);
+	unsigned int dBIndex = _map_dBIndex(dBValue + stream->globalDBValue);
 
-	aout_dev_set_volume(stream->optReg, (0x1<<substream->subdev), dbIndex);
-	substream->dbValue = dbValue;
+	aout_dev_set_volume(stream->optReg, (0x1<<substream->subdev), dBIndex);
+	substream->dBValue = dBValue;
 
 	return 0;
 }
 
-int gx8010_stream_get_volume(struct aout_substream *substream, long int *dbValue)
+int gx8010_stream_get_volume(struct aout_substream *substream, long int *dBValue)
 {
-	*dbValue = (long int)substream->dbValue;
+	*dBValue = (long int)substream->dBValue;
 
 	return 0;
 }

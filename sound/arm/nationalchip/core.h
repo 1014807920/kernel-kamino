@@ -134,7 +134,7 @@ struct aout_substream {
 	enum aout_channelnum channelNum;
 	enum aout_interlace  interlace;
 	unsigned int         mute;
-	unsigned int         dbValue;
+	unsigned int         dBValue;
 	enum aout_track      track;
 	int                  (*produce_callback)(void *priv);
 	int                  (*consume_callback)(void *priv);
