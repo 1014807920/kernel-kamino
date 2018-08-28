@@ -269,6 +269,9 @@
 	status = "disabled";
 };
 
+&mmc1 {
+    wlan_on-gpio = <&ck_gpa0 30 GPIO_ACTIVE_HIGH>;
+};
 
 &ck_i2c0{
 	npcp215x@73 {

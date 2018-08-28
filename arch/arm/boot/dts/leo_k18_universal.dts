@@ -218,6 +218,10 @@
 	status = "disabled";
 };
 
+&mmc1 {
+    wlan_on-gpio = <&gpa1 13 GPIO_ACTIVE_HIGH>;
+};
+
 &ck_i2c0{
 	sma1301@1e {
 		compatible = "siliconmitus,sma1301";
