@@ -49,7 +49,7 @@
 #include <linux/jiffies.h>
 #include <linux/kernel.h>
 
-#define TIMER_MARGIN	60		/* Default is 60 seconds */
+#define TIMER_MARGIN	15		/* Default is 60 seconds */
 static unsigned int soft_margin = TIMER_MARGIN;	/* in seconds */
 module_param(soft_margin, uint, 0);
 MODULE_PARM_DESC(soft_margin,
@@ -77,13 +77,29 @@ MODULE_PARM_DESC(soft_panic,
  */
 
 static void watchdog_fire(unsigned long);
+#ifdef WATCHDOG_TEST
+static void watchdog_print(unsigned long);
+#endif
 
 static struct timer_list watchdog_ticktock =
 		TIMER_INITIALIZER(watchdog_fire, 0, 0);
 
+#ifdef WATCHDOG_TEST
+static struct timer_list watchdog_test =
+		TIMER_INITIALIZER(watchdog_print, 0, 0);
+#endif
+
 /*
  *	If the timer expires..
  */
+
+#ifdef WATCHDOG_TEST
+static void watchdog_print(unsigned long data)
+{
+    pr_crit("Initiating system reboot\n");
+    emergency_restart();
+}
+#endif
 
 static void watchdog_fire(unsigned long data)
 {
@@ -190,7 +206,9 @@ static int __init watchdog_init(void)
 
 	pr_info("Software Watchdog Timer: 0.08 initialized. soft_noboot=%d soft_margin=%d sec soft_panic=%d (nowayout=%d)\n",
 		soft_noboot, soft_margin, soft_panic, nowayout);
-
+#ifdef WATCHDOG_TEST
+	mod_timer(&watchdog_test, jiffies+(20*HZ));
+#endif
 	return 0;
 }
 
