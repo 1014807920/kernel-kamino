@@ -49,7 +49,7 @@
 #include <linux/jiffies.h>
 #include <linux/kernel.h>
 
-#define TIMER_MARGIN	15		/* Default is 60 seconds */
+#define TIMER_MARGIN	120		/* Default is 60 seconds */
 static unsigned int soft_margin = TIMER_MARGIN;	/* in seconds */
 module_param(soft_margin, uint, 0);
 MODULE_PARM_DESC(soft_margin,
