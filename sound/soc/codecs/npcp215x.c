@@ -172,18 +172,18 @@ static unsigned char MaxxAudio_Cmd_FULL_Init[] = {
  	0x00, 0xE0, 0x0A,  // Set Soft-Mute Fade Time : 10 msec
  	0x00, 0xD5, 0x67,  // Set MaxxBass Cutoff Freq : 97.2 Hz
  	0x00, 0xE3, 0x64,  // Set Front High-Pass Freq : 89.8 Hz
- 	0x00, 0xCF, 0x00,  // Set Bypass Algorithm. Bypass is disabled for all algorithms.
+ 	0x00, 0xCF, 0x3D,  // Set Bypass Algorithm. Bypass is enable for High Pass Filter,Maxx3D,MaxxDialog,MaxxBass,MaxxTreble..
  	0x00, 0xE1, 0x70,  // Set MaxxBass Noise Gate Threshold : -100 dB
  	0x00, 0xCB, 0x00,  // Set Original Bass : Disable adding original bass
  	0x00, 0xE2, 0x2F,  // Set MaxxBass Noise Gate Gap : -47 dB
  	0x00, 0xD9, 0x5C,  // Set MaxxTreble Freq : 7242.4 Hz
  	0x00, 0xE5, 0x2F,  // Set MaxxTreble Noise Gate Gap : -47 dB
  	0x00, 0xE4, 0x70,  // Set MaxxTreble Noise Gate Threshold : -100 dB
-	0x01, 0xD0, 0xBA,  // Set MaxxVolume Gain : 8.40 dB
+	0x01, 0xD0, 0x90,  // Set MaxxVolume Gain : 0.0 dB
  	0x00, 0xC6, 0x01,  // Set Leveler : OFF
  	0x00, 0xDD, 0x01,  // Set MaxxVolume Type : Hard-Knee
- 	0x00, 0xD4, 0x15,  // Set MaxxVolume Dynamic Range : -70 dB
- 	0x00, 0xDA, 0x06,  // Set MaxxVolume Low Gain : 3.00 dB
+ 	0x00, 0xD4, 0x00,  // Set MaxxVolume Dynamic Range : -80 dB
+ 	0x00, 0xDA, 0x00,  // Set MaxxVolume Low Gain : 0.00 dB
  	0x00, 0xDC, 0x00,  // Set MaxxVolume Noise Gate : -96 dB
  	0x00, 0xA1, 0x05,  // Load PEQ Start
  	0x00, 0x00, 0x00,  // Ch: 1
@@ -275,7 +275,7 @@ static unsigned char MaxxAudio_Cmd_FULL_Init[] = {
  	0x00, 0xCF, 0x00,  // Set Bypass Algorithm. Bypass is disabled for all algorithms.
  	0x00, 0xE8, 0x4C,  // Set MaxxDialog Level : 59.8 %
  	0x00, 0xE9, 0x4C,  // Set MaxxDialog Side Level : 59.8 %
- 	0x00, 0xCF, 0x00,  // Set Bypass Algorithm. Bypass is disabled for all algorithms.
+ 	0x00, 0xCF, 0x3D,  // Set Bypass Algorithm. Bypass is enable for High Pass Filter,Maxx3D,MaxxDialog,MaxxBass,MaxxTreble..
  	0x07, 0xAA, 0x04,  // Set Patch Version
  	0x03, 0xA2, 0x5E,  // Load Patch (extend data 862 x 3)
   	0x61, 0xF4, 0x00,
@@ -2102,6 +2102,7 @@ static int npcp215x_i2c_probe(struct i2c_client *client,
 	struct npcp215x_priv *npcp215x = NULL;
 	int ret = 0, gpio_val = 0;
 
+	printk("%s,start V0\n", __func__);
 	npcp215x = devm_kzalloc(&client->dev, sizeof(struct npcp215x_priv),
 			      GFP_KERNEL);
 	if (npcp215x == NULL)
