@@ -11,17 +11,4 @@ config LEO_SUSPEND
 	help
 	  Select this if you want to enable Suspend-to-RAM on LEO
 	  platforms.
-
-config K18_UNIVERSAL_SUPPORT
-	bool "K18 Universal Family Boards support"
-	default n
-	help
-	  Select this if you want to support K18_UNIVERSAL family boards
-
-config K18_BOARD_NAME
-	string "K18 Board name"
-	default "gx8010_rkd_naboo"
-	help
-	  This option should contain the base name of Kamino18 product board.
-
 endif
