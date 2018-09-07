@@ -98,6 +98,13 @@ config LEDS_LM3642
 	  converter plus 1.5A constant current driver for a high-current
 	  white LED.
 
+config LEDS_AW9523
+	tristate "LED support for aw9523 Chip"
+	depends on LEDS_CLASS && I2C
+	select REGMAP_I2C
+	default n
+	help
+	  This option enables support for LEDs connected to AW9523.
 
 config LEDS_LOCOMO
 	tristate "LED Support for Locomo device"
