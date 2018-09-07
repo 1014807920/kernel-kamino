@@ -576,6 +576,10 @@ dtb-$(CONFIG_ARCH_LEO) += \
 	leo_gx8010_rkd_4v.dtb \
 	leo_gx8010_rkd_naboo.dtb \
 	leo_k18_universal.dtb \
+	leo_k18_dev31.dtb \
+	leo_k18_dev32.dtb \
+	leo_k18_dev33.dtb \
+	leo_k18_cus360.dtb \
 	leo_gx8010_est_1v.dtb \
 	leo_gx8009_ssd_1v.dtb \
 	leo_gx8010_mkt_1v.dtb \
