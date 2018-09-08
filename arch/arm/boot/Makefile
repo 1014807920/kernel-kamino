@@ -88,6 +88,12 @@ $(obj)/bootpImage: $(obj)/bootp/bootp FORCE
 	$(call if_changed,objcopy)
 	@$(kecho) '  Kernel: $@ is ready'
 
+ifeq ($(CONFIG_K18_UNIVERSAL_SUPPORT),y)
+$(shell cp $(obj)/dts/leo_$(CONFIG_K18_BOARD_NAME).dtb $(obj)/leo_k18_universal.dtb)
+else
+$(shell cp $(obj)/dts/leo_$(CONFIG_K18_BOARD_NAME).dtb $(obj)/)
+endif
+
 PHONY += initrd FORCE
 initrd:
 	@test "$(INITRD_PHYS)" != "" || \
