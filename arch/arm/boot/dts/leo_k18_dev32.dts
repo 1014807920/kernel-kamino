@@ -49,32 +49,6 @@
 		regulator-max-microvolt = <3300000>;
 	};
 
-/*
-	a7_key:a7_key@0x2305008{
-		compatible = "nationalchip,LEO-keypad";
-		reg = <0x230501c 0x90>;
-		autorepeat;
-	};
-
-	csky_key:csky_key@0x305004{
-		compatible = "nationalchip,LEO-keypad";
-		reg = <0x30501c 0x90>;
-		autorepeat;
-
-        key1:key1{
-			key_code  = <KEY_MUTE>;
-			key_gpio = <7>;
-		};
-        key2:key2{
-			key_code  = <KEY_VOLUMEUP>;
-			key_gpio = <8>;
-		};
-        key3:key3{
-			key_code  = <KEY_VOLUMEDOWN>;
-			key_gpio = <21>;
-		};
-	};
-*/
 	gpio_keypad{
 		compatible = "amlogic, gpio_keypad";
 		status = "okay";
@@ -92,16 +66,7 @@
 		//irq_keyup = <6>;
 		//irq_keydown = <7>;
 	};
-/*
-	switch_key{
-		compatible = "rokid, switch_key";
-		status = "okay";
-		switch_name = "lock";
-		switch_pin = <&ck_gpa0 18 GPIO_ACTIVE_HIGH>;
-		switch-gpio-pull = <0>;//0: pull disable, 1: pull down, 2: pull up
-		debounce = <0>;
-	};
-*/
+
 	urat1_control{
 		compatible = "nationalchip,LEO_uart_control";
 		reg = <0x02308000 0x1000>;
@@ -235,51 +200,5 @@
 		#thermal-sensor-cells = <0>;
 	};
 
-/*
-	npcp215x@73 {
-		compatible = "npcp215x";
-		dev-name = "npcp215x";
-		reg = <0x73>;
-		dsp_rst-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
-		amp_pdn-gpio = <&ck_gpa1 3 GPIO_ACTIVE_HIGH>;
-	};
-*/
-/*
-	nau8822@1a {
-		compatible = "nau8822";
-		dev-name = "nau8822";
-		reg = <0x1a>;
-	};
-*/
-#if 0
-	lis331dlh: lis331dlh@18 {
-		compatible = "st,lis331dlh", "st,lis3lv02d";
-		reg = <0x18>;
-		//Vdd-supply = <&lis3_reg>;
-		//Vdd_IO-supply = <&lis3_reg>;
-
-		st,click-single-x;
-		st,click-single-y;
-		st,click-single-z;
-		st,click-thresh-x = <10>;
-		st,click-thresh-y = <10>;
-		st,click-thresh-z = <10>;
-		st,irq1-click;
-		st,irq2-click;
-		st,wakeup-x-lo;
-		st,wakeup-x-hi;
-		st,wakeup-y-lo;
-		st,wakeup-y-hi;
-		st,wakeup-z-lo;
-		st,wakeup-z-hi;
-		st,min-limit-x = <120>;
-		st,min-limit-y = <120>;
-		st,min-limit-z = <140>;
-		st,max-limit-x = <550>;
-		st,max-limit-y = <550>;
-		st,max-limit-z = <750>;
-		st,default-rate = <100>;
-	};
-#endif
 };
 

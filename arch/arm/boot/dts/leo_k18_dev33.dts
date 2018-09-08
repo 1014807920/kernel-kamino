@@ -99,16 +99,6 @@
 		reset-gpio = <&ck_gpa0 31 GPIO_ACTIVE_HIGH>;
 	};
 
-	thermal-zones {
-		board_thermal: board_thermal {
-			polling-delay-passive = <1250>; /* milliseconds */
-			polling-delay = <1500>; /* milliseconds */
-
-			/* sensor ID */
-			thermal-sensors = <&tmp103 0>;
-		};
-	};
-
 };
 
 &gxasoc_codec{

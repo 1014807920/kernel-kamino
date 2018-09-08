@@ -99,16 +99,6 @@
 		reset-gpio = <&ck_gpa0 20 GPIO_ACTIVE_HIGH>;
 	};
 
-	thermal-zones {
-		board_thermal: board_thermal {
-			polling-delay-passive = <1250>; /* milliseconds */
-			polling-delay = <1500>; /* milliseconds */
-
-			/* sensor ID */
-			thermal-sensors = <&tmp103 0>;
-		};
-	};
-
 };
 
 &gxasoc_codec{
@@ -185,4 +175,21 @@
 	};
 
 };
+
+&ck_i2c1{
+	status = "okay";
+    aw9523_led@5b {
+        compatible = "awinic,aw9523_led";
+        reg = <0x5b>;
+        reset-gpio = <&ck_gpa0 18 GPIO_ACTIVE_HIGH>;    //test,really used &ck_gpa0 19
+        status = "okay";
+        aw9523,led {
+            aw9523,name = "aw9523_led";
+            aw9523,imax = <3>;
+            aw9523,brightness = <32>;
+            aw9523,max_brightness = <255>;
+        };
+    };
+};
+
 
