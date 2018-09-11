@@ -103,10 +103,10 @@ static const struct snd_kcontrol_new ad82584f_snd_controls[] = {
 static int m_reg_tab[AD82584F_REGISTER_COUNT][2] = {
 	{0x00, 0x04},//##State_Control_1
 	{0x01, 0x81},//##State_Control_2
-	{0x02, 0x7f},//##State_Control_3
-	{0x03, 0x2c},//##Master_volume_control
-	{0x04, 0x18},//##Channel_1_volume_control
-	{0x05, 0x18},//##Channel_2_volume_control
+	{0x02, 0x00},//##State_Control_3
+	{0x03, 0x0b},//##Master_volume_control
+	{0x04, 0x00},//##Channel_1_volume_control
+	{0x05, 0x00},//##Channel_2_volume_control
 	{0x06, 0x18},//##Channel_3_volume_control
 	{0x07, 0x18},//##Channel_4_volume_control
 	{0x08, 0x18},//##Channel_5_volume_control
@@ -122,7 +122,7 @@ static int m_reg_tab[AD82584F_REGISTER_COUNT][2] = {
 	{0x12, 0x00},//##Channel_6_configuration_registers
 	{0x13, 0x00},//##Channel_7_configuration_registers
 	{0x14, 0x00},//##Channel_8_configuration_registers
-	{0x15, 0x6a},//##DRC1_limiter_attack/release_rate
+	{0x15, 0x69},//##DRC1_limiter_attack/release_rate
 	{0x16, 0x6a},//##DRC2_limiter_attack/release_rate
 	{0x17, 0x6a},//##DRC3_limiter_attack/release_rate
 	{0x18, 0x6a},//##DRC4_limiter_attack/release_rate
@@ -143,7 +143,7 @@ static int m_reg_tab[AD82584F_REGISTER_COUNT][2] = {
 	{0x27, 0x00},//##Top_8-bits_of_coefficients_B2
 	{0x28, 0x00},//##Middle_8-bits_of_coefficients_B2
 	{0x29, 0x00},//##Bottom_8-bits_of_coefficients_B2
-	{0x2a, 0x40},//##Top_8-bits_of_coefficients_A0
+	{0x2a, 0x20},//##Top_8-bits_of_coefficients_A0
 	{0x2b, 0x00},//##Middle_8-bits_of_coefficients_A0
 	{0x2c, 0x00},//##Bottom_8-bits_of_coefficients_A0
 	{0x2d, 0x40},//##Coefficient_R/W_control
@@ -169,12 +169,12 @@ static int m_reg_tab[AD82584F_REGISTER_COUNT][2] = {
 	{0x41, 0x00},//##RAM2_test_r/w_control
 	{0x42, 0x00},//##Level_Meter_Clear
 	{0x43, 0x00},//##Power_Meter_Clear
-	{0x44, 0x20},//##TOP_of_C1_Level_Meter
-	{0x45, 0x00},//##Middle_of_C1_Level_Meter
-	{0x46, 0x00},//##Bottom_of_C1_Level_Meter
-	{0x47, 0x20},//##TOP_of_C2_Level_Meter
-	{0x48, 0x00},//##Middle_of_C2_Level_Meter
-	{0x49, 0x00},//##Bottom_of_C2_Level_Meter
+	{0x44, 0x7f},//##TOP_of_C1_Level_Meter
+	{0x45, 0xff},//##Middle_of_C1_Level_Meter
+	{0x46, 0xff},//##Bottom_of_C1_Level_Meter
+	{0x47, 0x7f},//##TOP_of_C2_Level_Meter
+	{0x48, 0xff},//##Middle_of_C2_Level_Meter
+	{0x49, 0xff},//##Bottom_of_C2_Level_Meter
 	{0x4a, 0x00},//##TOP_of_C3_Level_Meter
 	{0x4b, 0x00},//##Middle_of_C3_Level_Meter
 	{0x4c, 0x00},//##Bottom_of_C3_Level_Meter
@@ -223,7 +223,7 @@ static int m_reg_tab[AD82584F_REGISTER_COUNT][2] = {
 	{0x77, 0x07},//##Hi-res_Item
 	{0x78, 0x40},//##Test_Mode_register
 	{0x79, 0x62},//##Boost_Strap_OV/UV_Selection
-	{0x7a, 0x8c},//##OC_Selection_2
+	{0x7a, 0x88},//##OC_Selection_2
 	{0x7b, 0x55},//##MBIST_User_Program_Top_Byte_Even
 	{0x7c, 0x55},//##MBIST_User_Program_Middle_Byte_Even
 	{0x7d, 0x55},//##MBIST_User_Program_Bottom_Byte_Even
@@ -234,41 +234,41 @@ static int m_reg_tab[AD82584F_REGISTER_COUNT][2] = {
 	{0x82, 0x0c},//##Minimum_duty_test
 	{0x83, 0x06},//##Reserve
 	{0x84, 0xfe},//##Reserve
-	{0x85, 0xca},//##Reserve
+	{0x85, 0x4a},//##Reserve
 
 };
 
 static int m_ram1_tab[][4] = {
-	{0x00, 0x00, 0x00, 0x00},//##Channel_1_EQ1_A1 
-	{0x01, 0x00, 0x00, 0x00},//##Channel_1_EQ1_A2 
-	{0x02, 0x00, 0x00, 0x00},//##Channel_1_EQ1_B1 
-	{0x03, 0x00, 0x00, 0x00},//##Channel_1_EQ1_B2 
-	{0x04, 0x20, 0x00, 0x00},//##Channel_1_EQ1_A0 
-	{0x05, 0x00, 0x00, 0x00},//##Channel_1_EQ2_A1 
-	{0x06, 0x00, 0x00, 0x00},//##Channel_1_EQ2_A2 
-	{0x07, 0x00, 0x00, 0x00},//##Channel_1_EQ2_B1 
-	{0x08, 0x00, 0x00, 0x00},//##Channel_1_EQ2_B2 
-	{0x09, 0x20, 0x00, 0x00},//##Channel_1_EQ2_A0 
-	{0x0a, 0x00, 0x00, 0x00},//##Channel_1_EQ3_A1 
-	{0x0b, 0x00, 0x00, 0x00},//##Channel_1_EQ3_A2 
-	{0x0c, 0x00, 0x00, 0x00},//##Channel_1_EQ3_B1 
-	{0x0d, 0x00, 0x00, 0x00},//##Channel_1_EQ3_B2 
-	{0x0e, 0x20, 0x00, 0x00},//##Channel_1_EQ3_A0 
-	{0x0f, 0x00, 0x00, 0x00},//##Channel_1_EQ4_A1 
-	{0x10, 0x00, 0x00, 0x00},//##Channel_1_EQ4_A2 
-	{0x11, 0x00, 0x00, 0x00},//##Channel_1_EQ4_B1 
-	{0x12, 0x00, 0x00, 0x00},//##Channel_1_EQ4_B2 
-	{0x13, 0x20, 0x00, 0x00},//##Channel_1_EQ4_A0 
-	{0x14, 0x00, 0x00, 0x00},//##Channel_1_EQ5_A1 
-	{0x15, 0x00, 0x00, 0x00},//##Channel_1_EQ5_A2 
-	{0x16, 0x00, 0x00, 0x00},//##Channel_1_EQ5_B1 
-	{0x17, 0x00, 0x00, 0x00},//##Channel_1_EQ5_B2 
-	{0x18, 0x20, 0x00, 0x00},//##Channel_1_EQ5_A0 
-	{0x19, 0x00, 0x00, 0x00},//##Channel_1_EQ6_A1 
-	{0x1a, 0x00, 0x00, 0x00},//##Channel_1_EQ6_A2 
-	{0x1b, 0x00, 0x00, 0x00},//##Channel_1_EQ6_B1 
-	{0x1c, 0x00, 0x00, 0x00},//##Channel_1_EQ6_B2 
-	{0x1d, 0x20, 0x00, 0x00},//##Channel_1_EQ6_A0 
+	{0x00, 0xc0, 0x26, 0x41},//##Channel_1_EQ1_A1 
+	{0x01, 0x1f, 0xec, 0xdf},//##Channel_1_EQ1_A2 
+	{0x02, 0x3f, 0xd9, 0xb4},//##Channel_1_EQ1_B1 
+	{0x03, 0xe0, 0x26, 0x35},//##Channel_1_EQ1_B2 
+	{0x04, 0x1f, 0xec, 0xdf},//##Channel_1_EQ1_A0 
+	{0x05, 0xc0, 0x18, 0xfb},//##Channel_1_EQ2_A1 
+	{0x06, 0x1f, 0xdf, 0xf0},//##Channel_1_EQ2_A2 
+	{0x07, 0x3f, 0xe7, 0x05},//##Channel_1_EQ2_B1 
+	{0x08, 0xe0, 0x18, 0xcf},//##Channel_1_EQ2_B2 
+	{0x09, 0x20, 0x07, 0x41},//##Channel_1_EQ2_A0 
+	{0x0a, 0xc4, 0x22, 0x6d},//##Channel_1_EQ3_A1 
+	{0x0b, 0x1c, 0xf8, 0x1b},//##Channel_1_EQ3_A2 
+	{0x0c, 0x3b, 0xdd, 0x93},//##Channel_1_EQ3_B1 
+	{0x0d, 0xe3, 0xb7, 0x76},//##Channel_1_EQ3_B2 
+	{0x0e, 0x1f, 0x50, 0x6f},//##Channel_1_EQ3_A0 
+	{0x0f, 0xd1, 0x2f, 0x78},//##Channel_1_EQ4_A1 
+	{0x10, 0x15, 0x3c, 0x71},//##Channel_1_EQ4_A2 
+	{0x11, 0x2e, 0xd0, 0x88},//##Channel_1_EQ4_B1 
+	{0x12, 0xec, 0x9a, 0xc0},//##Channel_1_EQ4_B2 
+	{0x13, 0x1e, 0x28, 0xce},//##Channel_1_EQ4_A0 
+	{0x14, 0xd3, 0x4a, 0x01},//##Channel_1_EQ5_A1 
+	{0x15, 0x17, 0x5d, 0xd0},//##Channel_1_EQ5_A2 
+	{0x16, 0x2c, 0xb5, 0xff},//##Channel_1_EQ5_B1 
+	{0x17, 0xe7, 0xa4, 0xd9},//##Channel_1_EQ5_B2 
+	{0x18, 0x20, 0xfd, 0x56},//##Channel_1_EQ5_A0 
+	{0x19, 0xe1, 0x78, 0x5c},//##Channel_1_EQ6_A1 
+	{0x1a, 0x18, 0x45, 0x7e},//##Channel_1_EQ6_A2 
+	{0x1b, 0x1e, 0x87, 0xa4},//##Channel_1_EQ6_B1 
+	{0x1c, 0xe9, 0x0c, 0xd4},//##Channel_1_EQ6_B2 
+	{0x1d, 0x1e, 0xad, 0xae},//##Channel_1_EQ6_A0 
 	{0x1e, 0x00, 0x00, 0x00},//##Channel_1_EQ7_A1 
 	{0x1f, 0x00, 0x00, 0x00},//##Channel_1_EQ7_A2 
 	{0x20, 0x00, 0x00, 0x00},//##Channel_1_EQ7_B1 
@@ -314,9 +314,9 @@ static int m_ram1_tab[][4] = {
 	{0x48, 0x00, 0x00, 0x00},//##Channel_1_EQ15_B1 
 	{0x49, 0x00, 0x00, 0x00},//##Channel_1_EQ15_B2 
 	{0x4a, 0x20, 0x00, 0x00},//##Channel_1_EQ15_A0 
-	{0x4b, 0x7f, 0xff, 0xff},//##Channel_1_Mixer1 
-	{0x4c, 0x00, 0x00, 0x00},//##Channel_1_Mixer2 
-	{0x4d, 0x7f, 0xff, 0xff},//##Channel_1_Prescale 
+	{0x4b, 0x40, 0x00, 0x00},//##Channel_1_Mixer1 
+	{0x4c, 0x40, 0x00, 0x00},//##Channel_1_Mixer2 
+	{0x4d, 0x74, 0x00, 0x00},//##Channel_1_Prescale 
 	{0x4e, 0x7f, 0xff, 0xff},//##Channel_1_Postscale 
 	{0x4f, 0xc7, 0xb6, 0x91},//##A0_of_L_channel_SRS_HPF 
 	{0x50, 0x38, 0x49, 0x6e},//##A1_of_L_channel_SRS_HPF 
@@ -325,8 +325,8 @@ static int m_ram1_tab[][4] = {
 	{0x53, 0xf2, 0x2c, 0x12},//##A1_of_L_channel_SRS_LPF 
 	{0x54, 0x0f, 0xca, 0xbb},//##B1_of_L_channel_SRS_LPF 
 	{0x55, 0x20, 0x00, 0x00},//##CH1.2_Power_Clipping 
-	{0x56, 0x20, 0x00, 0x00},//##CCH1.2_DRC1_Attack_threshold 
-	{0x57, 0x08, 0x00, 0x00},//##CH1.2_DRC1_Release_threshold 
+	{0x56, 0x0c, 0x06, 0xdc},//##CCH1.2_DRC1_Attack_threshold 
+	{0x57, 0x0b, 0x5a, 0xa1},//##CH1.2_DRC1_Release_threshold 
 	{0x58, 0x20, 0x00, 0x00},//##CH3.4_DRC2_Attack_threshold 
 	{0x59, 0x08, 0x00, 0x00},//##CH3.4_DRC2_Release_threshold 
 	{0x5a, 0x20, 0x00, 0x00},//##CH5.6_DRC3_Attack_threshold 
@@ -339,7 +339,7 @@ static int m_ram1_tab[][4] = {
 	{0x61, 0x00, 0x20, 0x00},//##DRC2_Energy_Coefficient 
 	{0x62, 0x00, 0x80, 0x00},//##DRC3_Energy_Coefficient 
 	{0x63, 0x00, 0x80, 0x00},//##DRC4_Energy_Coefficient 
-	{0x64, 0x00, 0x00, 0x00},//DRC1_Power_Meter
+	{0x64, 0x0b, 0x7e, 0x5e},//DRC1_Power_Meter
 	{0x65, 0x00, 0x00, 0x00},//DRC3_Power_Mete
 	{0x66, 0x00, 0x00, 0x00},//DRC5_Power_Meter
 	{0x67, 0x00, 0x00, 0x00},//DRC7_Power_Meter
@@ -447,7 +447,7 @@ static int m_ram2_tab[][4] = {
 	{0x4a, 0x20, 0x00, 0x00},//##Channel_2_EQ15_A0 
 	{0x4b, 0x00, 0x00, 0x00},//##Channel_2_Mixer1 
 	{0x4c, 0x7f, 0xff, 0xff},//##Channel_2_Mixer2 
-	{0x4d, 0x7f, 0xff, 0xff},//##Channel_2_Prescale 
+	{0x4d, 0x74, 0x00, 0x00},//##Channel_2_Prescale 
 	{0x4e, 0x7f, 0xff, 0xff},//##Channel_2_Postscale 
 	{0x4f, 0xc7, 0xb6, 0x91},//##A0_of_R_channel_SRS_HPF 
 	{0x50, 0x38, 0x49, 0x6e},//##A1_of_R_channel_SRS_HPF 
@@ -470,7 +470,7 @@ static int m_ram2_tab[][4] = {
 	{0x61, 0x00, 0x00, 0x00},//##Reserve
 	{0x62, 0x00, 0x00, 0x00},//##Reserve
 	{0x63, 0x00, 0x00, 0x00},//##Reserve
-	{0x64, 0x00, 0x00, 0x00},//DRC2_Power_Meter
+	{0x64, 0x0b, 0x8d, 0xe2},//DRC2_Power_Meter
 	{0x65, 0x00, 0x00, 0x00},//DRC4_Power_Mete
 	{0x66, 0x00, 0x00, 0x00},//DRC6_Power_Meter
 	{0x67, 0x00, 0x00, 0x00},//DRC8_Power_Meter
@@ -627,11 +627,37 @@ static int ad82584f_set_bias_level(struct snd_soc_codec *codec,
 	return 0;
 }
 
+static int ad82584f_startup(struct snd_pcm_substream *substream,
+				struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct ad82584f_priv *ad82584f = snd_soc_codec_get_drvdata(codec);
+	int ret = 0;
+
+	dev_info(codec->dev, "%s\n", __func__);
+
+	return ret;
+}
+
+static int ad82584f_shutdown(struct snd_pcm_substream *substream,
+				struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct ad82584f_priv *ad82584f = snd_soc_codec_get_drvdata(codec);
+	int ret = 0;
+
+	dev_info(codec->dev, "%s\n", __func__);
+
+	return ret;
+}
+
 static const struct snd_soc_dai_ops ad82584f_dai_ops = {
 	.hw_params = ad82584f_hw_params,
 	.set_sysclk = ad82584f_set_dai_sysclk,
 	.set_fmt = ad82584f_set_dai_fmt,
 	.digital_mute = ad82584f_dai_digital_mute,
+	.startup      = ad82584f_startup,
+	.shutdown     = ad82584f_shutdown,
 };
 
 static struct snd_soc_dai_driver ad82584f_dai = {
@@ -679,7 +705,6 @@ static int ad82584f_reg_init(struct snd_soc_codec *codec)
 {
 	int i = 0;
 	for (i = 0; i < AD82584F_REGISTER_COUNT; i++) {
-		//printk("ad82584f_reg_init  write 0x%x = 0x%x\n", m_reg_tab[i][0], m_reg_tab[i][1]);
 		snd_soc_write(codec, m_reg_tab[i][0], m_reg_tab[i][1]);
 	};
        
@@ -696,7 +721,6 @@ static int ad82584f_reg_check(struct snd_soc_codec *codec)
 	
 	for (i = 0; i < AD82584F_REGISTER_COUNT; i++) {
 		reg_data = snd_soc_read(codec, m_reg_tab[i][0]);
-		//printk("ad82584f_reg_init  write 0x%x = 0x%x\n", m_reg_tab[i][0], reg_data);
 	};
 	return 0;
 }
@@ -952,8 +976,14 @@ static int ad82584f_i2c_probe(struct i2c_client *i2c,
 
 static int ad82584f_i2c_remove(struct i2c_client *client)
 {
+	pr_info("%s\n", __func__);
 	snd_soc_unregister_codec(&client->dev);
+	return 0;
+}
 
+static int ad82584f_i2c_shutdown(struct i2c_client *client)
+{
+	pr_info("%s\n", __func__);
 	return 0;
 }
 
@@ -970,13 +1000,62 @@ static const struct of_device_id ad82584f_of_id[] = {
 };
 MODULE_DEVICE_TABLE(of, ad82584f_of_id);
 
+#ifdef CONFIG_PM_SLEEP
+static int ad82584f_i2c_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct ad82584f_priv *ad82584f = i2c_get_clientdata(client);
+
+	pr_info("%s\n", __func__);
+	return 0;
+}
+
+static int ad82584f_i2c_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct ad82584f_priv *ad82584f = i2c_get_clientdata(client);
+
+	pr_info("%s\n", __func__);
+	return 0;
+}
+#endif /* CONFIG_PM_SLEEP */
+
+#ifdef CONFIG_PM
+static int ad82584f_i2c_runtime_suspend(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct ad82584f_priv *ad82584f = i2c_get_clientdata(client);
+
+	pr_info("%s\n", __func__);
+	return 0;
+}
+
+static int ad82584f_i2c_runtime_resume(struct device *dev)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct ad82584f_priv *ad82584f = i2c_get_clientdata(client);
+
+	pr_info("%s\n", __func__);
+	return 0;
+}
+#endif /* CONFIG_PM */
+
+static const struct dev_pm_ops ad82584f_pm_ops = {
+	SET_SYSTEM_SLEEP_PM_OPS(ad82584f_i2c_suspend,
+				ad82584f_i2c_resume)
+	SET_RUNTIME_PM_OPS(ad82584f_i2c_runtime_suspend,
+			   ad82584f_i2c_runtime_resume,
+			   NULL)
+};
+
 static struct i2c_driver ad82584f_i2c_driver = {
 	.driver = {
 		.name = "ad82584f",
+		.pm     = &ad82584f_pm_ops,
 		.of_match_table = ad82584f_of_id,
 		.owner = THIS_MODULE,
 	},
-	//.shutdown = ad82584f_i2c_shutdown,
+	.shutdown = ad82584f_i2c_shutdown,
 	.probe = ad82584f_i2c_probe,
 	.remove = ad82584f_i2c_remove,
 	.id_table = ad82584f_i2c_id,
