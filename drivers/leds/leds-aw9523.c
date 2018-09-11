@@ -423,14 +423,23 @@ static ssize_t aw9523_pixel_store(struct device *dev, struct device_attribute *a
     return count;
 }
 
+static ssize_t led_busy_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    struct led_classdev *led_cdev = dev_get_drvdata(dev);
+    struct aw9523 *aw9523 = container_of(led_cdev, struct aw9523, cdev);
+       return snprintf(buf, 16, "%u\n", (work_busy(&aw9523->pixel_work)) ? 1 : 0);
+}
+
 static DEVICE_ATTR(reg, S_IWUSR | S_IRUGO, aw9523_reg_show, aw9523_reg_store);
 static DEVICE_ATTR(hwen, S_IWUSR | S_IRUGO, aw9523_hwen_show, aw9523_hwen_store);
 static DEVICE_ATTR(pixel, S_IWUSR, NULL, aw9523_pixel_store);
+static DEVICE_ATTR(busy, S_IRUGO, led_busy_show, NULL);
 
 static struct attribute *aw9523_attributes[] = {
     &dev_attr_reg.attr,
     &dev_attr_hwen.attr,
     &dev_attr_pixel.attr,
+    &dev_attr_busy.attr,
     NULL
 };
 
