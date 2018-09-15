@@ -73,6 +73,7 @@ static int nationalchip_clk_divider_set_rate(struct clk_hw *hw, unsigned long us
 
 	data = clk_readl(divider->reg);
 	clk_writel(data & ~(div_mask(divider->width) << divider->shift), divider->reg);
+	data = clk_readl(divider->reg);
 	clk_writel(data | (div << divider->shift), divider->reg);
 
 	data = clk_readl(divider->reg);
