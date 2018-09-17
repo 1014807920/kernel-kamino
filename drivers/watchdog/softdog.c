@@ -46,6 +46,7 @@
 #include <linux/notifier.h>
 #include <linux/reboot.h>
 #include <linux/init.h>
+#include <linux/console.h>
 #include <linux/jiffies.h>
 #include <linux/kernel.h>
 
@@ -110,6 +111,8 @@ static void watchdog_fire(unsigned long data)
 		panic("Software Watchdog Timer expired");
 	} else {
 		pr_crit("Initiating system reboot\n");
+		pr_crit("watchdog timeout reboot\n");
+		console_flush_on_panic();
 		emergency_restart();
 		pr_crit("Reboot didn't ?????\n");
 	}
