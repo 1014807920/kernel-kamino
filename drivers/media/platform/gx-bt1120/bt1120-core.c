@@ -51,35 +51,6 @@ static struct bt1120_irq_info gx_bt1120_irq_info = {
 	.irqFlag = {IRQF_SHARED,},
 };
 
-static struct clk *sensor_clk = NULL;
-static int set_sensor_clk_24M(struct bt1120_dev *bt1120, struct platform_device *pdev)
-{
-	char clk_name[] = "xvclk";
-	unsigned long rate = 24000000;
-	int ret = -1;
-	struct clk *bt1120_div_clk;
-
-	sensor_clk = devm_clk_get(&pdev->dev, clk_name);
-	if (IS_ERR(sensor_clk)) {
-		dev_err(&pdev->dev, "get sensor clk error!!!!\n");
-		return -1;
-	}
-
-	bt1120_div_clk = devm_clk_get(&pdev->dev, gx_bt1120_clk_info.name[0]);
-	if (IS_ERR(bt1120_div_clk)) {
-		dev_err(&pdev->dev, "get bt1120 div clk error!!!!\n");
-		return -1;
-	}
-
-	ret = clk_set_parent(sensor_clk, bt1120_div_clk);
-	ret = clk_set_rate(sensor_clk, rate);
-	dev_info(&pdev->dev, "round_rate:%ld\n", clk_round_rate(sensor_clk, rate));
-	dev_info(&pdev->dev, "##sensor_clk rate:%ld ret:%d\n", clk_get_rate(sensor_clk), ret);
-	clk_prepare_enable(sensor_clk);
-
-	return 0;
-}
-
 static int gx_bt1120_dt_parse(struct bt1120_dev *bt1120, struct platform_device *pdev)
 {
 	int i = 0, ret = 0;
@@ -105,16 +76,16 @@ static int gx_bt1120_dt_parse(struct bt1120_dev *bt1120, struct platform_device 
 		}
 	}
 
-//	for (i = 0; i < gx_bt1120_clk_info.num; i++) {
-//		if (gx_bt1120_clk_info.name[i]) {
-//			bt1120->clk[i] = v4l2_clk_get(&pdev->dev, gx_bt1120_clk_info.name[i]);
-//			if (IS_ERR(bt1120->clk[i])) {
-//				dev_err(&pdev->dev, "get clk error!!!!\n");
-//				return -1;
-//			}
-//		}
-//	}
-//	bt1120->clk_info = &gx_bt1120_clk_info;
+	for (i = 0; i < gx_bt1120_clk_info.num; i++) {
+		if (gx_bt1120_clk_info.name[i]) {
+			bt1120->clk[i] = v4l2_clk_get(&pdev->dev, gx_bt1120_clk_info.name[i]);
+			if (IS_ERR(bt1120->clk[i])) {
+				dev_err(&pdev->dev, "get clk error!!!!\n");
+				return -1;
+			}
+		}
+	}
+	bt1120->clk_info = &gx_bt1120_clk_info;
 
 	bt1120->reg = (struct bt1120_reg *)ioremap(gx_bt1120_reg_info.baseAddr[0], gx_bt1120_reg_info.length[0]);
 	if (!bt1120->reg) {
@@ -137,8 +108,6 @@ static int gx_bt1120_dt_parse(struct bt1120_dev *bt1120, struct platform_device 
 	ret = of_property_read_u32(np, "i2c_bus", &bt1120->i2c_bus);
 	if (ret != 0)
 		bt1120->i2c_bus = 0;
-
-	set_sensor_clk_24M(bt1120, pdev);
 
 	return 0;
 err_request_irq:
@@ -185,7 +154,7 @@ static int gx_bt1120_probe(struct platform_device *pdev)
 	if (ret < 0)
 		return ret;
 
-//	gx_bt1120_clk_enable(bt1120);
+	gx_bt1120_clk_enable(bt1120);
 
 	platform_set_drvdata(pdev, bt1120);
 
@@ -195,11 +164,11 @@ static int gx_bt1120_probe(struct platform_device *pdev)
 		goto err_register_dev;
 	}
 
-//	ret = bt1120_register_sensor(bt1120);
-//	if (ret < 0) {
-//		dev_err(&pdev->dev, "register sensor error\n");
-//		goto err_register_sensor;
-//	}
+	ret = bt1120_register_sensor(bt1120);
+	if (ret < 0) {
+		dev_err(&pdev->dev, "register sensor error\n");
+		goto err_register_sensor;
+	}
 
 	ret = bt1120_register_video_nodes(bt1120);
 	if (ret < 0) {
@@ -208,12 +177,12 @@ static int gx_bt1120_probe(struct platform_device *pdev)
 	}
 
 	bt1120->is_open = false;
-//	gx_bt1120_clk_disable(bt1120);
+	gx_bt1120_clk_disable(bt1120);
 
 	return 0;
 
 err_regiseter_nodes:
-//err_register_sensor:
+err_register_sensor:
 	v4l2_device_unregister(&bt1120->v4l2_dev);
 err_register_dev:
 	free_irq(gx_bt1120_irq_info.irq[0], bt1120);
@@ -228,7 +197,6 @@ static int gx_bt1120_remove(struct platform_device *pdev)
 {
 	struct bt1120_dev *bt1120 = platform_get_drvdata(pdev);
 
-	clk_disable_unprepare(sensor_clk);
 	iounmap(bt1120->reg);
 	iounmap(bt1120->reset_reg);
 	free_irq(gx_bt1120_irq_info.irq[0], bt1120);
