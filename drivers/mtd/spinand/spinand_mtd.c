@@ -14,11 +14,13 @@
 #include <linux/of_device.h>
 #include "spinand.h"
 
-#define ID_TABLE_FILL(_id, _info, _ecc,_name) {\
+#define ID_TABLE_FILL(_id, _name, _info, _ecc, _get_ecc_status, _ecc_strength) {\
 	.id		= _id,	\
+	.name		= _name,\
 	.info_index	= _info,\
 	.ecc_index	= _ecc,	\
-	.name		= _name,\
+	.ecc_strength = _ecc_strength,	\
+	.get_ecc_status = _get_ecc_status,\
 }
 
 enum {
@@ -469,72 +471,343 @@ static struct spinand_info s_nand_info[] = {
 	},
 };
 
-static struct spinand_index s_id_table[] = {
-	/* GD spi nand flash */
-	ID_TABLE_FILL(0xF1C8, NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_GD_OOB64,        "GD5F1GQ4UAYIG"),
-	ID_TABLE_FILL(0xF2C8, NAND_2G_PAGE2K_OOB64,  ECC_LAYOUT_GD_OOB64,        "GD5F2GQ4RAYIG"),
-	ID_TABLE_FILL(0xD1C8, NAND_1G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,       "GD5F1GQ4U"),
-	ID_TABLE_FILL(0xD2C8, NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,       "GD5F2GQ4U"),
-	ID_TABLE_FILL(0xC1C8, NAND_1G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,       "GD5F1GQ4R"),
-	ID_TABLE_FILL(0xC2C8, NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,       "GD5F2GQ4R"),
-	ID_TABLE_FILL(0xD4C8, NAND_4G_PAGE4K_OOB256, ECC_LAYOUT_GD_OOB256,       "GD5F4G"),
-	/* TOSHIBA spi nand flash */
-	ID_TABLE_FILL(0xC298, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_TC58CV_OOB64,     "TC58CVG053HRA1G"),
-	/* Micron spi nand flash */
-	ID_TABLE_FILL(0x122C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,      "MT29F1G01ZAC"),
-	ID_TABLE_FILL(0x112C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,      "MT29F1G01ZAC"),
-	ID_TABLE_FILL(0x132C, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MT29F_OOB64,      "MT29F1G01ZAC"),
-	/* 芯天下 spi nand flash */
-	ID_TABLE_FILL(0xE1A1, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_PN26G_OOB64,      "PN26G01AWS1UG"),
-	ID_TABLE_FILL(0xE10B, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_XT26G_OOB64,      "XT26G01AWS1UG"),
-	ID_TABLE_FILL(0xE20B, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_XT26G_OOB64,      "XT26G02AWSEGA"),
-	/* Zetta Confidentia spi nand flash */
-	ID_TABLE_FILL(0x71ba, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_ZD35X_OOB64,      "ZD35X1GA"),
-	ID_TABLE_FILL(0x21ba, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_ZD35X_OOB64,      "ZD35X1GA"),
-	/* ESMT spi nand flash */
-	ID_TABLE_FILL(0x21C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_F50LXX1A_OOB64,   "F50L1G41A"),
-	ID_TABLE_FILL(0x01C8, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_F50LXX41LB_OOB64, "F50L1G41LB"),
-	/* winbond spi nand flash */
-	ID_TABLE_FILL(0xAAEF, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_W25ND_OOB64,      "W25N01GV"),
-	/* Mxic spi nand flash */
-	ID_TABLE_FILL(0x12C2, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_MX35LF_OOB64,     "MX35LF1GE4AB"),
-	/* foresee spi nand flash */
-	ID_TABLE_FILL(0xa1cd, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_FORESEE_D1_OOB64, "FS35ND01G-D1"),
-	ID_TABLE_FILL(0xb1cd, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_FORESEE_S1_OOB64, "FS35ND01G-S1"),
-	/* EtronTech spi nand flash */
-	ID_TABLE_FILL(0x1cd5, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_EM73_OOB64,       "EM73C044VCD"),
-	ID_TABLE_FILL(0x1fd5, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_EM73_OOB64,       "EM73D044VCG"),
-	/* dosilicon spi nand flash */
-	ID_TABLE_FILL(0x71e5, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_DS35Q_OOB64,      "DS35Q1GA"),
-	ID_TABLE_FILL(0x72e5, NAND_2G_PAGE2K_OOB64, ECC_LAYOUT_DS35Q_OOB64,      "DS35Q2GA"),
-	/* HeYangTek spi nand flash */
-	ID_TABLE_FILL(0x21c9, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_HEYANGTEK_OOB64,  "HYF1GQ4UDACAE"),
-	ID_TABLE_FILL(0x5ac9, NAND_2G_PAGE2K_OOB128,ECC_LAYOUT_HEYANGTEK_OOB128, "HYF2GQ4UHCCAE"),
-	ID_TABLE_FILL(0x52c9, NAND_2G_PAGE2K_OOB128,ECC_LAYOUT_HEYANGTEK_OOB128, "HYF2GQ4UAACAE"),
-	ID_TABLE_FILL(0x0001, NAND_1G_PAGE2K_OOB64, ECC_LAYOUT_DEFAULT_OOB64,    "General flash"),
-};
-
-static int spinand_mtd_read_id(struct spinand_chip *chip)
+static int generic_ecc_status(unsigned char status, unsigned int *bitflips)
 {
-	uint16_t id = 0;
-	struct spinand_cmd cmd = {
-		.cmd_len = 2,
-		.cmd[0] = CMD_READ_ID,
-		.cmd[1] = 0,
-		.xfer_len = 2,
-		.rx = (u8*)&id,
-	};
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
 
-	if(chip->read_id){
-		chip->read_id(chip, &id);
-		return id;
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = GENERIC_ECC_BITS_MAX - 1;
+		break;
+	case 0x30:
+		*bitflips = GENERIC_ECC_BITS_MAX;
+		break;
+	case 0x20:
+		*bitflips = GENERIC_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	default:;
 	}
-
-	chip->cmd_func(chip, &cmd);
-	return id;
+	return ret;
 }
 
-static struct spinand_info *spinand_id_probe(u16 id)
+static int gd_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = GD_ECC_BITS_MAX - 1;
+		break;
+	case 0x30:
+		*bitflips = GD_ECC_BITS_MAX;
+		break;
+	case 0x20:
+		*bitflips = GD_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	default:;
+	}
+	return ret;
+}
+
+static int toshiba_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = TOSHIBA_ECC_BITS_MAX - 1;
+		break;
+	case 0x30:
+		*bitflips = TOSHIBA_ECC_BITS_MAX;
+		break;
+	case 0x20:
+		*bitflips = TOSHIBA_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	default:;
+	}
+	return ret;
+}
+
+static int micron_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_MICRON_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = 3;
+		break;
+	case 0x30:
+		*bitflips = 6;
+		break;
+	case 0x50:
+		*bitflips = MICRON_ECC_BITS_MAX;
+		break;
+	case 0x20:
+		*bitflips = MICRON_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	default:;
+	}
+	return ret;
+}
+
+static int xtx_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = (status & STATUS_XTX_ECC_MASK) >> 2;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x08:
+		*bitflips = XTX_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	case 0x0c:
+		*bitflips = 8;
+		break;
+	default:
+		*bitflips = ecc_status;
+	}
+	return ret;
+}
+
+static int zetta_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = ZETTA_ECC_BITS_MAX;
+		break;
+	case 0x20:
+	default:
+		*bitflips = ZETTA_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+static int esmt_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = ESMT_ECC_BITS_MAX;
+		break;
+	case 0x20:
+	default:
+		*bitflips = ESMT_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+
+static int winbond_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = WINBOND_ECC_BITS_MAX;
+		break;
+	case 0x30:
+	case 0x20:
+	default:
+		*bitflips = WINBOND_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+static int mxic_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = MXIC_ECC_BITS_MAX;
+		break;
+	case 0x30:
+	case 0x20:
+	default:
+		*bitflips = MXIC_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+static int foresse_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = (status & STATUS_FORESEE_ECC_MASK) >> 4;
+
+	if (likely(ecc_status != 0x07)) {
+		*bitflips = ecc_status ;
+	} else {
+		*bitflips = FORESSE_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+	}
+
+	return ret;
+}
+
+static int dosilicon_ecc_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = DOSILICON_ECC_BITS_MAX;
+		break;
+	case 0x30:
+	case 0x20:
+	default:
+		*bitflips = DOSILICON_ECC_BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+static int heyang_ecc4_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = HEYANG_ECC_4BITS_MAX;
+		break;
+	case 0x30:
+	case 0x20:
+	default:
+		*bitflips = HEYANG_ECC_4BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+static int heyang_ecc14_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = HEYANG_ECC_14BITS_MAX;
+		break;
+	case 0x30:
+	case 0x20:
+	default:
+		*bitflips = HEYANG_ECC_14BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+static struct spinand_index s_id_table[] = {
+	/* GD spi nand flash */
+	ID_TABLE_FILL(0xF1C8, "GD5F1GQ4UAYIG",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_GD_OOB64,	     gd_ecc_status,        GD_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xF2C8, "GD5F2GQ4RAYIG",   NAND_2G_PAGE2K_OOB64,  ECC_LAYOUT_GD_OOB64,	     gd_ecc_status,        GD_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xD1C8, "GD5F1GQ4U",       NAND_1G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	     gd_ecc_status,        GD_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xD2C8, "GD5F2GQ4U",       NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	     gd_ecc_status,        GD_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xC1C8, "GD5F1GQ4R",       NAND_1G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	     gd_ecc_status,        GD_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xC2C8, "GD5F2GQ4R",       NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_GD_OOB128,	     gd_ecc_status,        GD_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xD4C8, "GD5F4G",          NAND_4G_PAGE4K_OOB256, ECC_LAYOUT_GD_OOB256,	     gd_ecc_status,        GD_ECC_BITS_MAX),
+	/* TOSHIBA spi nand flash */
+	ID_TABLE_FILL(0xC298, "TC58CVG053HRA1G", NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_TC58CV_OOB64,     toshiba_ecc_status,   TOSHIBA_ECC_BITS_MAX),
+	/* Micron spi nand flash */
+	ID_TABLE_FILL(0x122C, "MT29F1G01ZAC",    NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_MT29F_OOB64,	     micron_ecc_status,    MICRON_ECC_BITS_MAX),
+	ID_TABLE_FILL(0x112C, "MT29F1G01ZAC",    NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_MT29F_OOB64,      micron_ecc_status,    MICRON_ECC_BITS_MAX),
+	ID_TABLE_FILL(0x132C, "MT29F1G01ZAC",    NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_MT29F_OOB64,      micron_ecc_status,    MICRON_ECC_BITS_MAX),
+	/* 芯天下 spi nand flash */
+	ID_TABLE_FILL(0xE1A1, "PN26G01AWS1UG",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_PN26G_OOB64,      generic_ecc_status,   GENERIC_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xE10B, "XT26G01AWS1UG",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_XT26G_OOB64,      xtx_ecc_status,       XTX_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xE20B, "XT26G02AWSEGA",   NAND_2G_PAGE2K_OOB64,  ECC_LAYOUT_XT26G_OOB64,      xtx_ecc_status,       XTX_ECC_BITS_MAX),
+	/* Zetta Confidentia spi nand flash */
+	ID_TABLE_FILL(0x71ba, "ZD35X1GA",        NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_ZD35X_OOB64,      zetta_ecc_status,     ZETTA_ECC_BITS_MAX),
+	ID_TABLE_FILL(0x21ba, "ZD35X1GA",        NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_ZD35X_OOB64,      zetta_ecc_status,     ZETTA_ECC_BITS_MAX),
+	/* ESMT spi nand flash */
+	ID_TABLE_FILL(0x21C8, "F50L1G41A",       NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_F50LXX1A_OOB64,   esmt_ecc_status,      ESMT_ECC_BITS_MAX),
+	ID_TABLE_FILL(0x01C8, "F50L1G41LB",      NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_F50LXX41LB_OOB64, esmt_ecc_status,      ESMT_ECC_BITS_MAX),
+	/* winbond spi nand flash */
+	ID_TABLE_FILL(0xAAEF, "W25N01GV",        NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_W25ND_OOB64,	     winbond_ecc_status,   WINBOND_ECC_BITS_MAX),
+	/* Mxic spi nand flash */
+	ID_TABLE_FILL(0x12C2, "MX35LF1GE4AB",    NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_MX35LF_OOB64,     mxic_ecc_status,      MXIC_ECC_BITS_MAX),
+	/* foresee spi nand flash */
+	ID_TABLE_FILL(0xa1cd, "FS35ND01G-D1",    NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_FORESEE_D1_OOB64, foresse_ecc_status,   FORESSE_ECC_BITS_MAX),
+	ID_TABLE_FILL(0xb1cd, "FS35ND01G-S1",    NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_FORESEE_S1_OOB64, foresse_ecc_status,   FORESSE_ECC_BITS_MAX),
+	/* EtronTech spi nand flash */
+	ID_TABLE_FILL(0x1cd5, "EM73C044VCD",     NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_EM73_OOB64,       generic_ecc_status,   GENERIC_ECC_BITS_MAX),
+	ID_TABLE_FILL(0x1fd5, "EM73D044VCG",     NAND_2G_PAGE2K_OOB64,  ECC_LAYOUT_EM73_OOB64,       generic_ecc_status,   GENERIC_ECC_BITS_MAX),
+	/* dosilicon spi nand flash */
+	ID_TABLE_FILL(0x71e5, "DS35Q1GA",        NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_DS35Q_OOB64,      dosilicon_ecc_status, DOSILICON_ECC_BITS_MAX),
+	ID_TABLE_FILL(0x72e5, "DS35Q2GA",        NAND_2G_PAGE2K_OOB64,  ECC_LAYOUT_DS35Q_OOB64,      dosilicon_ecc_status, DOSILICON_ECC_BITS_MAX),
+	/* HeYangTek spi nand flash */
+	ID_TABLE_FILL(0x21c9, "HYF1GQ4UDACAE",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_HEYANGTEK_OOB64,  heyang_ecc4_status,   HEYANG_ECC_4BITS_MAX),
+	ID_TABLE_FILL(0x5ac9, "HYF2GQ4UHCCAE",   NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_HEYANGTEK_OOB128, heyang_ecc14_status,  HEYANG_ECC_14BITS_MAX),
+	ID_TABLE_FILL(0x52c9, "HYF2GQ4UAACAE",   NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_HEYANGTEK_OOB128, heyang_ecc14_status,  HEYANG_ECC_14BITS_MAX),
+
+	/* item end */
+	ID_TABLE_FILL(0x0001, "General flash",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_DEFAULT_OOB64,    generic_ecc_status,   GENERIC_ECC_BITS_MAX),
+};
+
+static struct spinand_info *spinand_id_probe(u16 id, struct spinand_chip *chip)
 {
 	struct spinand_index *tb = s_id_table;
 	struct spinand_info *info;
@@ -548,10 +821,12 @@ static struct spinand_info *spinand_id_probe(u16 id)
 		info->id = tb[i].id;
 		info->name = tb[i].name;
 		info->ecclayout = s_ecclayout + tb[i].ecc_index;
+		chip->get_ecc_status = tb[i].get_ecc_status;
+		chip->ecc_strength = tb[i].ecc_strength;
 		return info;
 	}
 
-	pr_warn("Warning: unknow flash id = 0x%x.\n", id);
+	pr_warn("Warning: unknow flash id = 0x%04x.\n", id);
 	return NULL;
 }
 
@@ -693,6 +968,7 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 	int main_ok = 0, main_left = 0, main_offset = 0;
 	int oob_ok = 0, oob_left = 0;
 	int retval;
+	unsigned int corrected;
 
 	page_id = from >> info->page_shift;
 
@@ -718,18 +994,25 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 	while (count < page_num || count < oob_num){
 #ifdef CONFIG_MTD_SPINAND_SWECC
 		retval = chip->read_page(chip,
-			page_id + count, 0, info->page_size, chip->buf);
+			page_id + count, 0, info->page_size, chip->buf, &corrected);
 #else
 		if(likely(ops->datbuf))
 			retval = chip->read_page(chip,
-				page_id + count, 0, info->page_size, chip->buf);
+				page_id + count, 0, info->page_size, chip->buf, &corrected);
 		else
 			retval = chip->read_page(chip, page_id + count,
 					info->page_main_size,
 					info->page_spare_size,
-					chip->buf + info->page_main_size);
+					chip->buf + info->page_main_size, &corrected);
 #endif
-		if (retval != 0){
+
+		if (likely(retval == 0)){
+			if (unlikely(corrected != 0))
+				 mtd->ecc_stats.corrected += corrected;
+		} else if (unlikely(retval == ECC_NOT_CORRECT)) {
+			mtd->ecc_stats.failed++;
+			pr_notice("read nand page ops ecc not corrected! page id = %d\n", page_id+count);
+		} else if (unlikely(retval < 0)){
 			pr_debug("%s: fail, page=%d!\n",__func__, page_id);
 			return retval;
 		}
@@ -815,7 +1098,7 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 		count++;
 	}
 
-	return 0;
+	return corrected;
 }
 
 static int spinand_write_ops(struct mtd_info *mtd, loff_t to, struct mtd_oob_ops *ops)
@@ -1189,6 +1472,7 @@ static int spinand_scan_bad_blocks(struct mtd_info *mtd)
 	struct spinand_info *info = chip->info;
 	int block_count = mtd->size >> info->block_shift;
 	int i, ret, page_id;
+	unsigned int corrected;
 	u8 is_bad;
 
 	pr_debug("%s: total blocks %d\n", __func__, block_count);
@@ -1204,7 +1488,7 @@ static int spinand_scan_bad_blocks(struct mtd_info *mtd)
 
 	for(i = 0; i < block_count; ++i){
 		page_id = i << (info->block_shift - info->page_shift);
-		ret = chip->read_page(chip, page_id, info->page_main_size, 1, &is_bad);
+		ret = chip->read_page(chip, page_id, info->page_main_size, 1, &is_bad, &corrected);
 		if(ret < 0 || is_bad != 0xff){
 			pr_debug("block %d is bad\n", i);
 			bbt_mask_bad(chip, i);
@@ -1217,18 +1501,16 @@ static int spinand_scan_bad_blocks(struct mtd_info *mtd)
 	return 0;
 }
 
-int spinand_mtd_register(struct spinand_chip *chip)
+int spinand_mtd_register(struct spinand_chip *chip, uint16_t spinand_id)
 {
 	struct spinand_info *info;
 	struct mtd_info *mtd;
 	struct mtd_part_parser_data ofpart;
-	u16 spinand_id;
 
 	if(chip_check(chip) < 0)
 		return -EINVAL;
 
-	spinand_id = spinand_mtd_read_id(chip);
-	info = spinand_id_probe(spinand_id);
+	info = spinand_id_probe(spinand_id, chip);
 	if(!info)
 		return -ENODEV;
 
@@ -1273,6 +1555,7 @@ int spinand_mtd_register(struct spinand_chip *chip)
 	mtd->_resume		= spinand_resume;
 	mtd->_block_isbad	= spinand_block_isbad;
 	mtd->_block_markbad	= spinand_block_markbad;
+	mtd->bitflip_threshold  = chip->ecc_strength;
 	ofpart.of_node		= chip->spi->dev.of_node;
 
 	pr_info("SPINAND: %s, size = %lld M, page size = %d KB, id = 0x%x\n", \
