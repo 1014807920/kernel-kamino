@@ -170,7 +170,7 @@
 		compatible = "ESMT, ad82584f";
 		dev-name = "ad82584f";
 		reg = <0x31>;
-		//init-vol = <0x3e>;
+		speaker-power = <3>;
 		dsp_reset_pin = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 	};
 
