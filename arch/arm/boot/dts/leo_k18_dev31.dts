@@ -114,9 +114,9 @@
 	gxasoc-machine {
 		name = "gxasoc-machine";
 		compatible = "NationalChip,ASoc-Machine";
-		num_codecs = <2>;
-		codec-name     = "gxasoc-lodac", "ad82584f";
-		codec-dai-name = "gxasoc-lodac-dai", "ad82584f-dai";
+		num_codecs = <1>;
+		codec-name     = "sma1301";
+		codec-dai-name = "sma1301-dai";
 		platform-name  = "gxasoc-platform";
 		cup-dai-name   = "gxasoc-platform-dai";
 		status = "okay";
@@ -148,7 +148,7 @@
 };
 
 &gxasoc_codec{
-	status = "okay";
+	status = "disabled";
 };
 
 &ck_i2c0{
@@ -226,13 +226,6 @@
 		hp_pa_shdn-gpio = <&gpa1 9 GPIO_ACTIVE_HIGH>;
 		};
 
-	ad82584f@31 {
-		compatible = "ESMT, ad82584f";
-		dev-name = "ad82584f";
-		reg = <0x31>;
-		//init-vol = <0x3e>;
-		dsp_reset_pin = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
-		};
 
 	tmp103: tmp103@70 {
 		compatible = "ti,tmp103";
@@ -244,22 +237,6 @@
 		#thermal-sensor-cells = <0>;
 	};
 
-/*
-	npcp215x@73 {
-		compatible = "npcp215x";
-		dev-name = "npcp215x";
-		reg = <0x73>;
-		dsp_rst-gpio = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
-		amp_pdn-gpio = <&ck_gpa1 3 GPIO_ACTIVE_HIGH>;
-	};
-*/
-/*
-	nau8822@1a {
-		compatible = "nau8822";
-		dev-name = "nau8822";
-		reg = <0x1a>;
-	};
-*/
 #if 0
 	lis331dlh: lis331dlh@18 {
 		compatible = "st,lis331dlh", "st,lis3lv02d";
