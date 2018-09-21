@@ -117,7 +117,7 @@
 		compatible = "NationalChip,ASoc-Machine";
 		num_codecs = <1>;
 		codec-name     = "sma1301";
-		codec-dai-name = "sma1301-dai";
+		codec-dai-name = "sma1301-voice";
 		platform-name  = "gxasoc-platform";
 		cup-dai-name   = "gxasoc-platform-dai";
 		status = "okay";
