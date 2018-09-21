@@ -1008,9 +1008,14 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 		}
 		else if(likely(main_left)){
 			size = min(main_left, info->page_main_size - main_offset);
+#if 1
 			retval = chip->read_page(chip, page_id + count, main_offset, \
 						size, chip->buf, &corrected);
 			memcpy(ops->datbuf + main_ok, chip->buf, size);
+#else
+			retval = chip->read_page(chip, page_id + count, main_offset, \
+						size, ops->datbuf + main_ok, &corrected);
+#endif
 		}else{
 			retval = chip->read_page(chip, page_id + count,
 					info->page_main_size,

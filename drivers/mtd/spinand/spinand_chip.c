@@ -63,21 +63,6 @@
 	(_chip)->cmd_func(_chip, &_cmd);\
 }while(0)
 
-#define spinand_read_from_cache(_chip, _id, _len, _rbuf) do{\
-	struct spinand_cmd _cmd = {\
-		.cmd_len  = 4,\
-		.cmd      = {\
-			CMD_READ_RDM,\
-			0xFF & (_id >> 8),\
-			0xFF & (_id >> 0),\
-			~0, 0,\
-		},\
-		.xfer_len = _len,\
-		.rx       = _rbuf,\
-	};\
-	(_chip)->cmd_func(_chip, &_cmd);\
-}while(0)
-
 #define spinand_write_enable(_chip) do{\
 	struct spinand_cmd _cmd = {\
 		.cmd_len  = 1,\
@@ -141,6 +126,22 @@
 	_chip->cmd_func(_chip, &cmd);\
 }while(0)
 
+static inline int spinand_read_from_cache(struct spinand_chip *chip, u16 id, u16 len, u8* rbuf)
+{
+	struct spinand_cmd cmd = {
+		.cmd_len  = 4,
+		.cmd      = {
+			CMD_READ_RDM,\
+			0xFF & (id >> 8),
+			0xFF & (id >> 0),
+			~0, 0,
+		},
+		.xfer_len = len,
+		.rx       = rbuf,
+	};
+	return (chip)->cmd_func(chip, &cmd);
+}
+
 static void spinand_hwecc(struct spinand_chip *chip, bool enable)
 {
 	uint8_t status;
@@ -184,7 +185,7 @@ static inline int spinand_wait_ready(struct spinand_chip *chip, uint8_t *status)
 static int spinand_generic_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* rbuf, unsigned int *corrected)
 {
 	uint8_t status;
-	int ret;
+	int ret, err;
 
 	spinand_read_page_to_cache(chip, page_id);
 	ret = spinand_wait_ready(chip, &status);
@@ -201,7 +202,9 @@ static int spinand_generic_read_page(struct spinand_chip *chip, u32 page_id, u16
 		}
 	}
 
-	spinand_read_from_cache(chip, offs, len, rbuf);
+	err = spinand_read_from_cache(chip, offs, len, rbuf);
+	if(err != 0)
+		return err;
 
 	return ret;
 }
@@ -232,7 +235,7 @@ static int spinand_generic_program_page(struct spinand_chip *chip, u32 page_id, 
 static int spinand_ds25q2g_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* rbuf, unsigned int *corrected)
 {
 	uint8_t status;
-	int ret;
+	int ret, err;
 
 	//针对Dosilicon的DS35Q2GA做特殊处理,DS35Q2GA只有一个die,每个die有两个plane.
 	//当block number为奇数,选择另外一个plane.
@@ -255,7 +258,9 @@ static int spinand_ds25q2g_read_page(struct spinand_chip *chip, u32 page_id, u16
 		}
 	}
 
-	spinand_read_from_cache(chip, offs, len, rbuf);
+	err = spinand_read_from_cache(chip, offs, len, rbuf);
+	if(err != 0)
+		return err;
 
 	return ret;
 }
