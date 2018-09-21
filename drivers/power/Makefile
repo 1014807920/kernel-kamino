@@ -75,3 +75,4 @@ obj-$(CONFIG_AXP288_CHARGER)	+= axp288_charger.o
 obj-$(CONFIG_CHARGER_RT5036)	+= rt5036-charger.o
 obj-$(CONFIG_RT_POWER)		+= rt-power.o
 obj-$(CONFIG_RT_BATTERY)	+= rt-battery.o
+obj-$(CONFIG_AW_AXP)		+= axp/
