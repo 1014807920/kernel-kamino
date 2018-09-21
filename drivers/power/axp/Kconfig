@@ -1,0 +1,82 @@
+menuconfig AW_AXP
+	bool "AXP Power drivers"
+	depends on REGULATOR
+	#depends on ARCH_SUNXI
+	select MFD_CORE
+	help
+	  This option allows you to select AXP power driver
+
+if AW_AXP
+
+config AXP_TWI_USED
+	bool "AXP use twi as transfer channel"
+	default y
+	depends on I2C
+	help
+	  To use twi as transfer channel
+
+config DUAL_AXP_USED
+	bool "Support dual axp online"
+        default n
+	#depends on ARCH_SUN8IW10 || ARCH_SUN8IW15
+
+config AW_AXP22X
+	bool "AXP22x driver"
+	#depends on ARCH_SUN8IW11 || ARCH_SUN8IW12 || ARCH_SUN8IW15
+        default n
+	help
+	  AXP22x driver
+
+config AW_AXP15060
+    bool "AXP15060 driver"
+   # depends on ARCH_SUN8IW15
+   default n
+    help
+        AXP15060 driver
+
+config AW_AXP152
+    bool "AXP152 driver"
+   # depends on ARCH_SUN8IW15
+   default n
+    help
+        AXP152 driver
+
+config AW_AXP2585
+	bool "AXP2585 driver"
+	#depends on ARCH_SUN8IW15
+        default n
+	help
+	AXP2585 driver, AXP2585 is a BMU,which is just for battery power manager.
+	We could use a BMU and a PMU for high voltage project.The BMU is good
+	at manage battery, and the PMU could be a supplier of  periphrals.
+	Say Y here to enable AXP2585 driver.
+
+
+config AW_AXP233
+	bool "AXP233 driver"
+	#depends on ARCH_SUN8IW11 || ARCH_SUN8IW12
+	default n
+	help
+	  AXP233 driver, compatible with AXP22X.
+
+config AW_AXP80X
+	bool "AXP80x driver"
+	#depends on ARCH_SUN8IW12 || ARCH_SUN50IW6
+        default n
+	help
+	  AXP80x driver
+
+config AW_AXP2881
+	bool "AXP2881 driver"
+	#depends on ARCH_SUN50IW1 || ARCH_SUN50IW3 || ARCH_SUN8IW6
+        default n
+	help
+	  AXP2881 driver
+config XP_AXP2601
+	bool "AXP2601 driver"
+	#depends on ARCH_SUN50IW1 || ARCH_SUN50IW3 || ARCH_SUN8IW6
+        default n
+	help
+	  AXP2601 is a discrete battery gauge for single /2 serial battery driver
+
+endif # AW_AXP
