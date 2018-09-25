@@ -25,7 +25,6 @@
 #include <linux/mtd/partitions.h>
 #include <linux/spi/flash.h>
 #include <linux/platform_device.h>
-#include <linux/jiffies.h>
 #include "spinand.h"
 
 #define DRIVER_NAME	"SPINAND"
@@ -130,16 +129,11 @@
 	(_chip)->cmd_func(_chip, &_cmd);\
 }while(0)
 
-#define spinand_read_id(_chip, _id) do{\
-	struct spinand_cmd cmd = {\
-		.cmd_len = 2,\
-		.cmd[0] = CMD_READ_ID,\
-		.cmd[1] = 0,\
-		.xfer_len = 2,\
-		.rx = (u8*)_id,\
-	};\
-	_chip->cmd_func(_chip, &cmd);\
-}while(0)
+#define spinand_wait_ready(_chip, _stat) do{\
+	spinand_read_status(_chip, &(_stat));\
+	if(((_stat) & STATUS_OIP_MASK) == STATUS_READY)\
+			break;\
+}while(1)
 
 static void spinand_hwecc(struct spinand_chip *chip, bool enable)
 {
@@ -164,121 +158,58 @@ static int spinand_reset(struct spinand_chip *chip)
 	return chip->cmd_func(chip, &cmd);
 }
 
-static inline int spinand_wait_ready(struct spinand_chip *chip, uint8_t *status)
+static inline void spinand_read_status(struct spinand_chip *chip, u8 *status)
 {
-	unsigned long timeo = jiffies;
-
-	timeo += msecs_to_jiffies(100);
-
-	while (time_before(jiffies, timeo)) {
-		spinand_get_status(chip, REG_STATUS, status);
-		if((*status & STATUS_OIP_MASK) == STATUS_READY)
-		    return 0;
-
-		cond_resched();
-	}
-
-	return -ETIMEDOUT;
+	spinand_get_status(chip, REG_STATUS, status);
 }
 
-static int spinand_generic_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* rbuf, unsigned int *corrected)
+static int spinand_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* rbuf)
 {
-	uint8_t status;
-	int ret;
+	u8 status = 0;
 
-	spinand_read_page_to_cache(chip, page_id);
-	ret = spinand_wait_ready(chip, &status);
-
-	if (ret != 0){
-	    return ret;
+	//针对Dosilicon的DS35Q2GA做特殊处理,DS35Q2GA只有一个die,每个die有两个plane.
+	//当block number为奇数,选择另外一个plane.
+	if((chip->info->id == 0x72e5) && ((page_id / PAGES_PER_BLOCK) % 2)){
+		offs |= (0x1 << 12);
 	}
 
-	if(likely(chip->get_ecc_status != NULL)){
-		ret = chip->get_ecc_status(status, corrected);
-		if (ret != 0){
+	spinand_read_page_to_cache(chip, page_id);
+	spinand_wait_ready(chip, status);
+
+	if (((chip->info->id)&0xff) != 0xcd){
+		if((status & STATUS_COMMON_ECC_MASK) == STATUS_COMMON_ECC_ERROR){
 			dev_dbg(&chip->spi->dev, "spi nand page read error, "
-				"status = 0x%02x, page_id = %d\n", status, page_id);
+				"status = 0x%x, page_id = %d\n", status, page_id);
+			return -status;
+		}
+	}else{  // 处理Foresee spi nand ecc 错误标志位特异性
+		if((status & STATUS_FORESEE_ECC_MASK) == STATUS_FORESEE_ECC_ERROR){
+			dev_dbg(&chip->spi->dev, "spi nand page read error, "
+				"status = 0x%x, page_id = %d\n", status, page_id);
+			return -status;
 		}
 	}
 
+
 	spinand_read_from_cache(chip, offs, len, rbuf);
-
-	return ret;
-}
-
-static int spinand_generic_program_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* wbuf)
-{
-	uint8_t status;
-	int ret;
-
-	spinand_write_enable(chip);
-	spinand_program_data_to_cache(chip, offs, len, wbuf);
-	spinand_program_execute(chip, page_id);
-	ret = spinand_wait_ready(chip, &status);
-
-	if (ret != 0){
-	    return ret;
-	}
-
-	if(STATUS_P_FAIL == (status & STATUS_P_FAIL_MASK)){
-		dev_dbg(&chip->spi->dev, "spi nand write error, "
-			"status = 0x%x, page_id = %d\n", status, page_id);
-		return -status;
-	}
 
 	return 0;
 }
 
-static int spinand_ds25q2g_read_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* rbuf, unsigned int *corrected)
+static int spinand_program_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* wbuf)
 {
-	uint8_t status;
-	int ret;
+	u8 status;
 
 	//针对Dosilicon的DS35Q2GA做特殊处理,DS35Q2GA只有一个die,每个die有两个plane.
 	//当block number为奇数,选择另外一个plane.
-	if((page_id / PAGES_PER_BLOCK) % 2){
-		offs |= (0x1 << 12);
-	}
-
-	spinand_read_page_to_cache(chip, page_id);
-	ret = spinand_wait_ready(chip, &status);
-
-	if (ret != 0){
-	    return ret;
-	}
-
-	if(likely(chip->get_ecc_status != NULL)){
-		ret = chip->get_ecc_status(status, corrected);
-		if (ret != 0){
-			dev_dbg(&chip->spi->dev, "spi nand page read error, "
-				"status = 0x%02x, page_id = %d\n", status, page_id);
-		}
-	}
-
-	spinand_read_from_cache(chip, offs, len, rbuf);
-
-	return ret;
-}
-
-static int spinand_ds25q2g_program_page(struct spinand_chip *chip, u32 page_id, u16 offs, u16 len, u8* wbuf)
-{
-	uint8_t status;
-	int ret;
-
-	//针对Dosilicon的DS35Q2GA做特殊处理,DS35Q2GA只有一个die,每个die有两个plane.
-	//当block number为奇数,选择另外一个plane.
-	if((page_id / PAGES_PER_BLOCK) % 2){
+	if((chip->info->id == 0x72e5) && ((page_id / PAGES_PER_BLOCK) % 2)){
 		offs |= (0x1 << 12);
 	}
 
 	spinand_write_enable(chip);
 	spinand_program_data_to_cache(chip, offs, len, wbuf);
 	spinand_program_execute(chip, page_id);
-	ret = spinand_wait_ready(chip, &status);
-
-	if (ret != 0){
-	    return ret;
-	}
+	spinand_wait_ready(chip, status);
 
 	if(STATUS_P_FAIL == (status & STATUS_P_FAIL_MASK)){
 		dev_dbg(&chip->spi->dev, "spi nand write error, "
@@ -291,16 +222,11 @@ static int spinand_ds25q2g_program_page(struct spinand_chip *chip, u32 page_id, 
 
 static int spinand_erase_block(struct spinand_chip *chip, u32 block_id)
 {
-	uint8_t status;
-	int ret;
+	u8 status;
 
 	spinand_write_enable(chip);
 	spinand_erase_block_erase(chip, block_id);
-	ret = spinand_wait_ready(chip, &status);
-
-	if (ret != 0){
-	    return ret;
-	}
+	spinand_wait_ready(chip, status);
 
 	if ((status & STATUS_E_FAIL_MASK) == STATUS_E_FAIL){
 		dev_dbg(&chip->spi->dev, "erase error, "
@@ -335,7 +261,6 @@ static int spinand_cmd_func(struct spinand_chip *chip, struct spinand_cmd *cmd)
 static int spinand_probe(struct spi_device *spi)
 {
 	struct spinand_chip *chip;
-	uint16_t id;
 
 	chip = devm_kzalloc(&spi->dev, sizeof(*chip), GFP_KERNEL);
 	if(!chip)
@@ -343,22 +268,14 @@ static int spinand_probe(struct spi_device *spi)
 
 	chip->spi = spi;
 	chip->reset = spinand_reset;
+	chip->read_page = spinand_read_page;
+	chip->program_page = spinand_program_page;
 	chip->erase_block = spinand_erase_block;
 	chip->cmd_func = spinand_cmd_func;
 	chip->hwecc = spinand_hwecc;
 
-	spinand_read_id(chip, &id);
-
-	if(id == 0x72e5){
-		chip->read_page    = spinand_ds25q2g_read_page;
-		chip->program_page = spinand_ds25q2g_program_page;
-	}else{
-		chip->read_page    = spinand_generic_read_page;
-		chip->program_page = spinand_generic_program_page;
-	}
-
 	spi_set_drvdata(spi, chip);
-	return spinand_mtd_register(chip, id);
+	return spinand_mtd_register(chip);
 }
 
 static int spinand_remove(struct spi_device *spi)
