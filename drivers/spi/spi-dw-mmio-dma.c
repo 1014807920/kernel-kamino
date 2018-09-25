@@ -123,7 +123,7 @@ static bool spi_dw_can_dma(struct spi_master *master, struct spi_device *spi,
 		return false;
 
 	/* 当xfer->len > fifo_len * 32 才使用dma */
-	return xfer->len > (dws->tx_fifo_len << 5);
+	return xfer->len > (dws->fifo_len << 5);
 }
 
 /*
@@ -153,7 +153,7 @@ static struct dma_async_tx_descriptor *dw_spi_dma_prepare_tx(
 
 	txconf.direction = DMA_MEM_TO_DEV;
 	txconf.dst_addr = dws->dma_addr;
-	txconf.dst_maxburst = 4;
+	txconf.dst_maxburst = 8;
 	txconf.src_maxburst = 32;
 	txconf.src_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
 	txconf.dst_addr_width = DMA_SLAVE_BUSWIDTH_1_BYTE;
@@ -239,8 +239,8 @@ static int spi_dw_dma_setup(struct dw_spi *dws, struct spi_transfer *xfer)
 	cr0 = dw_readl(dws, DW_SPI_CTRL0) & (~SPI_TMOD_MASK);
 	cr0 |= SPI_TMOD_TO << SPI_TMOD_OFFSET;
 
-	dw_writel(dws, DW_SPI_DMARDLR, dws->rx_fifo_len / 2 -1);
-	dw_writel(dws, DW_SPI_DMATDLR, dws->tx_fifo_len / 2);
+	dw_writel(dws, DW_SPI_DMARDLR, dws->fifo_len - 1);
+	dw_writel(dws, DW_SPI_DMATDLR, dws->fifo_len);
 
 	if(xfer->rx_buf){
 		cr0 &= ~SPI_TMOD_MASK;
