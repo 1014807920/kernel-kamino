@@ -171,10 +171,13 @@ static inline int spinand_wait_ready(struct spinand_chip *chip, uint8_t *status)
 
 	timeo += msecs_to_jiffies(100);
 
-	while (time_before(jiffies, timeo)) {
+	while (1) {
 		spinand_get_status(chip, REG_STATUS, status);
 		if((*status & STATUS_OIP_MASK) == STATUS_READY)
 		    return 0;
+
+		if(time_after(jiffies, timeo))
+		    break;
 
 		cond_resched();
 	}
