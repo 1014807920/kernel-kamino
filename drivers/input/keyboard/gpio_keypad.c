@@ -91,17 +91,17 @@ static void kp_work(struct kp *kp)
 	for (i = 0; i < kp->key_num; i++) {
 		io_status = gpiod_get_value(gpio_to_desc(key->pin));
 		if (io_status != key->status) {
-			msleep(SOFT_JITTER);
+			//msleep(SOFT_JITTER);
 			io_status = gpiod_get_value(gpio_to_desc(key->pin));
 			if (io_status != key->status) {
 				if (!io_status) {
-					dev_err(&kp->input->dev,
-						 "key %d up\n", key->code);
+					//dev_err(&kp->input->dev,
+					//	 "key %d up\n", key->code);
 					input_report_key(kp->input,  key->code, 0);
 					input_sync(kp->input);
 				} else {
-					dev_err(&kp->input->dev,
-						 "key %d down\n", key->code);
+					//dev_err(&kp->input->dev,
+					//	 "key %d down\n", key->code);
 					input_report_key(kp->input, key->code, 1);
 					input_sync(kp->input);
 				}
