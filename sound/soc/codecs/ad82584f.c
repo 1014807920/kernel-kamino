@@ -1073,7 +1073,9 @@ static int ad82584f_startup(struct snd_pcm_substream *substream,
 	struct ad82584f_priv *ad82584f = snd_soc_codec_get_drvdata(codec);
 	int ret = 0;
 
-	dev_info(codec->dev, "%s\n", __func__);
+	gpio_direction_output(ad82584f->pdata->reset_pin,1);
+	dev_info(codec->dev, "%s reset_pin=%d\n", __func__,
+		 gpio_get_value(ad82584f->pdata->reset_pin));
 
 	return ret;
 }
@@ -1085,7 +1087,9 @@ static int ad82584f_shutdown(struct snd_pcm_substream *substream,
 	struct ad82584f_priv *ad82584f = snd_soc_codec_get_drvdata(codec);
 	int ret = 0;
 
-	dev_info(codec->dev, "%s\n", __func__);
+	gpio_direction_output(ad82584f->pdata->reset_pin,0);
+	dev_info(codec->dev, "%s reset_pin=%d\n", __func__,
+		 gpio_get_value(ad82584f->pdata->reset_pin));
 
 	return ret;
 }
