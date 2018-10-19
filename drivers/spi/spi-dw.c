@@ -151,10 +151,10 @@ static void dw_spi_set_cs(struct spi_device *spi, bool enable)
 #define tx_max(_dws) ({\
 	uint32_t __tx_left, __fifo_left, __rxtx_gap;\
 	__tx_left   = ((_dws)->tx_end - (_dws)->tx) / (_dws)->n_bytes;\
-	__fifo_left = (_dws)->fifo_len - dw_readl((_dws), DW_SPI_TXFLR);\
+	__fifo_left = (_dws)->tx_fifo_len - dw_readl((_dws), DW_SPI_TXFLR);\
 	__rxtx_gap  = (((_dws)->rx_end - (_dws)->rx) -\
 		((_dws)->tx_end - (_dws)->tx)) / (_dws)->n_bytes;\
-	min3(__tx_left, __fifo_left, (uint32_t)((_dws)->fifo_len - __rxtx_gap));\
+	min3(__tx_left, __fifo_left, (uint32_t)((_dws)->tx_fifo_len - __rxtx_gap));\
 })
 
 #define dw_writer(_dws) do{\
@@ -356,7 +356,7 @@ static int dw_spi_transfer_one(struct spi_master *master,
 			return ret;
 		}
 	} else if (!chip->poll_mode) {
-		txlevel = min_t(u16, dws->fifo_len / 2, dws->len / dws->n_bytes);
+		txlevel = min_t(u16, dws->tx_fifo_len / 2, dws->len / dws->n_bytes);
 		dw_writel(dws, DW_SPI_TXFLTR, txlevel);
 
 		/* Set the interrupt mask */
@@ -455,7 +455,7 @@ static void spi_hw_init(struct device *dev, struct dw_spi *dws)
 	 * Try to detect the FIFO depth if not set by interface driver,
 	 * the depth could be from 2 to 256 from HW spec
 	 */
-	if (!dws->fifo_len) {
+	if (!dws->tx_fifo_len) {
 		u32 fifo;
 
 		for (fifo = 1; fifo < 256; fifo++) {
@@ -465,8 +465,23 @@ static void spi_hw_init(struct device *dev, struct dw_spi *dws)
 		}
 		dw_writel(dws, DW_SPI_TXFLTR, 0);
 
-		dws->fifo_len = (fifo == 1) ? 0 : fifo;
-		dev_dbg(dev, "Detected FIFO size: %u bytes\n", dws->fifo_len);
+		dws->tx_fifo_len = (fifo == 1) ? 0 : fifo;
+		dev_dbg(dev, "Detected tx FIFO size: %u bytes\n", dws->tx_fifo_len);
+	}
+
+	if (!dws->rx_fifo_len) {
+		u32 fifo;
+
+		for (fifo = 1; fifo < 256; fifo++) {
+			dw_writel(dws, DW_SPI_RXFLTR, fifo);
+			if (fifo != dw_readl(dws, DW_SPI_RXFLTR))
+				break;
+		}
+		dw_writel(dws, DW_SPI_RXFLTR, 0);
+
+		dws->rx_fifo_len = (fifo == 1) ? 0 : fifo;
+		dev_dbg(dev, "Detected rx FIFO size: %u bytes\n", dws->rx_fifo_len);
+
 	}
 }
 

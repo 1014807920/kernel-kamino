@@ -114,7 +114,8 @@ struct dw_spi {
 
 	unsigned long		paddr;
 	int			irq;
-	u32			fifo_len;	/* depth of the FIFO buffer */
+	u32			tx_fifo_len;	/* depth of the FIFO buffer */
+	u32			rx_fifo_len;	/* depth of the FIFO buffer */
 	u32			max_freq;	/* max bus freq supported */
 
 	u32			reg_io_width;	/* DR I/O width in bytes */
