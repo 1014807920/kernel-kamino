@@ -961,13 +961,13 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 {
 	struct spinand_chip *chip = mtd_to_chip(mtd);
 	struct spinand_info *info = chip->info;
-	int page_id, page_offset = 0, page_num = 0, oob_num = 0;
+	int page_id, page_offset = 0, page_left = 0, oob_left = 0;
 	u32 oobsize = 0, oob_offs = ops->ooboffs;
 
 	int count = 0;
 	int main_ok = 0, main_left = 0, main_offset = 0;
-	int oob_ok = 0, oob_left = 0;
-	int retval;
+	int oob_ok = 0;
+	int size, retval;
 	unsigned int corrected;
 
 	page_id = from >> info->page_shift;
@@ -975,7 +975,7 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 	/* for main data */
 	if(likely(ops->datbuf)){
 		page_offset = from & info->page_mask;
-		page_num = (page_offset + ops->len + info->page_main_size -1 ) /
+		page_left = (page_offset + ops->len + info->page_main_size -1 ) /
 							info->page_main_size;
 		main_left = ops->len;
 		main_offset = page_offset;
@@ -984,26 +984,40 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 	if(unlikely(ops->oobbuf)){
 		oobsize = ops->mode == MTD_OPS_AUTO_OOB ?
 			info->ecclayout->oobavail : info->page_spare_size;
-		oob_num = (ops->ooblen + oobsize -1) / oobsize;
+		page_left = max_t(u32, page_left, (oob_offs + ops->ooblen + oobsize -1) / oobsize);
 		oob_left = ops->ooblen;
 
 		if(ops->ooboffs >= oobsize)
 			return -EINVAL;
 	}
 
-	while (count < page_num || count < oob_num){
+#if 0
+	pr_notice("page_offset=%04d, oob_offs=%04d, len=%04d, oob_len=%04d\n", page_offset, oob_offs, ops->len, ops->ooblen);
+#endif
+
+	while (page_left){
 #ifdef CONFIG_MTD_SPINAND_SWECC
 		retval = chip->read_page(chip,
 			page_id + count, 0, info->page_size, chip->buf, &corrected);
 #else
-		if(likely(ops->datbuf))
-			retval = chip->read_page(chip,
-				page_id + count, 0, info->page_size, chip->buf, &corrected);
-		else
+		if(unlikely(main_left && oob_left)){
+			retval = chip->read_page(chip, page_id + count, main_offset, \
+					info->page_size - main_offset, chip->buf + main_offset , &corrected);
+			size = min(main_left, info->page_main_size - main_offset);
+			memcpy (ops->datbuf + main_ok, chip->buf + main_offset, size);
+		}
+		else if(likely(main_left)){
+			size = min(main_left, info->page_main_size - main_offset);
+			retval = chip->read_page(chip, page_id + count, main_offset, \
+						size, chip->buf, &corrected);
+			memcpy(ops->datbuf + main_ok, chip->buf, size);
+		}else{
 			retval = chip->read_page(chip, page_id + count,
 					info->page_main_size,
 					info->page_spare_size,
 					chip->buf + info->page_main_size, &corrected);
+		}
+
 #endif
 
 		if (likely(retval == 0)){
@@ -1013,13 +1027,11 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 			mtd->ecc_stats.failed++;
 			pr_notice("read nand page ops ecc not corrected! page id = %d\n", page_id+count);
 		} else if (unlikely(retval < 0)){
-			pr_debug("%s: fail, page=%d!\n",__func__, page_id);
+			pr_err("%s: fail, page=%d!, code = %d\n",__func__, page_id+count, retval);
 			return retval;
 		}
 
-		if (count < page_num && ops->datbuf){
-
-			int size = min(main_left, info->page_main_size - main_offset);
+		if (main_left){
 #ifdef CONFIG_MTD_SPINAND_SWECC
 			retval = spinand_correct_data(mtd);
 
@@ -1029,15 +1041,13 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 				pr_info("SWECC 1 bit error, corrected! page=%x\n", page_id+count);
 #endif
 
-			memcpy (ops->datbuf + main_ok, chip->buf + main_offset, size);
-
 			main_ok += size;
 			main_left -= size;
 			main_offset = 0;
 			ops->retlen = main_ok;
 		}
 
-		if (count < oob_num && ops->oobbuf){
+		if (oob_left){
 			int len = 0;
 
 			switch(ops->mode){
@@ -1096,6 +1106,7 @@ static int spinand_read_ops(struct mtd_info *mtd, loff_t from, struct mtd_oob_op
 			ops->oobretlen = oob_ok;
 		}
 		count++;
+		page_left--;
 	}
 
 	return corrected;
