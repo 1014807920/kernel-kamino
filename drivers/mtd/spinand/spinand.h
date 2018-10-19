@@ -29,12 +29,30 @@
 #define STATUS_E_FAIL			(1 << 2)
 #define STATUS_P_FAIL_MASK		(0x08  )
 #define STATUS_P_FAIL			(1 << 3)
-#define STATUS_COMMON_ECC_MASK		(0x30  )
+#define STATUS_GENERIC_ECC_MASK		(0x30  )
+#define STATUS_MICRON_ECC_MASK		(0x70  )
+#define STATUS_XTX_ECC_MASK		(0x3c  )
 #define STATUS_FORESEE_ECC_MASK		(0x70  )
 #define STATUS_ECC_1BIT_CORRECTED	(1 << 4)
-#define STATUS_COMMON_ECC_ERROR		(2 << 4)
+#define STATUS_GENERIC_ECC_ERROR	(2 << 4)
 #define STATUS_FORESEE_ECC_ERROR	(7 << 4)
 #define STATUS_ECC_RESERVED		(3 << 4)
+
+#define GENERIC_ECC_BITS_MAX		8
+#define GD_ECC_BITS_MAX			8
+#define TOSHIBA_ECC_BITS_MAX		4
+#define MICRON_ECC_BITS_MAX		8
+#define XTX_ECC_BITS_MAX		8
+#define ZETTA_ECC_BITS_MAX		4
+#define ESMT_ECC_BITS_MAX		1
+#define WINBOND_ECC_BITS_MAX		4
+#define MXIC_ECC_BITS_MAX		4
+#define FORESSE_ECC_BITS_MAX		4
+#define DOSILICON_ECC_BITS_MAX		4
+#define HEYANG_ECC_4BITS_MAX		4
+#define HEYANG_ECC_14BITS_MAX		14
+
+#define ECC_NOT_CORRECT			(1)
 
 /*ECC enable defines*/
 #define REG_ECC_MASK			0x10
@@ -111,11 +129,13 @@ struct spinand_chip {
 	u8 *bbt;
 	int (*reset)(struct spinand_chip *chip);
 	int (*read_id)(struct spinand_chip *chip, void* id);
-	int (*read_page)(struct spinand_chip *chip, u32 page_id, u16 offset, u16 len, u8* rbuf);
+	int (*read_page)(struct spinand_chip *chip, u32 page_id, u16 offset, u16 len, u8* rbuf, unsigned int* corrected);
 	int (*program_page)(struct spinand_chip *chip, u32 page_id, u16 offset, u16 len, u8* wbuf);
 	int (*erase_block)(struct spinand_chip *chip, u32 block_id);
 	int (*cmd_func)(struct spinand_chip *chip, struct spinand_cmd *cmd);
 	void (*hwecc)(struct spinand_chip *chip, bool en);
+	int (*get_ecc_status)(unsigned char status, unsigned int *corrected);
+	u32 ecc_strength;
 };
 
 struct spinand_index {
@@ -123,12 +143,14 @@ struct spinand_index {
 	const char *name;
 	int ecc_index;
 	int info_index;
+	u8  ecc_strength;
+	int (*get_ecc_status)(unsigned char status, unsigned int *corrected);
 };
 
 #define mtd_to_chip(_mtd)	((_mtd)->priv)
 #define chip_to_mtd(_chip)	(&(_chip)->mtd)
 
-int spinand_mtd_register(struct spinand_chip *chip);
+int spinand_mtd_register(struct spinand_chip *chip, uint16_t spinand_id);
 int spinand_mtd_unregister(struct spinand_chip *chip);
 
 #endif	// #ifndef __SPINAND_H__
