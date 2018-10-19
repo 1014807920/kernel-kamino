@@ -256,10 +256,27 @@ static int nationalchip_pwm_remove(struct platform_device *pdev)
 	return ret;
 }
 
+static int nationalchip_pwm_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	return 0;
+}
+
+static int nationalchip_pwm_resume(struct platform_device *pdev)
+{
+	struct nationalchip_pwm *p = platform_get_drvdata(pdev);
+	//使能
+	writel(0xff, p->base + PWM_CHANNEL_EN);
+	//更新占空比等寄存器
+	writel(0x00, p->base + PWM_UPDATE);
+	return 0;
+}
+
 static struct platform_driver nationalchip_pwm_driver = {
-	.probe  = nationalchip_pwm_probe,
-	.remove = nationalchip_pwm_remove,
-	.driver = {
+	.probe   = nationalchip_pwm_probe,
+	.remove  = nationalchip_pwm_remove,
+	.suspend = nationalchip_pwm_suspend,
+	.resume  = nationalchip_pwm_resume,
+	.driver  = {
 		.name           = "pwm-nationalchip",
 		.of_match_table = nationalchip_pwm_of_match,
 	},
