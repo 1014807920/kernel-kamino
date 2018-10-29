@@ -49,6 +49,8 @@ static int init_display(struct fbtft_par *par)
 	write_reg(par, 0xCB, 0x39, 0X2C, 0x00, 0x34, 0x02);
 	write_reg(par, 0xF7, 0x20);
 	write_reg(par, 0xEA, 0x00, 0x00);
+	write_reg(par, 0x3A, 0x55); //16bits pixl
+	write_reg(par, 0x36, 0x88); //0x48->0x40  bgr->rgb,0x40->0x0 column address order.
 	/* ------------power control-------------------------------- */
 	write_reg(par, 0xC0, 0x26);
 	write_reg(par, 0xC1, 0x11);
@@ -95,6 +97,8 @@ static void set_addr_win(struct fbtft_par *par, int xs, int ys, int xe, int ye)
 #define MEM_BGR (3) /* RGB-BGR Order */
 static int set_var(struct fbtft_par *par)
 {
+	/* set in init_display */
+	/*
 	switch (par->info->var.rotate) {
 	case 0:
 		write_reg(par, 0x36, (1 << MEM_X) | (par->bgr << MEM_BGR));
@@ -111,7 +115,7 @@ static int set_var(struct fbtft_par *par)
 				     (1 << MEM_V) | (par->bgr << MEM_BGR));
 		break;
 	}
-
+	*/
 	return 0;
 }
 

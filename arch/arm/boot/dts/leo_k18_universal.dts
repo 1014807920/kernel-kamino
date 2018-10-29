@@ -202,6 +202,24 @@
 
 };
 
+&spi1{
+       lcd0: ili9341@0{
+               compatible = "ilitek,ili9341";
+               reg = <0>;
+               status = "okay";
+               spi-max-frequency = <15000000>;
+               /*regwidth = <8>;*/
+               width = <240>;
+               height = <320>;
+               buswidth = <8>;
+               /*bpp = <16>;*/
+               bgr = <1>;
+               dc-gpios = <&gpa0 9 GPIO_ACTIVE_HIGH>;
+               reset-gpios = <&ck_gpa0 18 GPIO_ACTIVE_HIGH>;
+               debug = <0x1>;
+       };
+};
+
 &mmc0{
 	status = "disabled";
 };
