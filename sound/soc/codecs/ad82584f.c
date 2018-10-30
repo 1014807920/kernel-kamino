@@ -1352,8 +1352,7 @@ const struct regmap_config ad82584f_regmap = {
 	//.num_reg_defaults = ARRAY_SIZE(ad82584f_reg_def),
 };
 
-static int ad82584f_i2c_probe(struct i2c_client *i2c,
-			      const struct i2c_device_id *id)
+static int ad82584f_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *id)
 {
 	struct ad82584f_priv *ad82584f;
 	struct ad82584f_platform_data *pdata;
@@ -1361,11 +1360,11 @@ static int ad82584f_i2c_probe(struct i2c_client *i2c,
 	int ret;
 	int value_id;
 	const char *dev_name = NULL;
+	const char *dai_name = NULL;
 	struct device_node *np = i2c->dev.of_node;
 
 	printk("%s\n", __func__);
-	ad82584f =
-	    devm_kzalloc(&i2c->dev, sizeof(struct ad82584f_priv), GFP_KERNEL);
+	ad82584f = devm_kzalloc(&i2c->dev, sizeof(struct ad82584f_priv), GFP_KERNEL);
 	if (!ad82584f) {
 		printk("%s,%d,Fail to devm_kzalloc\n", __func__, __LINE__);
 		return -ENOMEM;
@@ -1374,56 +1373,56 @@ static int ad82584f_i2c_probe(struct i2c_client *i2c,
 	ad82584f->regmap = devm_regmap_init_i2c(i2c, &ad82584f_regmap);	//---rokid
 	if (IS_ERR(ad82584f->regmap)) {
 		ret = PTR_ERR(ad82584f->regmap);
-		dev_err(&i2c->dev, "Failed to allocate register map: %d\n",
-			ret);
+		dev_err(&i2c->dev, "Failed to allocate register map: %d\n", ret);
 		return ret;
 	}
 
-	ret = of_property_read_u32(np, "speaker-power", &g_speaker_power);
-	if ((ret < 0) || ((g_speaker_power != 3) && (g_speaker_power != 10))) {
-		dev_err(&i2c->dev,
-			"Failed to get  speaker-power,ret = %d, g_speaker_power=%d\n",
-			ret, g_speaker_power);
-		g_speaker_power = 3;
-	}
-	printk("%s g_speaker_power=%d\n", __func__, g_speaker_power);
-	init_reg_and_ram_tab();
-
 	ret = regmap_read(ad82584f->regmap, DEVICE_ID, &value_id);
 	if (ret < 0 || (value_id != 0x52)) {
-		dev_err(&i2c->dev,
-			"Failed to read device id from the ad82584f: ret=%d,value_id(%d) != 0x52\n",
+		dev_err(&i2c->dev, "Failed to read device id from the ad82584f: ret=%d,value_id(%d) != 0x52\n",
 			ret, value_id);
 		return ret;
 	}
 
-	ret = of_property_read_string_index(np, "dev-name", 0, &dev_name);
-	if (ret == 0)
-		dev_set_name(&i2c->dev, dev_name);
+	if(np){
+		ret = of_property_read_string_index(np, "dev-name", 0, &dev_name);
+		if (ret == 0)
+			dev_set_name(&i2c->dev, dev_name);
 
-	pdata =
-	    devm_kzalloc(&i2c->dev, sizeof(struct ad82584f_platform_data),
-			 GFP_KERNEL);
+		ret = of_property_read_string_index(np, "dai-name", 0, &dai_name);
+		if(ret == 0){
+			strcpy(ad82584f_dai.name, dai_name);
+			dev_err(&i2c->dev, "dai_name=%s\n", ad82584f_dai.name);
+		}
+
+		ret = of_property_read_u32(np, "speaker-power", &g_speaker_power);
+		if ((ret < 0) || ((g_speaker_power != 3) && (g_speaker_power != 10))) {
+			dev_err(&i2c->dev,
+				"Failed to get  speaker-power,ret = %d, g_speaker_power=%d\n",
+				ret, g_speaker_power);
+			g_speaker_power = 3;
+		}
+	}
+
+	dev_err(&i2c->dev, "%s g_speaker_power=%d\n", __func__, g_speaker_power);
+	init_reg_and_ram_tab();
+
+	pdata = devm_kzalloc(&i2c->dev, sizeof(struct ad82584f_platform_data), GFP_KERNEL);
 	if (!pdata) {
-		dev_err(&i2c->dev, "%s failed to kzalloc for ad82584f pdata\n",
-			__func__);
+		dev_err(&i2c->dev, "%s failed to kzalloc for ad82584f pdata\n", __func__);
 		return -ENOMEM;
 	}
 	ad82584f->pdata = pdata;
 
-	ad82584f->pdata->reset_pin =
-	    of_get_named_gpio_flags(i2c->dev.of_node, "dsp_reset_pin", 0,
-				    &flags);
+	ad82584f->pdata->reset_pin = of_get_named_gpio_flags(i2c->dev.of_node, "dsp_reset_pin", 0, &flags);
 
 	if (ad82584f->pdata->reset_pin < 0) {
-		dev_err(&i2c->dev, "%s() Can not read property reset_pin\n",
-			__func__);
+		dev_err(&i2c->dev, "%s() Can not read property reset_pin\n", __func__);
 		ad82584f->pdata->reset_pin = -1;
 	} else {
 		ret = gpio_request(ad82584f->pdata->reset_pin, NULL);
 		if (ret != 0) {
-			dev_err(&i2c->dev, "%s request reset_pin error",
-				__func__);
+			dev_err(&i2c->dev, "%s request reset_pin error", __func__);
 			return ret;
 		}
 		dev_info(&i2c->dev, "%s set reset_pin high\n", __func__);
@@ -1434,12 +1433,9 @@ static int ad82584f_i2c_probe(struct i2c_client *i2c,
 
 	i2c_set_clientdata(i2c, ad82584f);
 
-	ret =
-	    snd_soc_register_codec(&i2c->dev, &soc_codec_dev_ad82584f,
-				   &ad82584f_dai, 1);
+	ret = snd_soc_register_codec(&i2c->dev, &soc_codec_dev_ad82584f, &ad82584f_dai, 1);
 	if (ret != 0) {
-		dev_err(&i2c->dev, "%s,%d,Failed to register codec\n", __func__,
-			__LINE__);
+		dev_err(&i2c->dev, "%s,%d,Failed to register codec\n", __func__, __LINE__);
 	}
 
 	return ret;

@@ -80,8 +80,8 @@
 		name = "gxasoc-machine";
 		compatible = "NationalChip,ASoc-Machine";
 		num_codecs = <1>;
-		codec-name     = "ad82584f";
-		codec-dai-name = "ad82584f-dai";
+		codec-name     = "cus360-dev";
+		codec-dai-name = "cus360-dai";
 		platform-name  = "gxasoc-platform";
 		cup-dai-name   = "gxasoc-platform-dai";
 		status = "okay";
@@ -169,10 +169,19 @@
 &ck_i2c0{
 	ad82584f@31 {
 		compatible = "ESMT, ad82584f";
-		dev-name = "ad82584f";
 		reg = <0x31>;
+		dev-name = "cus360-dev";
+		dai-name = "cus360-dai";
 		speaker-power = <10>;
 		dsp_reset_pin = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	tas5805m@2d {
+		compatible = "ti,tas5805m";
+		reg = <0x2d>;
+		dev-name = "cus360-dev";
+		dai-name = "cus360-dai";
+		pdn_pin = <&ck_gpa0 6 GPIO_ACTIVE_HIGH>;
 	};
 
 };
