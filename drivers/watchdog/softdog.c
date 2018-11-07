@@ -102,6 +102,10 @@ static void watchdog_print(unsigned long data)
 }
 #endif
 
+#if defined(CONFIG_LEDS_SOFTDOG_ALARM)
+extern void softdog_light_leds_all(void);
+#endif
+
 static void watchdog_fire(unsigned long data)
 {
 	if (soft_noboot)
@@ -113,7 +117,12 @@ static void watchdog_fire(unsigned long data)
 		pr_crit("Initiating system reboot\n");
 		pr_crit("watchdog timeout reboot\n");
 		console_flush_on_panic();
+#if defined(CONFIG_LEDS_SOFTDOG_ALARM)
+		pr_crit("light all leds to tell it\n");
+		softdog_light_leds_all();
+#else
 		emergency_restart();
+#endif
 		pr_crit("Reboot didn't ?????\n");
 	}
 }

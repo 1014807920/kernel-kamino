@@ -405,6 +405,13 @@ config LEDS_OTA
 	help
 	  This option enables support for OTA LEDS
 
+config LEDS_SOFTDOG_ALARM
+	tristate "watchdog timeout and light leds"
+	depends on LEDS_PWM
+	default n
+	help
+	  This option enables support to light all leds for alarm
+
 config LEDS_REGULATOR
 	tristate "REGULATOR driven LED support"
 	depends on LEDS_CLASS

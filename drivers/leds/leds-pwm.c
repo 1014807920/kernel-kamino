@@ -50,8 +50,8 @@ struct led_pwm_priv {
 	struct led_pwm_data leds[0];
 };
 
-#if defined(CONFIG_LEDS_OTA)
 static struct led_pwm_priv *g_priv;
+#if defined(CONFIG_LEDS_OTA)
 static int ota_light_start = 0;
 static int ota_light_end = 0;
 static struct kobject *ota_light_kobj;
@@ -195,6 +195,18 @@ static void prob_timer_fun(unsigned long data)
 #endif
 }
 
+#if defined(CONFIG_LEDS_SOFTDOG_ALARM)
+void softdog_light_leds_all(void)
+{
+	int count = 0;
+	printk("softdog: %s\n", __func__);
+	for (count = 0; count < 5; count++)
+                led_pwm_set(&g_priv->leds[count].cdev, 255);
+
+	printk("softdog: watchdog timeout and light all leds.\n");
+}
+#endif
+
 #if defined(CONFIG_LEDS_OTA)
 static void ota_light_workfunc(struct work_struct *work)
 {
@@ -336,8 +348,8 @@ static int led_pwm_probe(struct platform_device *pdev)
 		msecs_tmp = DEFAULT_DELAY_MS;
 	}
 
-#if defined(CONFIG_LEDS_OTA)
     g_priv = priv;
+#if defined(CONFIG_LEDS_OTA)
     ota_light_kobj = kobject_create_and_add("ota_light", NULL);
     if (ota_light_kobj) {
         ret = sysfs_create_group(ota_light_kobj, &ota_light_attr_group);
