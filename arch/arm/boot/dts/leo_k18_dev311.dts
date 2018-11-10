@@ -1,0 +1,181 @@
+/*
+ *  Copyright (C) 2013 Steffen Trumtrar <s.trumtrar@pengutronix.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/dts-v1/;
+/* First 4KB has trampoline code for secondary cores. */
+/* /memreserve/ 0x00000000 0x0001000; */
+
+#include "leo.dtsi"
+
+/ {
+	model = "nationalchip leo_k18_universal SoC";
+	compatible = "nationalchip,leo_k18_universal_1v", "nationalchip,leo";
+
+	chosen {
+		bootargs = "earlyprintk";
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory {
+		name = "memory";
+		device_type = "memory";
+		reg = <0x10000000 0x8000000>;
+	};
+
+	aliases {
+		/* this allow the ethaddr uboot environmnet variable contents
+		 * to be added to the gmac1 device tree blob.
+		 */
+	};
+
+	regulator_3_3v: vcc3p3-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "VCC3P3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	gpio_keypad{
+		compatible = "amlogic, gpio_keypad";
+		status = "okay";
+		scan_period = <20>;
+
+		key_num = <3>;
+		key_name = "volup", "voldown" , "mute";
+		key_code = <115 114 113>;
+
+		volup-gpio =   <&ck_gpa0 8 GPIO_ACTIVE_LOW>;
+		voldown-gpio = <&ck_gpa0 21 GPIO_ACTIVE_LOW>;
+		mute-gpio =    <&ck_gpa0 7 GPIO_ACTIVE_LOW>;
+
+		//gpio_high_z = <1>;
+		//irq_keyup = <6>;
+		//irq_keydown = <7>;
+	};
+
+	urat1_control{
+		compatible = "nationalchip,LEO_uart_control";
+		reg = <0x02308000 0x1000>;
+		val = <0x01>;
+		cts-gpio = <&gpa0 27 GPIO_ACTIVE_HIGH>;
+		rts-gpio = <&gpa0 26 GPIO_ACTIVE_HIGH>;
+	};
+
+	gxasoc-machine {
+		name = "gxasoc-machine";
+		compatible = "NationalChip,ASoc-Machine";
+		num_codecs = <1>;
+		codec-name     = "alc1311-dev";
+		codec-dai-name = "alc1311-dai";
+		platform-name  = "gxasoc-platform";
+		cup-dai-name   = "gxasoc-platform-dai";
+		status = "okay";
+	};
+
+	gxasoc-platform_dai {
+		dev-name   = "gxasoc-platform-dai";
+		compatible = "NationalChip,ASoc-Platform_Dai";
+		status = "okay";
+	};
+
+	bt-dev{
+		compatible = "rokid, bt-dev";
+		dev_name = "bt-dev";
+		status = "okay";
+		reset-gpio = <&ck_gpa0 31 GPIO_ACTIVE_HIGH>;
+	};
+
+};
+
+&gxasoc_codec{
+	status = "disabled";
+};
+
+&ck_i2c0{
+	status = "okay";
+};
+
+&spi0{
+	status = "okay";
+
+	/* spi nor flash */
+	/*M25P@0 {
+		compatible = "jedec,spi-nor";
+		spi-max-frequency = <85000000>;
+		reg = <1>;
+		status = "okay";
+
+		partitions {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fixed-partitions";
+			scpu {		reg = <0x000000 0x100000>; };
+			uboot_stage1 {	reg = <0x100000 0x40000>;  };
+			uboot_env {	reg = <0x140000 0x40000>;  };
+			uboot_stage2 {	reg = <0x180000 0x80000>;  };
+			boot_music {	reg = <0x200000 0x80000>;  };
+			kernel_dtb {	reg = <0x280000 0x80000>;  };
+			kernel {	reg = <0x300000 0x500000>; };
+		};
+	};*/
+
+	/* spi nand flash */
+	spinand_mcu@0 {
+		compatible = "spinand";
+		spi-max-frequency = <85000000>;
+		reg = <0>;
+		status = "okay";
+
+		partitions {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "fixed-partitions";
+			scpu {		reg = <0x000000 0x100000>; };
+			uboot_stage1 {	reg = <0x100000 0x40000>;  };
+			uboot_env {	reg = <0x140000 0x40000>;  };
+			uboot_stage2 {	reg = <0x180000 0x80000>;  };
+			boot_music {	reg = <0x200000 0x80000>;  };
+			kernel_dtb {	reg = <0x280000 0x80000>;  };
+			kernel {	reg = <0x300000 0x700000>; };
+			rootfs {	reg = <0xa00000 0x7600000>;};
+		};
+	};
+
+};
+
+&mmc0{
+	status = "disabled";
+};
+
+&mmc1 {
+	wlan_on-gpio = <&ck_gpa0 30 GPIO_ACTIVE_HIGH>;
+};
+
+&ck_i2c0{
+	alc1311@2a {
+		compatible = "realtek,alc1311";
+		dev-name = "alc1311-dev";
+		dai-name = "alc1311-dai";
+		reg = <0x2a>;
+		//init-vol = <0x3e>;
+		//hp_det-gpio = <&gpa1 8 GPIO_ACTIVE_HIGH>;
+		//hp_pa_shdn-gpio = <&gpa1 9 GPIO_ACTIVE_HIGH>;
+		};
+
+
+};
+
