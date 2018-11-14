@@ -1125,7 +1125,7 @@ static int __init setup_android_get_sn(char *str)
     return 0;
 }
 
-__setup("serialno=", setup_android_get_sn);
+__setup("androidboot.serialno=", setup_android_get_sn);
 
 static int android_bind_config(struct usb_configuration *c)
 {
