@@ -1606,6 +1606,13 @@ static int tas5805m_probe(struct device *dev, struct regmap *regmap)
 
 	}
 
+    //unmute the codec for init
+    ret = regmap_write(regmap, TAS5805M_REG_35, 0x11);
+    if(ret){
+        dev_err(dev, "Failed to initialize TAS5805M: %d\n",ret);
+        goto err;
+    }
+
 	ret = snd_soc_register_codec(dev, &soc_codec_tas5805m, &tas5805m_dai, 1);
 	if(ret != 0){
 		dev_err(dev, "Failed to register CODEC: %d\n", ret);
@@ -1630,15 +1637,15 @@ static int tas5805m_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id
 	if (IS_ERR(regmap))
 		return PTR_ERR(regmap);
 
-	unsigned int reg_res;
+	unsigned int reg_res = 0xFF;
 	int ret;
 
-	ret = regmap_read(regmap, TAS5805M_REG_35, &reg_res);
-	if(ret || (reg_res != 0x11)){
-		dev_err(&i2c->dev, "Failed to regmap_read TAS5805M_REG_35(which used for chid_id): %d,\
-							maybe IC TAS5805M is not powered on\n", ret);
-		return -1;
-	}
+    ret = regmap_read(regmap, TAS5805M_REG_35, &reg_res);
+    if(ret || (reg_res != 0x11) || (reg_res != 0x00)){
+        dev_err(&i2c->dev, "Failed to regmap_read TAS5805M_REG_35(which used for chid_id): ret=%d,reg_res=0x%x\
+                            maybe IC TAS5805M is not powered on\n", ret, reg_res);
+        return -1;
+    }
 
 	dev_info(&i2c->dev, "register TAS5805M_REG_35=%0x\n", reg_res);
 
