@@ -1,0 +1,10 @@
+#
+# yodabase configuration
+#
+
+config LIGHT_EFFECT
+	tristate "Support light effect"
+	default n
+	help
+		Light on when drive start,and export universal port.
+
