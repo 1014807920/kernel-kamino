@@ -22,18 +22,40 @@ int (*yodabase_led_brightness_set)(int brightness) = NULL;
 
 #define BREATH_PATTERN 1
 
+struct pattern_st{
+    int pattern_type;
+    int pattern_internal_timems;
+};
+
+struct raw_data_st{
+    int raw_data_internal_timems;
+    int raw_data_length;
+    u8 *raw_data_u8buf;
+};
+
+enum light_status_enum{
+    LIGHT_IDLE,
+    INIT_PATTERN_DATA,
+    INIT_RAW_DATA,
+    OTA_PATTERN_DATA,
+    OTA_RAW_DATA,
+};
+
 struct light {
     struct platform_device *platform_dev;
     struct device *dev;
     int led_num;
     char *led_charbuf;
-    int enable_in_probe;
     int led_inter_time;
-    int pattern_data;
-    int raw_data_length;
-    u8 *raw_data;
     int brightness;
     struct delayed_work light_delayed_workqueue;
+
+    int light_status;
+    int enable_init_light;
+    struct pattern_st init_pattern_st;
+    struct pattern_st ota_pattern_st;
+    struct raw_data_st init_raw_data_st;
+    struct raw_data_st ota_raw_data_st;
 };
 
 static ssize_t light_pixel_store(struct device *dev, struct device_attribute *attr,
@@ -41,9 +63,9 @@ static ssize_t light_pixel_store(struct device *dev, struct device_attribute *at
 {
     struct light *light_stage = dev_get_drvdata(dev);
 
-    if(light_stage->enable_in_probe){
-        cancel_delayed_work_sync(&light_stage->light_delayed_workqueue);
-        light_stage->enable_in_probe = 0;
+    if(light_stage->light_status != LIGHT_IDLE){
+        //cancel_delayed_work_sync(&light_stage->light_delayed_workqueue);
+        light_stage->light_status = LIGHT_IDLE;
     }
 
     if(count != light_stage->led_num){
@@ -100,14 +122,54 @@ static ssize_t light_brightness_store(struct device *dev, struct device_attribut
     return count;
 }
 
+static ssize_t light_ota_ctl_store(struct device *dev, struct device_attribute *attr,
+                const char *buf, size_t count)
+{
+    struct light *light_stage = dev_get_drvdata(dev);
+    unsigned long state;
+    int ret = kstrtoul(buf, 10, &state);
+    if(ret < 0){
+        dev_err(dev,"%s,buf=%s is not right\n",__func__, buf);
+        return -1;
+    }
+
+    if(state == 0){
+        dev_err(dev,"stop ota light effect\n");
+        light_stage->light_status = LIGHT_IDLE;        
+    }else{
+        dev_err(dev,"start ota light effect\n");
+        if(light_stage->ota_pattern_st.pattern_type > 0)
+            light_stage->light_status = OTA_PATTERN_DATA;
+        else
+            light_stage->light_status = OTA_RAW_DATA;
+    }
+
+    return count;
+}
+
+static ssize_t light_ota_ctl_show(struct device *dev, struct device_attribute *attr,
+                char *buf)
+{
+    struct light *light_stage = dev_get_drvdata(dev);
+    int ret;
+    if((light_stage->light_status == OTA_PATTERN_DATA) || light_stage->light_status == OTA_RAW_DATA)
+        ret = 1;
+    else
+        ret = 0;
+    return snprintf(buf, 16, "%u\n", (ret) ? 1 : 0);
+}
+
 static DEVICE_ATTR(pixel, S_IWUSR | S_IRUGO, light_pixel_show, light_pixel_store);
 static DEVICE_ATTR(busy, S_IRUGO, light_busy_show, NULL);
 static DEVICE_ATTR(brightness, S_IWUSR | S_IRUGO, light_brightness_show, light_brightness_store);
+static DEVICE_ATTR(ota_ctl, S_IWUSR | S_IRUGO, light_ota_ctl_show, light_ota_ctl_store);
+
 
 static struct attribute *light_attributes[] = {
     &dev_attr_pixel.attr,
     &dev_attr_busy.attr,
     &dev_attr_brightness.attr,
+    &dev_attr_ota_ctl.attr,
     NULL
 };
 
@@ -115,34 +177,34 @@ static struct attribute_group light_attribute_group = {
     .attrs = light_attributes
 };
 
-static uint32_t bgr_cal(uint32_t srcRGB, uint32_t dstRGB, int devision, int seq)
+static u32 bgr_cal(u32 srcRGB, u32 dstRGB, int devision, int seq)
 {
 
-    uint8_t tmpR, tmpG, tmpB;
+    u8 tmpR, tmpG, tmpB;
 
-    uint8_t srcR = (uint8_t)((srcRGB >> 16) & 0xFF);
-    uint8_t srcG = (uint8_t)((srcRGB >> 8) & 0xFF);
-    uint8_t srcB = (uint8_t)((srcRGB >> 0) & 0xFF);
+    u8 srcR = (u8)((srcRGB >> 16) & 0xFF);
+    u8 srcG = (u8)((srcRGB >> 8) & 0xFF);
+    u8 srcB = (u8)((srcRGB >> 0) & 0xFF);
 
-    uint8_t dstR = (uint8_t)((dstRGB >> 16) & 0xFF);
-    uint8_t dstG = (uint8_t)((dstRGB >> 8) & 0xFF);
-    uint8_t dstB = (uint8_t)((dstRGB >> 0) & 0xFF);
+    u8 dstR = (u8)((dstRGB >> 16) & 0xFF);
+    u8 dstG = (u8)((dstRGB >> 8) & 0xFF);
+    u8 dstB = (u8)((dstRGB >> 0) & 0xFF);
 
     tmpR = srcR + (dstR - srcR) * seq / devision;
     tmpG = srcG + (dstG - srcG) * seq / devision;
     tmpB = srcB + (dstB - srcB) * seq / devision;
 
-    uint32_t result = tmpR << 16 | tmpG << 8| tmpB;
+    u32 result = tmpR << 16 | tmpG << 8| tmpB;
     return result;
 }
 
 static void breath_pattern(struct light *light_stage)
 {
     const int div = 64;
-    const uint32_t led_ref[3] = {0xFF0000, 0xCC00FF, 0xFFFFFF};//attention it is bgr, not rgb!
+    const u32 led_ref[3] = {0xFF0000, 0xCC00FF, 0xFFFFFF};//attention it is bgr, not rgb!
     int light_num = sizeof(led_ref)/sizeof(led_ref[0]);
 
-    static uint32_t circle_num = 0,seq = 0;
+    static u32 circle_num = 0,seq = 0;
     int i;
 
     seq++;
@@ -151,55 +213,69 @@ static void breath_pattern(struct light *light_stage)
         circle_num++;
         circle_num = circle_num % light_num;
     }
-    uint32_t led_bgr32 = bgr_cal(led_ref[circle_num], led_ref[(circle_num+1)%light_num], div, seq);
-    uint8_t led_bgr8[3];
-    led_bgr8[0] = (uint8_t)((led_bgr32 >> 0) & 0xFF);
-    led_bgr8[1] = (uint8_t)((led_bgr32 >> 8) & 0xFF);
-    led_bgr8[2] = (uint8_t)((led_bgr32 >> 16) & 0xFF);
+    u32 led_bgr32 = bgr_cal(led_ref[circle_num], led_ref[(circle_num+1)%light_num], div, seq);
+    u8 led_bgr8[3];
+    led_bgr8[0] = (u8)((led_bgr32 >> 0) & 0xFF);
+    led_bgr8[1] = (u8)((led_bgr32 >> 8) & 0xFF);
+    led_bgr8[2] = (u8)((led_bgr32 >> 16) & 0xFF);
 
     for(i = 0; i<light_stage->led_num; i++){
         *((light_stage->led_charbuf) + i) = led_bgr8[i%3];
     }
 }
 
-static void raw_data_prepare(struct light *light_stage)
+static void init_raw_data_prepare(struct light *light_stage)
 {
     static int tick = 0;
-    memcpy(light_stage->led_charbuf, ((light_stage->raw_data)+tick), light_stage->led_num);
+    memcpy(light_stage->led_charbuf, (light_stage->init_raw_data_st.raw_data_u8buf+tick), light_stage->led_num);
     tick = tick + light_stage->led_num;
-    if(tick == light_stage->raw_data_length)
+    if(tick == light_stage->init_raw_data_st.raw_data_length)
+        tick = 0;
+}
+
+static void ota_raw_data_prepare(struct light *light_stage)
+{
+    static int tick = 0;
+    memcpy(light_stage->led_charbuf, (light_stage->ota_raw_data_st.raw_data_u8buf+tick), light_stage->led_num);
+    tick = tick + light_stage->led_num;
+    if(tick == light_stage->ota_raw_data_st.raw_data_length)
         tick = 0;
 }
 
 static void prepare_buf(struct light *light_stage)
 {
-
-    if((light_stage->pattern_data) > 0){
-        switch(light_stage->pattern_data){
-            case BREATH_PATTERN:
-                breath_pattern(light_stage);
-                break;
-            default:
-                break;
-        }
-    }else{
-        raw_data_prepare(light_stage);
+    switch(light_stage->light_status){
+        case LIGHT_IDLE:
+            break;
+        case INIT_PATTERN_DATA:
+            light_stage->led_inter_time = light_stage->init_pattern_st.pattern_internal_timems;
+            breath_pattern(light_stage);
+            break;
+        case OTA_PATTERN_DATA:
+            light_stage->led_inter_time = light_stage->ota_pattern_st.pattern_internal_timems;
+            breath_pattern(light_stage);
+            break;
+        case INIT_RAW_DATA:
+            light_stage->led_inter_time = light_stage->init_raw_data_st.raw_data_internal_timems;
+            init_raw_data_prepare(light_stage);
+            break;
+        case OTA_RAW_DATA:
+            light_stage->led_inter_time = light_stage->ota_raw_data_st.raw_data_internal_timems;
+            ota_raw_data_prepare(light_stage);
+            break;
+        default:
+            break;
     }
 }
 
-static void light_update_work_func(struct delayed_work *work)
+static void light_update_work_func(struct work_struct *work)
 {
-    struct light *light_stage = container_of(work, struct light, light_delayed_workqueue);
+    struct light *light_stage = container_of(work, struct light, light_delayed_workqueue.work);
     int ret = 0;
-    int i;
 
-    if(yodabase_led_draw != NULL){
+    if((yodabase_led_draw != NULL) && (light_stage->light_status != LIGHT_IDLE)){
         prepare_buf(light_stage);
         ret = (*yodabase_led_draw)(light_stage->led_charbuf,light_stage->led_num);
-        if(ret == 0){
-            dev_err(light_stage->dev,"light_update_work_func disable yodabase_led_draw\n");
-            return;
-        }
     }
 
     schedule_delayed_work(&(light_stage->light_delayed_workqueue), msecs_to_jiffies(light_stage->led_inter_time));
@@ -209,6 +285,7 @@ static int led_stage_probe(struct platform_device *pdev)
 {
     struct light *light_stage;
     int ret;
+    int defalt_internal_timems = 30;
 
     dev_info(&pdev->dev, "%s enter\n", __func__);
 
@@ -226,47 +303,88 @@ static int led_stage_probe(struct platform_device *pdev)
     if (light_stage->led_charbuf == NULL)
         return -ENOMEM;
 
-    light_stage->enable_in_probe = 0;
-    ret = of_property_read_u32(pdev->dev.of_node, "enable_in_probe", &light_stage->enable_in_probe);
+    ret = of_property_read_u32(pdev->dev.of_node, "enable_init_light", &light_stage->enable_init_light);
     if (ret) {
-        dev_err(&pdev->dev, "%s,read no enable_in_probe\n", __func__);
+        dev_err(&pdev->dev, "%s,read no enable_init_light\n", __func__);
         goto free_led_charbuf;
     }
 
-    if(light_stage->enable_in_probe){
-        ret = of_property_read_u32(pdev->dev.of_node, "led_inter_time", &light_stage->led_inter_time);
+    ret = of_property_read_u32(pdev->dev.of_node, "init_pattern_type", &light_stage->init_pattern_st.pattern_type);
+    if (!ret) {
+        ret = of_property_read_u32(pdev->dev.of_node, "init_pattern_inter_timems", \
+                        &light_stage->init_pattern_st.pattern_internal_timems);
         if (ret) {
-            dev_err(&pdev->dev, "%s,read no led_inter_time\n", __func__);
-            ret = -EINVAL;
+            light_stage->init_pattern_st.pattern_internal_timems = defalt_internal_timems;
+        }
+    }
+
+    ret = of_property_read_u32(pdev->dev.of_node, "ota_pattern_type", &light_stage->ota_pattern_st.pattern_type);
+    if (!ret) {
+        ret = of_property_read_u32(pdev->dev.of_node, "ota_pattern_inter_timems", \
+                        &light_stage->ota_pattern_st.pattern_internal_timems);
+        if (ret) {
+            light_stage->init_pattern_st.pattern_internal_timems = defalt_internal_timems;
+        }
+    }
+
+    ret = of_property_read_u32(pdev->dev.of_node, "init_raw_data_length", &light_stage->init_raw_data_st.raw_data_length);
+    if (!ret) {
+        ret = of_property_read_u32(pdev->dev.of_node, "init_raw_data_inter_timems", \
+                        &light_stage->init_raw_data_st.raw_data_internal_timems);
+        if (ret) {
+            light_stage->init_raw_data_st.raw_data_internal_timems = defalt_internal_timems;
+        }
+        light_stage->init_raw_data_st.raw_data_u8buf = kzalloc(light_stage->init_raw_data_st.raw_data_length,  GFP_KERNEL);
+        if (light_stage->init_raw_data_st.raw_data_u8buf == NULL){
+            dev_err(&pdev->dev, "%s,fail kzalloc raw_data\n", __func__);
             goto free_led_charbuf;
         }
-
-        ret = of_property_read_u32(pdev->dev.of_node, "pattern_data", &light_stage->pattern_data);
-        if (ret) {
-            dev_err(&pdev->dev, "%s,read no pattern_data\n", __func__);
+        ret = of_property_read_u8_array(pdev->dev.of_node,  "init_raw_data_u8", \
+                    light_stage->init_raw_data_st.raw_data_u8buf, light_stage->init_raw_data_st.raw_data_length);
+        if(ret){
+            dev_err(&pdev->dev, "%s,fail to read raw_data\n", __func__);
+            goto free_init_raw_data;
         }
-
-        ret = of_property_read_u32(pdev->dev.of_node, "raw_data_length", &light_stage->raw_data_length);
-        if (!ret) {
-            light_stage->raw_data = kzalloc(light_stage->raw_data_length,  GFP_KERNEL);
-            if (light_stage->raw_data == NULL){
-                dev_err(&pdev->dev, "%s,fail kzalloc raw_data\n", __func__);
-                goto free_led_charbuf;
-            }
-            ret = of_property_read_u8_array(pdev->dev.of_node,  "raw_data", light_stage->raw_data, light_stage->raw_data_length);
-            if(ret){
-                dev_err(&pdev->dev, "%s,fail to read raw_data\n", __func__);
-                goto free_raw_data;
-            }
-        } else {
-            dev_err(&pdev->dev, "%s,read no raw_data_length\n", __func__);
-        }
-
-        INIT_DELAYED_WORK(&(light_stage->light_delayed_workqueue),  light_update_work_func);
-        schedule_delayed_work(&(light_stage->light_delayed_workqueue), msecs_to_jiffies(100));
-    }else{
-        dev_info(&pdev->dev, "%s,enable_in_probe is disable\n", __func__);
     }
+
+    ret = of_property_read_u32(pdev->dev.of_node, "ota_raw_data_length", &light_stage->ota_raw_data_st.raw_data_length);
+    if (!ret) {
+        ret = of_property_read_u32(pdev->dev.of_node, "ota_raw_data_inter_timems", \
+                        &light_stage->ota_raw_data_st.raw_data_internal_timems);
+        if (ret) {
+            light_stage->ota_raw_data_st.raw_data_internal_timems = defalt_internal_timems;
+        }
+        light_stage->ota_raw_data_st.raw_data_u8buf = kzalloc(light_stage->ota_raw_data_st.raw_data_length,  GFP_KERNEL);
+        if (light_stage->ota_raw_data_st.raw_data_u8buf == NULL){
+            dev_err(&pdev->dev, "%s,fail kzalloc raw_data\n", __func__);
+            goto free_led_charbuf;
+        }
+        ret = of_property_read_u8_array(pdev->dev.of_node,  "ota_raw_data_u8", \
+                    light_stage->ota_raw_data_st.raw_data_u8buf, light_stage->ota_raw_data_st.raw_data_length);
+        if(ret){
+            dev_err(&pdev->dev, "%s,fail to read raw_data\n", __func__);
+            goto free_ota_raw_data;
+        }
+    }
+
+    switch(light_stage->enable_init_light){
+        case 0:
+            light_stage->light_status = LIGHT_IDLE;
+            break;
+        case 1:
+            light_stage->light_status = INIT_PATTERN_DATA;
+            break;
+        case 2:
+            light_stage->light_status = INIT_RAW_DATA;
+            break;
+        default:
+            light_stage->light_status = LIGHT_IDLE;
+            break;
+    }
+
+    light_stage->led_inter_time = defalt_internal_timems;
+    INIT_DELAYED_WORK(&(light_stage->light_delayed_workqueue),  light_update_work_func);
+    schedule_delayed_work(&(light_stage->light_delayed_workqueue), msecs_to_jiffies(light_stage->led_inter_time));
 
     light_stage->platform_dev = pdev;
     light_stage->dev = &pdev->dev;
@@ -282,8 +400,10 @@ static int led_stage_probe(struct platform_device *pdev)
 
     return 0;
 
-free_raw_data:
-    kfree(light_stage->raw_data);
+free_ota_raw_data:
+    kfree(light_stage->ota_raw_data_st.raw_data_u8buf);
+free_init_raw_data:
+    kfree(light_stage->init_raw_data_st.raw_data_u8buf);
 free_led_charbuf:
     kfree(light_stage->led_charbuf);
 
@@ -293,13 +413,15 @@ free_led_charbuf:
 static int led_stage_remove(struct platform_device *pdev)
 {
     struct light *light_stage = platform_get_drvdata(pdev);
-    if(light_stage->enable_in_probe){
+    if(light_stage->enable_init_light){
         cancel_delayed_work_sync(&light_stage->light_delayed_workqueue);
-        if((light_stage->led_charbuf))
-            kfree(light_stage->led_charbuf);
-        if((light_stage->raw_data))
-            kfree(light_stage->raw_data);
     }
+
+    if(light_stage->init_raw_data_st.raw_data_u8buf)
+        kfree(light_stage->init_raw_data_st.raw_data_u8buf);
+    if(light_stage->ota_raw_data_st.raw_data_u8buf)
+        kfree(light_stage->ota_raw_data_st.raw_data_u8buf);
+
     sysfs_remove_group(&light_stage->dev->kobj, &light_attribute_group); 
     return 0;
 }

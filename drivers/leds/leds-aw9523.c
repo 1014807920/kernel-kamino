@@ -603,7 +603,7 @@ static int aw9523_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *
 
     if (gpio_is_valid(aw9523->reset_gpio)) {
         ret = devm_gpio_request_one(&i2c->dev, aw9523->reset_gpio,
-            GPIOF_OUT_INIT_LOW, "aw9523_rst");
+            GPIOF_OUT_INIT_HIGH, "aw9523_rst");
         if (ret){
             dev_err(&i2c->dev, "%s: rst request failed\n", __func__);
             goto err;
@@ -611,7 +611,7 @@ static int aw9523_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *
     }
 
     /* hardware reset */
-    aw9523_hw_reset(aw9523);
+    //aw9523_hw_reset(aw9523);
 
     /* aw9523 chip id */
     ret = aw9523_read_chipid(aw9523);
