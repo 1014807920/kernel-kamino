@@ -28,7 +28,8 @@
 #include <linux/miscdevice.h>
 #include <asm/uaccess.h>
 #include <linux/leds.h>
-//#include <linux/leds-aw9523.h>
+#include <linux/light_effect.h>
+
 /******************************************************
  *
  * Marco
@@ -48,13 +49,14 @@ struct aw9523 {
     struct led_classdev cdev;
     struct work_struct brightness_work;
     struct work_struct pixel_work;
-
+    struct timer_list timer;
+    int enable_light_effect;
     int reset_gpio;
-
     unsigned char chipid;
-
     int imax;
 };
+
+static struct aw9523 *g_aw9523;
 
 #define AW_I2C_RETRIES 5
 #define AW_I2C_RETRY_DELAY 5
@@ -412,6 +414,10 @@ static ssize_t aw9523_pixel_store(struct device *dev, struct device_attribute *a
     struct led_classdev *led_cdev = dev_get_drvdata(dev);
     struct aw9523 *aw9523 = container_of(led_cdev, struct aw9523, cdev);
 
+    if(aw9523->enable_light_effect){
+        aw9523->enable_light_effect = false;
+    }
+
     if(count < sizeof(pixels)){
         printk("aw9523_pixel_store ERR buf, count=%d, buf=%s\n", count, buf);
         return count;
@@ -447,6 +453,32 @@ static struct attribute_group aw9523_attribute_group = {
     .attrs = aw9523_attributes
 };
 
+static int extern_aw9523_pixel_store(char *buf, int count)
+{
+    struct aw9523 *aw9523 = g_aw9523;
+
+    if(!(aw9523->enable_light_effect)){
+        return 0;
+    }
+
+    if(count < sizeof(pixels)){
+        printk("aw9523_led_draw ERR buf, count=%d, buf=%s\n", count, buf);
+        return count;
+    }
+    cancel_work_sync(&aw9523->pixel_work);
+    memcpy(pixels, buf, sizeof(pixels));
+    schedule_work(&aw9523->pixel_work);
+
+    return count;
+}
+
+static int extern_led_busy_show(void)
+{
+    struct aw9523 *aw9523 = g_aw9523;
+
+    int ret = (work_busy(&aw9523->pixel_work)) ? 1 : 0;
+    return ret;
+}
 
 /******************************************************
  *
@@ -514,8 +546,7 @@ static int aw9523_parse_led_cdev(struct aw9523 *aw9523,
         goto free_pdata;
     }
 
-    ret = sysfs_create_group(&aw9523->cdev.dev->kobj,
-            &aw9523_attribute_group);
+    ret = sysfs_create_group(&aw9523->cdev.dev->kobj, &aw9523_attribute_group);
     if (ret) {
         dev_err(aw9523->dev, "led sysfs ret: %d\n", ret);
         goto free_class;
@@ -529,6 +560,7 @@ free_pdata:
     return ret;
 }
 
+
 /******************************************************
  *
  * i2c driver
@@ -540,7 +572,7 @@ static int aw9523_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *
     struct device_node *np = i2c->dev.of_node;
     int ret;
 
-    pr_info("%s enter\n", __func__);
+    printk("%s enter\n", __func__);
 
     if (!i2c_check_functionality(i2c->adapter, I2C_FUNC_I2C)) {
         dev_err(&i2c->dev, "check_functionality failed\n");
@@ -550,6 +582,8 @@ static int aw9523_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *
     aw9523 = devm_kzalloc(&i2c->dev, sizeof(struct aw9523), GFP_KERNEL);
     if (aw9523 == NULL)
         return -ENOMEM;
+
+    g_aw9523 = aw9523;
 
     aw9523->dev = &i2c->dev;
     aw9523->i2c = i2c;
@@ -594,7 +628,11 @@ static int aw9523_i2c_probe(struct i2c_client *i2c, const struct i2c_device_id *
         goto err_sysfs;
     }
 
-    pr_info("%s probe completed successfully!\n", __func__);
+    aw9523->enable_light_effect = true;
+    yodabase_led_draw = extern_aw9523_pixel_store;
+    yodabase_is_led_busy = extern_led_busy_show;
+
+    printk("%s probe completed successfully!\n", __func__);
 
     return 0;
 
