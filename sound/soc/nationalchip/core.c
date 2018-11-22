@@ -320,6 +320,7 @@ int gxasoc_core_open(struct aout_stream *stream,
 	if (aout_substream_get_count(subdev) == 1) {
 		substream->stream = stream;
 		gxasoc_stream_open(substream, __callback, priv);
+		gxasoc_stream_set_volume(substream, defaultDBValue[subdev]);
 	}
 
 	return 0;
