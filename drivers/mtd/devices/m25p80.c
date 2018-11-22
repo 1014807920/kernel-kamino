@@ -201,7 +201,7 @@ static int m25p_probe(struct spi_device *spi)
 	struct flash_platform_data	*data;
 	struct m25p *flash;
 	struct spi_nor *nor;
-	enum read_mode mode = SPI_NOR_NORMAL;
+	enum read_mode mode = SPI_NOR_FAST;
 	char *flash_name = NULL;
 	int ret;
 
