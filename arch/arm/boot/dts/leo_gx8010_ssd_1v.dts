@@ -180,4 +180,20 @@
     status = "okay";
 };
 
-
+&spi1 {
+	lcd0: ili9488@0 {
+		  compatible = "ilitek,ili9488";
+		  reg = <0x0>;
+		  status = "okay";
+		  spi-max-frequency = <45000000>;
+		  regwidth = <8>;
+		  width = <320>;
+		  height = <480>;
+		  rotate = <0>;
+		  buswidth = <8>;
+		  bpp = <24>;
+		  dc-gpios = <&ck_gpa0 8 GPIO_ACTIVE_HIGH>;
+		  reset-gpios = <&gpa1 2 GPIO_ACTIVE_HIGH>;
+		  debug = <0x0>;
+	};
+};
