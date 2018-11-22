@@ -1060,6 +1060,7 @@
 				<0x04400000 0xd4>,
 				<0x04400200 0x30>,
 				<0x0230a000 0x4>,
+				<0x04700000 0x34>,
 				<0x04d00000 0x1bc>;
 			reg-names = "gxavdev.aout.opt.regs",
 				"gxavdev.aout.lodac.regs",
@@ -1070,16 +1071,19 @@
 				"gxavdev.jpeg.dec.regs",
 				"gxavdev.jpeg.prp.regs",
 				"gxavdev.jpeg.reset.regs",
+				"gxavdev.ga.regs",
 				"gxavdev.bt1120.regs";
 			interrupts = <49>,
 						<36>,
 						<36>,
 						<37>,
+						<62>,
 						<47>;
 			interrupt-names = "gxavdev.aout.irqs",
 							"gxavdev.jpeg.enc.irqs",
 							"gxavdev.jpeg.dec.irqs",
 							"gxavdev.adec.irqs",
+							"gxavdev.ga.irqs",
 							"gxavdev.bt1120.irqs";
 			status = "okay";
 		};
