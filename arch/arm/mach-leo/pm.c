@@ -38,6 +38,7 @@
 static u32 (*leo_sdram_self_refresh_in_ocram)(u32 sdr_base, u32 resume_base);
 static void __iomem *resume_base_addr;
 static phys_addr_t resume_addr; /* The physical resume address for asm code */
+static void __iomem *suspend_ocram_base;
 
 static int leo_setup_ocram_self_refresh(void)
 {
@@ -46,7 +47,6 @@ static int leo_setup_ocram_self_refresh(void)
 	struct device_node *np;
 	struct gen_pool *ocram_pool;
 	unsigned long ocram_base;
-	void __iomem *suspend_ocram_base;
 	int ret = 0;
 
 	np = of_find_compatible_node(NULL, NULL, "mmio-sram");
@@ -115,6 +115,12 @@ int leo_pm_mode_enter(enum reset_mode mode)
 
 	if (!pm->sdr_ctl_base_addr)
 		return -EFAULT;
+
+	/* Copy the code that puts DDR in self refresh to ocram */
+	leo_sdram_self_refresh_in_ocram =
+		(void *)fncpy(suspend_ocram_base,
+				&leo_sdram_self_refresh,
+				leo_sdram_self_refresh_sz);
 
 	/* flush cache back to ram */
 	flush_cache_all();
