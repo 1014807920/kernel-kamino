@@ -51,6 +51,8 @@ enum {
 	ECC_LAYOUT_DS35Q_OOB64,
 	ECC_LAYOUT_HEYANGTEK_OOB64,
 	ECC_LAYOUT_HEYANGTEK_OOB128,
+	ECC_LAYOUT_FUDANWEI_OOB128,
+	ECC_LAYOUT_FUDANWEI_OOB64,
 };
 
 static struct nand_ecclayout s_ecclayout[] = {
@@ -353,7 +355,37 @@ static struct nand_ecclayout s_ecclayout[] = {
 			{.offset = 68,	.length = 4},
 			{.offset = 100,	.length = 4},
 		}
-	}
+	},
+	[ECC_LAYOUT_FUDANWEI_OOB128] = {
+		.eccbytes = 64,
+		.eccpos = {
+			64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+			80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+			96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+			112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+		},
+		.oobavail = 62,
+		.oobfree = {
+			{.offset = 2,	.length = 62},
+		}
+	},
+	[ECC_LAYOUT_FUDANWEI_OOB64] = {
+		.eccbytes = 32,
+		.eccpos = {
+			8 , 9 , 10, 11, 12, 13, 14, 15,
+			24, 25, 26, 27, 28, 29, 30, 31,
+			40, 41, 42, 43, 44, 45, 46, 47,
+			56, 57, 58, 59, 60, 61, 62, 63,
+		},
+		.oobavail = 30,
+		.oobfree = {
+			{.offset = 2,	.length = 6},
+			{.offset = 16,	.length = 8},
+			{.offset = 32,	.length = 8},
+			{.offset = 48,	.length = 8},
+		}
+	},
+
 };
 
 /* page info */
@@ -760,6 +792,58 @@ static int heyang_ecc14_status(unsigned char status, unsigned int *bitflips)
 	return ret;
 }
 
+static int fudanwei_ecc1_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_GENERIC_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = FUDANWEI_ECC_1BITS_MAX;
+		break;
+	case 0x30:
+	case 0x20:
+	default:
+		*bitflips = FUDANWEI_ECC_1BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
+static int fudanwei_ecc4_status(unsigned char status, unsigned int *bitflips)
+{
+	int ret = 0;
+	unsigned int ecc_status = status & STATUS_FUDANWEI_ECC_MASK;
+
+	switch(ecc_status) {
+	case 0x00:
+		*bitflips = 0;
+		break;
+	case 0x10:
+		*bitflips = 1;
+		break;
+	case 0x20:
+		*bitflips = 2;
+		break;
+	case 0x30:
+		*bitflips = 3;
+		break;
+	case 0x40:
+		*bitflips = 4;
+		break;
+	case 0x70:
+	default:
+		*bitflips = FUDANWEI_ECC_4BITS_MAX + 1;
+		ret = ECC_NOT_CORRECT;
+		break;
+	}
+	return ret;
+}
+
 static struct spinand_index s_id_table[] = {
 	/* GD spi nand flash */
 	ID_TABLE_FILL(0xF1C8, "GD5F1GQ4UAYIG",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_GD_OOB64,	     gd_ecc_status,        GD_ECC_BITS_MAX),
@@ -802,6 +886,10 @@ static struct spinand_index s_id_table[] = {
 	ID_TABLE_FILL(0x21c9, "HYF1GQ4UDACAE",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_HEYANGTEK_OOB64,  heyang_ecc4_status,   HEYANG_ECC_4BITS_MAX),
 	ID_TABLE_FILL(0x5ac9, "HYF2GQ4UHCCAE",   NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_HEYANGTEK_OOB128, heyang_ecc14_status,  HEYANG_ECC_14BITS_MAX),
 	ID_TABLE_FILL(0x52c9, "HYF2GQ4UAACAE",   NAND_2G_PAGE2K_OOB128, ECC_LAYOUT_HEYANGTEK_OOB128, heyang_ecc14_status,  HEYANG_ECC_14BITS_MAX),
+
+	/* Fudan Microelectronics */
+	ID_TABLE_FILL(0xa1a1, "FM25S01",         NAND_1G_PAGE2K_OOB128, ECC_LAYOUT_FUDANWEI_OOB128, fudanwei_ecc1_status, FUDANWEI_ECC_1BITS_MAX),
+	ID_TABLE_FILL(0xf2a1, "FM25S02",         NAND_2G_PAGE2K_OOB64,  ECC_LAYOUT_FUDANWEI_OOB64,  fudanwei_ecc4_status, FUDANWEI_ECC_4BITS_MAX),
 
 	/* item end */
 	ID_TABLE_FILL(0x0001, "General flash",   NAND_1G_PAGE2K_OOB64,  ECC_LAYOUT_DEFAULT_OOB64,    generic_ecc_status,   GENERIC_ECC_BITS_MAX),
