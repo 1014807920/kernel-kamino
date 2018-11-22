@@ -80,6 +80,14 @@
 			 };
 	};
 
+	uart1_control{
+		compatible = "nationalchip,LEO_uart_control";
+		reg = <0x02308000 0x1000>;
+		val = <0x01>;
+		cts-gpio = <&gpa0 1 GPIO_ACTIVE_HIGH>;
+		rts-gpio = <&gpa0 2 GPIO_ACTIVE_HIGH>;
+	};
+
 	gxasoc-machine {
 		name = "gxasoc-machine";
 		compatible = "NationalChip,ASoc-Machine";
@@ -114,6 +122,14 @@
 		compatible = "NationalChip,ASoc-Platform_Dai";
 		status = "okay";
 	};
+
+	bt-dev{
+		compatible = "rokid, bt-dev";
+		dev_name = "bt-dev";
+		status = "okay";
+		reset-gpio = <&ck_gpa0 21 GPIO_ACTIVE_HIGH>;
+	};
+
 };
 
 &ck_i2c1{
