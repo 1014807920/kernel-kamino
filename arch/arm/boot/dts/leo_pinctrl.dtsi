@@ -30,7 +30,7 @@
 	};
 
 	a7_pinctrl: pinctrl@0x230a140 {
-		compatible = "NationalChip-pinctrl";
+		compatible = "NationalChip-pinctrl-leo-a7";
 		reg = <0x230a140 0x10>;
 
 		/* 数据来源于uboot/arch/arm/mach-leo/padmux.c中的padmux_table[]关于pin gpio模式的定义 */
@@ -182,9 +182,8 @@
 	};
 
 	ck_pinctrl: ck_pinctrl@0x30a140 {
-		compatible = "NationalChip-pinctrl";
+		compatible = "NationalChip-pinctrl-leo-csky";
 		reg = <0x30a140 0x10>;
-		nc,in-csky-domain;
 
 		/* 数据来源于scpu/arch/csky/mach-leo/padmux.c的padmux_table[]关于pin gpio模式的定义 */
 		/* 数据内容：pin base, nr_pins, gpio mode */
