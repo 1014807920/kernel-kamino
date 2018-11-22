@@ -62,7 +62,7 @@
 
         key1:key1{
 			key_code  = <KEY_HOME>;
-			key_gpio = <15>;
+			key_gpio = <0>;
 		};
         key2:key2{
 			key_code  = <KEY_VOLUMEUP>;
