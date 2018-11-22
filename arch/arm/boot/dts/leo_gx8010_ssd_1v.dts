@@ -85,8 +85,8 @@
 		compatible = "nationalchip,LEO_uart_control";
 		reg = <0x02308000 0x1000>;
 		val = <0x01>;
-		cts-gpio = <&gpa0 2 GPIO_ACTIVE_HIGH>;
-		rts-gpio = <&gpa0 1 GPIO_ACTIVE_HIGH>;
+		cts-gpio = <&gpa0 1 GPIO_ACTIVE_HIGH>;
+		rts-gpio = <&gpa0 2 GPIO_ACTIVE_HIGH>;
 	};
 
 	gxasoc-machine {
