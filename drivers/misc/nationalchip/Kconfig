@@ -33,23 +33,26 @@ if NATIONALCHIP_GXAVDEV
 
 config NATIONALCHIP_AUDIO_IN
 	bool "nationalchip audio in"
-	default	y
+	default	n
 
 config NATIONALCHIP_AUDIO_PLAY
 	bool "nationalchip audio play"
-	default	y
+	default	n
 	depends on NATIONALCHIP_GXALSA=n && NATIONALCHIP_GXASOC=n
 
 config NATIONALCHIP_AUDIO_DECODE
 	bool "nationalchip audio decode"
-	default	y
+	default	n
 
 config NATIONALCHIP_JPEG
 	bool "nationalchip jpeg decode/encode"
-	default	y
+	default	n
 
 config NATIONALCHIP_CAMERA
 	bool "nationalchip camera"
-	default	y
+	default	n
 
+config NATIONALCHIP_VPU
+	bool "nationalchip vpu"
+	default	n
 endif
