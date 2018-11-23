@@ -333,16 +333,14 @@ static void fbtft_set_addr_win(struct fbtft_par *par, int xs, int ys, int xe,
 
 static void fbtft_reset(struct fbtft_par *par)
 {
-    printk("+++++++%s:reset-gpio=%d\n",__func__,gpio_get_value(par->gpio.reset));
 
 	if (par->gpio.reset == -1)
 		return;
 	fbtft_par_dbg(DEBUG_RESET, par, "%s()\n", __func__);
 	gpio_set_value(par->gpio.reset, 0);
-	udelay(2000);
+	udelay(20);
 	gpio_set_value(par->gpio.reset, 1);
 	mdelay(120);
-	printk("-------%s:reset-gpio=%d \n",__func__,gpio_get_value(par->gpio.reset));
 }
 
 static void fbtft_update_display(struct fbtft_par *par, unsigned start_line,
@@ -1038,18 +1036,15 @@ static int fbtft_init_display_dt(struct fbtft_par *par)
 	u32 val;
 	int buf[64], i, j;
 
-        printk("+++++++%s...111111\n",__func__);
 
 	if (!node)
 		return -EINVAL;
 
-        printk("+++++++%s...222222\n",__func__);
-
 	prop = of_find_property(node, "init", NULL);
 	p = of_prop_next_u32(prop, NULL, &val);
-	/*if (!p)
+	if (!p)
 		return -EINVAL;
-	*/
+
 	par->fbtftops.reset(par);
 	if (par->gpio.cs != -1)
 		gpio_set_value(par->gpio.cs, 0);  /* Activate chip */
@@ -1124,14 +1119,12 @@ int fbtft_init_display(struct fbtft_par *par)
 	int i = 0;
 	int j;
 
-	printk("+++++++%s...111111\n",__func__);
 	/* sanity check */
 	if (!par->init_sequence) {
 		dev_err(par->info->device,
 			"error: init_sequence is not set\n");
 		return -EINVAL;
 	}
-        printk("+++++++%s...222222\n",__func__);
 
 	/* make sure stop marker exists */
 	for (i = 0; i < FBTFT_MAX_INIT_SEQUENCE; i++)
@@ -1142,8 +1135,6 @@ int fbtft_init_display(struct fbtft_par *par)
 			"missing stop marker at end of init sequence\n");
 		return -EINVAL;
 	}
-
-        printk("+++++++%s...3333333\n",__func__);
 
 	par->fbtftops.reset(par);
 	if (par->gpio.cs != -1)
