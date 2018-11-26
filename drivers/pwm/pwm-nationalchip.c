@@ -48,7 +48,6 @@ struct nationalchip_pwm {
 	spinlock_t lock;
 	struct clk *clk;
 	struct pwm_chip chip;
-	unsigned int gpio_base;
 	unsigned long rate;
 	struct gpio_pwm_info gpio_pwm_info;
 };
@@ -167,19 +166,11 @@ static void nationalchip_pwm_disable(struct pwm_chip *chip, struct pwm_device *p
 	nationalchip_pwm_enable_set(p, pwm->hwpwm, false);
 }
 
-static int nationalchip_pwm_request(struct pwm_chip *chip, struct pwm_device *pwm)
-{
-	struct nationalchip_pwm *p = to_nationalchip_pwm(chip);
-	int gpio_id = p->gpio_base + pwm->hwpwm;
-	return pinctrl_request_gpio(gpio_id);
-}
-
 static const struct pwm_ops nationalchip_pwm_ops = {
-	.request = nationalchip_pwm_request,
-	.config  = nationalchip_pwm_config,
-	.enable  = nationalchip_pwm_enable,
-	.disable = nationalchip_pwm_disable,
-	.owner   = THIS_MODULE,
+	.config       = nationalchip_pwm_config,
+	.enable       = nationalchip_pwm_enable,
+	.disable      = nationalchip_pwm_disable,
+	.owner        = THIS_MODULE,
 };
 
 static const struct of_device_id nationalchip_pwm_of_match[] = {
@@ -193,7 +184,6 @@ static int nationalchip_pwm_probe(struct platform_device *pdev)
 	struct nationalchip_pwm *p;
 	struct resource *res;
 	unsigned int freq, div;
-	unsigned int gpio_base, nr_pwms;
 	int ret;
 
 	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
@@ -202,15 +192,8 @@ static int nationalchip_pwm_probe(struct platform_device *pdev)
 
 	spin_lock_init(&p->lock);
 
-	if (of_property_read_u32(pdev->dev.of_node, "nc,gpio-base", &gpio_base))
-		return -1;
-
-	if (of_property_read_u32(pdev->dev.of_node, "nc,nr-pwms", &nr_pwms))
-		return -1;
-
 	if (of_property_read_u32(pdev->dev.of_node, "clock-frequency", &freq))
 		return -1;
-
 	p->clk = devm_clk_get(&pdev->dev, NULL);
 	if (IS_ERR(p->clk)) {
 		dev_err(&pdev->dev, "failed to obtain clock\n");
@@ -228,7 +211,7 @@ static int nationalchip_pwm_probe(struct platform_device *pdev)
 	p->chip.dev       = &pdev->dev;
 	p->chip.ops       = &nationalchip_pwm_ops;
 	p->chip.base      = -1;
-	p->chip.npwm      = nr_pwms;
+	p->chip.npwm      = 32;
 	p->chip.can_sleep = true;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
