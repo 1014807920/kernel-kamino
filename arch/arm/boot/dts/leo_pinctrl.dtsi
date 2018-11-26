@@ -18,8 +18,6 @@
 		clocks = <&ahb>;
 		clock-frequency = <1000000>;
 		#pwm-cells = <2>;
-		nc,gpio-base = <0>;
-		nc,nr-pwms = <32>;
 		status = "okay";
 	};
 	pwm1: pwm1@0x02306000 {
@@ -28,8 +26,6 @@
 		clocks = <&ahb>;
 		clock-frequency = <1000000>;
 		#pwm-cells = <2>;
-		nc,gpio-base = <32>;
-		nc,nr-pwms = <15>;
 		status = "okay";
 	};
 
