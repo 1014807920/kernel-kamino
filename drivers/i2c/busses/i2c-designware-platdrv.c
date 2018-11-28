@@ -159,7 +159,7 @@ static int dw_i2c_plat_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, dev);
 
 	/* fast mode by default because of legacy reasons */
-	clk_freq = 400000;
+	dev->scl_freq = 400000;
 
 	if (has_acpi_companion(&pdev->dev)) {
 		dw_i2c_acpi_configure(pdev);
@@ -175,7 +175,16 @@ static int dw_i2c_plat_probe(struct platform_device *pdev)
 				     &dev->scl_falling_time);
 
 		of_property_read_u32(pdev->dev.of_node, "clock-frequency",
-				     &clk_freq);
+				     &dev->scl_freq);
+
+		if (dev->scl_freq <= 100000) {
+			clk_freq = 100000;
+		} else if (dev->scl_freq <= 400000) {
+			clk_freq = 400000;
+		} else {
+			dev_err(&pdev->dev, "Only supports less than  or equal to 400kHz\n");
+			return -EINVAL;
+		}
 
 		/* Only standard mode at 100kHz and fast mode at 400kHz
 		 * are supported.
