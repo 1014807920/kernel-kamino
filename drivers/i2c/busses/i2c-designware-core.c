@@ -30,6 +30,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/delay.h>
 #include <linux/module.h>
+#include <linux/time64.h>
 #include "i2c-designware-core.h"
 
 /*
@@ -284,7 +285,7 @@ int i2c_dw_init(struct dw_i2c_dev *dev)
 	u32 input_clock_khz;
 	u32 hcnt, lcnt;
 	u32 reg;
-	u32 sda_falling_time, scl_falling_time;
+	u32 sda_falling_time, scl_falling_time, period;
 	int ret;
 
 	if (dev->acquire_lock) {
@@ -320,11 +321,24 @@ int i2c_dw_init(struct dw_i2c_dev *dev)
 	sda_falling_time = dev->sda_falling_time ?: 300; /* ns */
 	scl_falling_time = dev->scl_falling_time ?: 300; /* ns */
 
+	period = NSEC_PER_SEC / dev->scl_freq;
+
 	/* Set SCL timing parameters for standard-mode */
 	if (dev->ss_hcnt && dev->ss_lcnt) {
 		hcnt = dev->ss_hcnt;
 		lcnt = dev->ss_lcnt;
 	} else {
+		if ((dev->sda_falling_time == 0) && (dev->scl_falling_time == 0)) {
+			/* tHD;STA = tHIGH = 4.0 us, tLOW = 4.7 us */
+			/* 原生驱动计算时保留了700ns */
+			if (period > (4000 + 4700 + 700)) {
+				sda_falling_time = (period - (4000 + 4700 + 700)) / 2;
+				scl_falling_time = sda_falling_time;
+			}else{
+				sda_falling_time = 0;
+				scl_falling_time = 0;
+			}
+		}
 		hcnt = i2c_dw_scl_hcnt(input_clock_khz,
 					4000,	/* tHD;STA = tHIGH = 4.0 us */
 					sda_falling_time,
@@ -344,6 +358,17 @@ int i2c_dw_init(struct dw_i2c_dev *dev)
 		hcnt = dev->fs_hcnt;
 		lcnt = dev->fs_lcnt;
 	} else {
+		if ((dev->sda_falling_time == 0) && (dev->scl_falling_time == 0)) {
+			/* tHD;STA = tHIGH = 0.6 us, tLOW = 1.3 us */
+			/* 原生驱动计算时保留了600ns */
+			if (period > (600 + 1300 + 600)) {
+				sda_falling_time = (period - (600 + 1300 + 600)) / 2;
+				scl_falling_time = sda_falling_time;
+			}else{
+				sda_falling_time = 0;
+				scl_falling_time = 0;
+			}
+		}
 		hcnt = i2c_dw_scl_hcnt(input_clock_khz,
 					600,	/* tHD;STA = tHIGH = 0.6 us */
 					sda_falling_time,

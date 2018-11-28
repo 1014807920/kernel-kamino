@@ -726,6 +726,7 @@
 			compatible = "snps,designware-i2c";
 			reg = <0x02202000 0x1000>;
 			clocks = <&apb0>;
+			clock-frequency = <400000>;
 			interrupts = <1>;
 			status = "okay";
 
@@ -928,6 +929,7 @@
 			compatible = "snps,designware-i2c";
 			reg = <0x02203000 0x1000>;
 			clocks = <&apb0>;
+			clock-frequency = <400000>;
 			interrupts = <2>;
 			status = "okay";
 		};
@@ -937,6 +939,7 @@
 			#size-cells = <0>;
 			compatible = "snps,designware-i2c";
 			reg = <0x0205000 0x1000>;
+			clock-frequency = <400000>;
 			clocks = <&apb0>;
 			interrupts = <23>;
 			status = "disable";
@@ -947,6 +950,7 @@
 			#size-cells = <0>;
 			compatible = "snps,designware-i2c";
 			reg = <0x0206000 0x1000>;
+			clock-frequency = <400000>;
 			clocks = <&apb0>;
 			interrupts = <24>;
 			status = "disable";
