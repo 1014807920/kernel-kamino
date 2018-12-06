@@ -23,6 +23,7 @@
 struct alc1311_priv {
 	struct snd_soc_codec *codec;
 	struct regmap *regmap;
+	struct gpio_desc *pa_en_desc;
 
 	int sysclk;
 	int sysclk_src;

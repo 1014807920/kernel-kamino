@@ -25,6 +25,13 @@
 #include <sound/initval.h>
 #include <sound/tlv.h>
 #include <asm/div64.h>
+#include <linux/gpio.h>
+#include <linux/of.h>
+#include <linux/pinctrl/consumer.h>
+#include <linux/of_gpio.h>
+#include <linux/io.h>
+#include <linux/of_irq.h>
+
 #include "alc1311.h"
 
 #define ALC1311_I2C_ADDR	0x54
@@ -733,16 +740,28 @@ static int alc1311_remove(struct snd_soc_codec *codec)
 #ifdef CONFIG_PM
 static int alc1311_suspend(struct snd_soc_codec *codec)
 {
+	struct alc1311_priv *alc1311 = snd_soc_codec_get_drvdata(codec);
+
+	if(alc1311->pa_en_desc){
+		gpiod_set_value(alc1311->pa_en_desc, 0);
+		printk("####%s... pa_en=%d\n",__func__,gpiod_get_value(alc1311->pa_en_desc));
+	}
 	alc1311_set_bias_level(codec, SND_SOC_BIAS_OFF);
 	return 0;
 }
 
 static int alc1311_resume(struct snd_soc_codec *codec)
 {
+	struct alc1311_priv *alc1311 = snd_soc_codec_get_drvdata(codec);
+
 	codec->cache_bypass = 1;
 	snd_soc_cache_sync(codec);
 	//alc1311_index_sync(codec);
 	alc1311_reg_init(codec);
+	if(alc1311->pa_en_desc){
+		gpiod_set_value(alc1311->pa_en_desc, 1);
+		printk("####%s... pa_en=%d\n",__func__,gpiod_get_value(alc1311->pa_en_desc));
+	}
 	return 0;
 }
 #else
@@ -757,7 +776,7 @@ static int alc1311_resume(struct snd_soc_codec *codec)
 static int alc1311_dai_digital_mute(struct snd_soc_dai *codec_dai, int mute)
 {
 	struct snd_soc_codec *codec = codec_dai->codec;
-	struct ad82584f_priv *ad82584f = snd_soc_codec_get_drvdata(codec);
+	struct alc1311_priv *alc1311 = snd_soc_codec_get_drvdata(codec);
 
 	dev_info(codec->dev, "%s : %s\n", __func__, mute ? "MUTE" : "UNMUTE");
 
@@ -770,12 +789,40 @@ static int alc1311_dai_digital_mute(struct snd_soc_dai *codec_dai, int mute)
 	return 0;
 }
 
+static int alc1311_startup(struct snd_pcm_substream *substream,
+                            struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct alc1311_priv *alc1311 = snd_soc_codec_get_drvdata(codec);
+
+	if(alc1311->pa_en_desc){
+		gpiod_set_value(alc1311->pa_en_desc, 1);
+		printk("####%s... pa_en=%d\n",__func__,gpiod_get_value(alc1311->pa_en_desc));
+	}
+	return 0;
+}
+
+static int alc1311_shutdown(struct snd_pcm_substream *substream,
+                             struct snd_soc_dai *dai)
+{
+	struct snd_soc_codec *codec = dai->codec;
+	struct alc1311_priv *alc1311 = snd_soc_codec_get_drvdata(codec);
+
+	if(alc1311->pa_en_desc){
+		gpiod_set_value(alc1311->pa_en_desc, 0);
+		printk("####%s... pa_en=%d\n",__func__,gpiod_get_value(alc1311->pa_en_desc));
+	}
+	return 0;
+}
+
 struct snd_soc_dai_ops alc1311_aif_dai_ops = {
 	.hw_params = alc1311_hw_params,
 	.prepare = alc1311_prepare,
 	.set_fmt = alc1311_set_dai_fmt,
 	.digital_mute = alc1311_dai_digital_mute,
 	.set_sysclk = alc1311_set_dai_sysclk,
+	.startup = alc1311_startup,
+	.shutdown = alc1311_shutdown,
 };
 
 struct snd_soc_dai_driver alc1311_dai = {
@@ -885,6 +932,16 @@ static int alc1311_i2c_probe(struct i2c_client *i2c,
 		return ret;
 	}
 */
+	alc1311->pa_en_desc = devm_gpiod_get(&i2c->dev, "pa_en", GPIOD_OUT_HIGH);
+	if (IS_ERR(alc1311->pa_en_desc)) {
+		dev_err(&i2c->dev, "######unable to get gpio pa_en\n");
+		alc1311->pa_en_desc = NULL;
+	}
+	if (alc1311->pa_en_desc){
+		gpiod_set_value(alc1311->pa_en_desc, 1);
+		printk("####%s... pa_en=%d\n",__func__,gpiod_get_value(alc1311->pa_en_desc));
+	}
+
 	return ret;
 }
 
