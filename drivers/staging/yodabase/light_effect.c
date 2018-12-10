@@ -52,6 +52,7 @@ struct light {
 
     int light_status;
     int enable_init_light;
+	int enable_ota_light;
     struct pattern_st init_pattern_st;
     struct pattern_st ota_pattern_st;
     struct raw_data_st init_raw_data_st;
@@ -135,13 +136,18 @@ static ssize_t light_ota_ctl_store(struct device *dev, struct device_attribute *
 
     if(state == 0){
         dev_err(dev,"stop ota light effect\n");
-        light_stage->light_status = LIGHT_IDLE;        
+        light_stage->light_status = LIGHT_IDLE;
     }else{
         dev_err(dev,"start ota light effect\n");
-        if(light_stage->ota_pattern_st.pattern_type > 0)
-            light_stage->light_status = OTA_PATTERN_DATA;
-        else
-            light_stage->light_status = OTA_RAW_DATA;
+	if (light_stage->enable_ota_light) {
+		if (light_stage->ota_pattern_st.pattern_type > 0)
+			light_stage->light_status = OTA_PATTERN_DATA;
+		else
+			light_stage->light_status = OTA_RAW_DATA;
+	} else {
+		light_stage->light_status = LIGHT_IDLE;
+	}
+
     }
 
     return count;
@@ -181,6 +187,7 @@ static u32 bgr_cal(u32 srcRGB, u32 dstRGB, int devision, int seq)
 {
 
     u8 tmpR, tmpG, tmpB;
+ 	u32 result;
 
     u8 srcR = (u8)((srcRGB >> 16) & 0xFF);
     u8 srcG = (u8)((srcRGB >> 8) & 0xFF);
@@ -194,7 +201,7 @@ static u32 bgr_cal(u32 srcRGB, u32 dstRGB, int devision, int seq)
     tmpG = srcG + (dstG - srcG) * seq / devision;
     tmpB = srcB + (dstB - srcB) * seq / devision;
 
-    u32 result = tmpR << 16 | tmpG << 8| tmpB;
+	result = tmpR << 16 | tmpG << 8| tmpB;
     return result;
 }
 
@@ -308,6 +315,13 @@ static int led_stage_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "%s,read no enable_init_light\n", __func__);
         goto free_led_charbuf;
     }
+
+	ret = of_property_read_u32(pdev->dev.of_node, "enable_ota_light",
+				   &light_stage->enable_ota_light);
+	if (ret) {
+		dev_err(&pdev->dev, "%s,read no enable_ota_light\n", __func__);
+		goto free_led_charbuf;
+	}
 
     ret = of_property_read_u32(pdev->dev.of_node, "init_pattern_type", &light_stage->init_pattern_st.pattern_type);
     if (!ret) {

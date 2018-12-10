@@ -123,6 +123,8 @@
 		//..
 	#endif
 
+		enable_ota_light = <0>;
+		//0:disable,1:enable init_pattern,2:enable init_raw_data
 	#if 0
 		ota_pattern_type = <1>;
 		ota_pattern_inter_timems = <30>;
