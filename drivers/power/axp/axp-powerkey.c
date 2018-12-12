@@ -81,24 +81,24 @@ struct axp_interrupts axp_powerkey_irq[4] = {
 };
 
 int axp_powerkey_dt_parse(struct device_node *node,
-			struct axp_config_info *axp_config)
+			  struct axp_config_info *axp_config)
 {
 	if (!of_device_is_available(node)) {
 		pr_err("%s: failed\n", __func__);
 		return -1;
 	}
-  printk("[axp]parsing node name:%s in line:%d  in:%s \n",node->name,__LINE__,__func__);
-	AXP_OF_PROP_READ(pmu_powkey_off_time,            6000);
-	AXP_OF_PROP_READ(pmu_powkey_off_func,               0);
-	AXP_OF_PROP_READ(pmu_powkey_off_en,                 1);
-	AXP_OF_PROP_READ(pmu_powkey_off_delay_time,         0);
-	AXP_OF_PROP_READ(pmu_powkey_long_time,           1500);
-	AXP_OF_PROP_READ(pmu_powkey_on_time,             1000);
-	AXP_OF_PROP_READ(pmu_pwrok_time,                   64);
-	AXP_OF_PROP_READ(pmu_pwrnoe_time,                2000);
+	AXP_OF_PROP_READ(pmu_powkey_off_time, 6000);
+	AXP_OF_PROP_READ(pmu_powkey_off_func, 0);
+	AXP_OF_PROP_READ(pmu_powkey_off_en, 1);
+	AXP_OF_PROP_READ(pmu_powkey_off_delay_time, 0);
+	AXP_OF_PROP_READ(pmu_powkey_long_time, 1500);
+	AXP_OF_PROP_READ(pmu_powkey_on_time, 1000);
+	AXP_OF_PROP_READ(pmu_pwrok_time, 64);
+	AXP_OF_PROP_READ(pmu_pwrnoe_time, 2000);
 
 	return 0;
 }
+
 EXPORT_SYMBOL_GPL(axp_powerkey_dt_parse);
 
 MODULE_DESCRIPTION("ALLWINNERTECH axp powerkey");

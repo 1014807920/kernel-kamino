@@ -23,6 +23,7 @@
 #include <linux/delay.h>
 #include <linux/slab.h>
 #include <linux/i2c.h>
+#include <linux/gpio.h>
 
 #include "axp-core.h"
 
@@ -45,7 +46,7 @@ void axp_platform_ops_set(int pmu_num, struct axp_platform_ops *ops)
 	ap_ops[pmu_num].usb_vbus_output = ops->usb_vbus_output;
 	//ap_ops[pmu_num].cfg_pmux_para = ops->cfg_pmux_para;
 	ap_ops[pmu_num].get_pmu_name = ops->get_pmu_name;
-	ap_ops[pmu_num].get_pmu_dev  = ops->get_pmu_dev;
+	ap_ops[pmu_num].get_pmu_dev = ops->get_pmu_dev;
 	ap_ops[pmu_num].pmu_regulator_save = ops->pmu_regulator_save;
 	ap_ops[pmu_num].pmu_regulator_restore = ops->pmu_regulator_restore;
 }
@@ -145,8 +146,7 @@ int axp_get_pmu_num(const struct axp_compatible_name_mapping *mapping, int size)
 			break;
 		}
 
-		if (of_property_read_string(np, "compatible",
-					&prop_name)) {
+		if (of_property_read_string(np, "compatible", &prop_name)) {
 			pr_err("%s get failed\n", prop_name);
 			break;
 		}
@@ -163,36 +163,36 @@ int axp_get_pmu_num(const struct axp_compatible_name_mapping *mapping, int size)
 }
 
 int axp_mfd_cell_name_init(const struct axp_compatible_name_mapping *mapping,
-				int count, int pmu_num,
-				int size, struct mfd_cell *cells)
+			   int count, int pmu_num,
+			   int size, struct mfd_cell *cells)
 {
 	int i, j, find = 0;
 
 	for (j = 0; j < count; j++) {
 		if ((mapping[j].mfd_name.powerkey_name != NULL)
-				&& (strstr(mapping[j].mfd_name.powerkey_name,
-				axp_name[pmu_num]) != NULL)) {
+		    && (strstr(mapping[j].mfd_name.powerkey_name,
+			       axp_name[pmu_num]) != NULL)) {
 			find = 1;
 			break;
 		}
 
 		if ((mapping[j].mfd_name.regulator_name != NULL)
-				&& (strstr(mapping[j].mfd_name.regulator_name,
-				axp_name[pmu_num]) != NULL)) {
+		    && (strstr(mapping[j].mfd_name.regulator_name,
+			       axp_name[pmu_num]) != NULL)) {
 			find = 1;
 			break;
 		}
 
 		if ((mapping[j].mfd_name.charger_name != NULL)
-				&& (strstr(mapping[j].mfd_name.charger_name,
-				axp_name[pmu_num]) != NULL)) {
+		    && (strstr(mapping[j].mfd_name.charger_name,
+			       axp_name[pmu_num]) != NULL)) {
 			find = 1;
 			break;
 		}
 
 		if ((mapping[j].mfd_name.gpio_name != NULL)
-				&& (strstr(mapping[j].mfd_name.gpio_name,
-				axp_name[pmu_num]) != NULL)) {
+		    && (strstr(mapping[j].mfd_name.gpio_name,
+			       axp_name[pmu_num]) != NULL)) {
 			find = 1;
 			break;
 		}
@@ -206,16 +206,15 @@ int axp_mfd_cell_name_init(const struct axp_compatible_name_mapping *mapping,
 	for (i = 0; i < size; i++) {
 		if (strstr(cells[i].name, "powerkey") != NULL)
 			cells[i].of_compatible =
-					mapping[j].mfd_name.powerkey_name;
+			    mapping[j].mfd_name.powerkey_name;
 		else if (strstr(cells[i].name, "regulator") != NULL)
 			cells[i].of_compatible =
-					mapping[j].mfd_name.regulator_name;
+			    mapping[j].mfd_name.regulator_name;
 		else if (strstr(cells[i].name, "charger") != NULL)
 			cells[i].of_compatible =
-					mapping[j].mfd_name.charger_name;
+			    mapping[j].mfd_name.charger_name;
 		else if (strstr(cells[i].name, "gpio") != NULL)
-			cells[i].of_compatible =
-					mapping[j].mfd_name.gpio_name;
+			cells[i].of_compatible = mapping[j].mfd_name.gpio_name;
 	}
 
 	return 0;
@@ -231,13 +230,13 @@ static s32 __axp_read_i2c(struct i2c_client *client, u32 reg, u8 *val)
 		return ret;
 	}
 
-	*val = (u8)ret;
+	*val = (u8) ret;
 
 	return 0;
 }
 
 static s32 __axp_reads_i2c(struct i2c_client *client,
-				int reg, int len, u8 *val)
+			   int reg, int len, u8 *val)
 {
 	s32 ret;
 
@@ -258,7 +257,7 @@ static s32 __axp_write_i2c(struct i2c_client *client, int reg, u8 val)
 	ret = i2c_smbus_write_byte_data(client, reg, val);
 	if (ret < 0) {
 		dev_err(&client->dev, "failed writing 0x%02x to 0x%02x\n",
-				val, reg);
+			val, reg);
 		return ret;
 	}
 
@@ -266,7 +265,7 @@ static s32 __axp_write_i2c(struct i2c_client *client, int reg, u8 val)
 }
 
 static s32 __axp_writes_i2c(struct i2c_client *client,
-				int reg, int len, u8 *val)
+			    int reg, int len, u8 *val)
 {
 	s32 ret;
 
@@ -280,15 +279,12 @@ static s32 __axp_writes_i2c(struct i2c_client *client,
 	return 0;
 }
 
-
-
-
 static s32 _axp_write(struct axp_regmap *map, s32 reg, u8 val, bool sync)
 {
 	s32 ret = 0;
 
 	pr_debug("%s: map->type = 0x%x, reg = 0x%x, val = %u, sync= %d.\n",
-		__func__, map->type, reg, val, sync);
+		 __func__, map->type, reg, val, sync);
 
 	if (map->type == AXP_REGMAP_I2C)
 		ret = __axp_write_i2c(map->client, reg, val);
@@ -296,14 +292,15 @@ static s32 _axp_write(struct axp_regmap *map, s32 reg, u8 val, bool sync)
 }
 
 static s32 _axp_writes(struct axp_regmap *map, s32 reg,
-				s32 len, u8 *val, bool sync)
+		       s32 len, u8 *val, bool sync)
 {
 	s32 ret = 0, i;
 	s32 wr_len, rw_reg;
 	u8 wr_val[32];
 
-	pr_debug("%s: map->type = 0x%x, reg = 0x%x, val addr = 0x%p, sync= %d.\n",
-		__func__, map->type, reg, val, sync);
+	pr_debug
+	    ("%s: map->type = 0x%x, reg = 0x%x, val addr = 0x%p, sync= %d.\n",
+	     __func__, map->type, reg, val, sync);
 
 	while (len) {
 		wr_len = min(len, 15);
@@ -311,13 +308,13 @@ static s32 _axp_writes(struct axp_regmap *map, s32 reg,
 		wr_val[0] = *val++;
 
 		for (i = 1; i < wr_len; i++) {
-			wr_val[i*2-1] = reg++;
-			wr_val[i*2] = *val++;
+			wr_val[i * 2 - 1] = reg++;
+			wr_val[i * 2] = *val++;
 		}
 
 		if (map->type == AXP_REGMAP_I2C)
 			ret = __axp_writes_i2c(map->client,
-					rw_reg, 2*wr_len-1, wr_val);
+					       rw_reg, 2 * wr_len - 1, wr_val);
 		if (ret)
 			return ret;
 
@@ -333,18 +330,19 @@ static s32 _axp_read(struct axp_regmap *map, s32 reg, u8 *val, bool sync)
 
 	if (map->type == AXP_REGMAP_I2C)
 		ret = __axp_read_i2c(map->client, reg, val);
-		pr_debug("%s: map->type = 0x%x, reg = 0x%x, val = 0x%hhx, sync= %d.\n",
-		__func__, map->type, reg, *val, sync);
+	pr_debug("%s: map->type = 0x%x, reg = 0x%x, val = 0x%hhx, sync= %d.\n",
+		 __func__, map->type, reg, *val, sync);
 	return ret;
 }
 
 static s32 _axp_reads(struct axp_regmap *map, s32 reg,
-				s32 len, u8 *val, bool sync)
+		      s32 len, u8 *val, bool sync)
 {
 	s32 ret = 0;
 
-	pr_debug("%s: map->type = 0x%x, reg = 0x%x, val addr = 0x%p, sync= %d.\n",
-		__func__, map->type, reg, val, sync);
+	pr_debug
+	    ("%s: map->type = 0x%x, reg = 0x%x, val addr = 0x%p, sync= %d.\n",
+	     __func__, map->type, reg, val, sync);
 
 	if (map->type == AXP_REGMAP_I2C)
 		ret = __axp_reads_i2c(map->client, reg, len, val);
@@ -362,6 +360,7 @@ s32 axp_regmap_write(struct axp_regmap *map, s32 reg, u8 val)
 
 	return ret;
 }
+
 EXPORT_SYMBOL_GPL(axp_regmap_write);
 
 s32 axp_regmap_writes(struct axp_regmap *map, s32 reg, s32 len, u8 *val)
@@ -374,18 +373,21 @@ s32 axp_regmap_writes(struct axp_regmap *map, s32 reg, s32 len, u8 *val)
 
 	return ret;
 }
+
 EXPORT_SYMBOL_GPL(axp_regmap_writes);
 
 s32 axp_regmap_read(struct axp_regmap *map, s32 reg, u8 *val)
 {
 	return _axp_read(map, reg, val, false);
 }
+
 EXPORT_SYMBOL_GPL(axp_regmap_read);
 
 s32 axp_regmap_reads(struct axp_regmap *map, s32 reg, s32 len, u8 *val)
 {
 	return _axp_reads(map, reg, len, val, false);
 }
+
 EXPORT_SYMBOL_GPL(axp_regmap_reads);
 
 s32 axp_regmap_set_bits(struct axp_regmap *map, s32 reg, u8 bit_mask)
@@ -409,6 +411,7 @@ out:
 
 	return ret;
 }
+
 EXPORT_SYMBOL_GPL(axp_regmap_set_bits);
 
 s32 axp_regmap_clr_bits(struct axp_regmap *map, s32 reg, u8 bit_mask)
@@ -455,7 +458,6 @@ out:
 	return ret;
 }
 EXPORT_SYMBOL_GPL(axp_regmap_update);
-
 
 s32 axp_regmap_set_bits_sync(struct axp_regmap *map, s32 reg, u8 bit_mask)
 {
@@ -582,17 +584,17 @@ static void __do_irq(int pmu_num, struct axp_irq_chip_data *irq_data)
 		return;
 
 	axp_regmap_reads(irq_data->map, irq_data->chip->status_base,
-			irq_data->chip->num_regs, reg_val);
+			 irq_data->chip->num_regs, reg_val);
 
 	for (i = 0; i < irq_data->chip->num_regs; i++)
-		irqs |= (u64)reg_val[i] << (i * AXP_REG_WIDTH);
+		irqs |= (u64) reg_val[i] << (i * AXP_REG_WIDTH);
 
 	irqs &= irq_data->irqs_enabled;
 	if (irqs == 0)
 		return;
 
 	AXP_DEBUG(AXP_INT, pmu_num, "irqs enabled = 0x%llx\n",
-				irq_data->irqs_enabled);
+		  irq_data->irqs_enabled);
 	AXP_DEBUG(AXP_INT, pmu_num, "irqs = 0x%llx\n", irqs);
 
 	for_each_set_bit(j, (unsigned long *)&irqs, irq_data->num_irqs) {
@@ -605,7 +607,8 @@ static void __do_irq(int pmu_num, struct axp_irq_chip_data *irq_data)
 	for (i = 0; i < irq_data->chip->num_regs; i++) {
 		if (reg_val[i] != 0) {
 			axp_regmap_write(irq_data->map,
-				irq_data->chip->status_base + i, reg_val[i]);
+					 irq_data->chip->status_base + i,
+					 reg_val[i]);
 			udelay(30);
 		}
 	}
@@ -614,12 +617,20 @@ static void __do_irq(int pmu_num, struct axp_irq_chip_data *irq_data)
 static void axp_irq_work_func(struct work_struct *work)
 {
 	struct axp_dev *adev;
+	struct gpio_desc *gpiodesc;
 
+checkagain:
+	gpiodesc = NULL;
 	list_for_each_entry(adev, &axp_dev_list, list) {
 		__do_irq(adev->pmu_num, adev->irq_data);
+		if (adev->irqgpio_desc != NULL)
+			gpiodesc = adev->irqgpio_desc;
 	}
 
-
+	if (gpiodesc != NULL) {
+		if (gpiod_get_value(gpiodesc) == 0)
+			goto checkagain;
+	}
 	//sunxi_nmi_clear_status();
 	//sunxi_nmi_enable();
 }
@@ -627,7 +638,6 @@ static void axp_irq_work_func(struct work_struct *work)
 static irqreturn_t axp_irq(int irq, void *data)
 {
 	struct axp_dev *adev;
-
 	//sunxi_nmi_disable();
 	if (axp_suspend_flag == AXP_NOT_SUSPEND) {
 		schedule_work(&axp_irq_work);
@@ -644,38 +654,33 @@ static irqreturn_t axp_irq(int irq, void *data)
 }
 
 struct axp_irq_chip_data *axp_irq_chip_register(struct axp_regmap *map,
-			int irq_no, int irq_flags,
-			struct axp_regmap_irq_chip *irq_chip,
-			void (*wakeup_event)(void))
+						int irq_no, int irq_flags,
+						struct axp_regmap_irq_chip
+						*irq_chip,
+						void (*wakeup_event)(void))
 {
 	struct axp_irq_chip_data *irq_data = NULL;
 	struct axp_regmap_irq *irqs = NULL;
 	int i, err = 0;
-	printk("==%s==line:%d==file:%s==\n",__func__,__LINE__,__FILE__);
+
 	irq_data = kzalloc(sizeof(*irq_data), GFP_KERNEL);
 	if (IS_ERR_OR_NULL(irq_data)) {
 		pr_err("axp irq data: not enough memory for irq data\n");
 		return NULL;
 	}
-	printk("[axp]pointer to irq_data=%p in line:%d of %s\n",irq_data,__LINE__,__func__);
+
 	irq_data->map = map;
 	irq_data->chip = irq_chip;
 	irq_data->num_irqs = AXP_REG_WIDTH * irq_chip->num_regs;
-	printk("[axp]irq_data->map->client->name is %s\n",irq_data->map->client->name);
-    printk("[axp]irq_data->chip->name is %s\n",irq_data->chip->name);
-    printk("[axp]irq_data->num_irqs is %d\n",irq_data->num_irqs);
-
 
 	//irqs = kzalloc(irq_chip->num_regs * AXP_REG_WIDTH * sizeof(*irqs),
-	//			GFP_KERNEL);
-    irqs = kzalloc(irq_chip->num_regs * AXP_REG_WIDTH * sizeof(*irqs),
-                GFP_KERNEL);
-	printk("[axp]pointer to irqs=%p in line:%d of %s\n",irqs,__LINE__,__func__);
+	//                      GFP_KERNEL);
+	irqs = kzalloc(irq_chip->num_regs * AXP_REG_WIDTH * sizeof(*irqs),
+		       GFP_KERNEL);
 	if (IS_ERR_OR_NULL(irqs)) {
 		pr_err("axp irq data: not enough memory for irq disc\n");
 		goto free_irq_data;
 	}
-    printk("==%s==line:%d==file:%s==\n",__func__,__LINE__,__FILE__);
 
 	mutex_init(&irq_data->lock);
 	irq_data->irqs = irqs;
@@ -687,23 +692,26 @@ struct axp_irq_chip_data *axp_irq_chip_register(struct axp_regmap *map,
 		axp_regmap_clr_bits(map, irq_chip->enable_base + i, 0xff);
 		axp_regmap_set_bits(map, irq_chip->status_base + i, 0xff);
 	}
-	printk("==%s==line:%d==file:%s==\n",__func__,__LINE__,__FILE__);
+
 #ifdef CONFIG_DUAL_AXP_USED
 	if (axp_dev_register_count == 1) {
 		err = request_irq(irq_no, axp_irq, irq_flags, "axp", irq_data);
 		goto irq_out;
 	} else if (axp_dev_register_count == 2) {
 		return irq_data;
+		;
 	}
 #else
 	err = request_irq(irq_no, axp_irq, irq_flags, irq_chip->name, irq_data);
+	if (err) {
+		pr_err("[axp2585] request_irq fault! %d\n", err);
+		goto free_irqs;
+	}
 #endif
 
 #ifdef CONFIG_DUAL_AXP_USED
 irq_out:
 #endif
-	if (err)
-		goto free_irqs;
 
 	INIT_WORK(&axp_irq_work, axp_irq_work_func);
 #if 0
@@ -714,8 +722,6 @@ irq_out:
 	return irq_data;
 
 free_irqs:
-pr_err("request_irq for axp2585 fail\n");
-
 	kfree(irqs);
 free_irq_data:
 	kfree(irq_data);
@@ -733,10 +739,8 @@ void axp_irq_chip_unregister(int irq, struct axp_irq_chip_data *irq_data)
 
 	/* disable all irq and clear all irq pending */
 	for (i = 0; i < irq_data->chip->num_regs; i++) {
-		axp_regmap_clr_bits(map,
-				irq_data->chip->enable_base + i, 0xff);
-		axp_regmap_write(map,
-				irq_data->chip->status_base + i, 0xff);
+		axp_regmap_clr_bits(map, irq_data->chip->enable_base + i, 0xff);
+		axp_regmap_write(map, irq_data->chip->status_base + i, 0xff);
 	}
 
 	kfree(irq_data->irqs);
@@ -747,23 +751,22 @@ void axp_irq_chip_unregister(int irq, struct axp_irq_chip_data *irq_data)
 EXPORT_SYMBOL_GPL(axp_irq_chip_unregister);
 
 int axp_request_irq(struct axp_dev *adev, int irq_no,
-				irq_handler_t handler, void *data)
+		    irq_handler_t handler, void *data)
 {
 
-    struct axp_irq_chip_data *irq_data = adev->irq_data;
+	struct axp_irq_chip_data *irq_data = adev->irq_data;
 	struct axp_regmap_irq *irqs = irq_data->irqs;
 
 	int reg, ret;
 	u8 mask;
-    	if (!irq_data || irq_no < 0 || irq_no >= irq_data->num_irqs || !handler)
+	if (!irq_data || irq_no < 0 || irq_no >= irq_data->num_irqs || !handler)
 		return -1;
 	mutex_lock(&irq_data->lock);
 
-    irqs[irq_no].handler = handler;
-    irqs[irq_no].data = data;
+	irqs[irq_no].handler = handler;
+	irqs[irq_no].data = data;
 
-  	irq_data->irqs_enabled |= ((u64)0x1 << irq_no);
-    printk("==%s==line:%d==%s\n",__func__,__LINE__,__FILE__);
+	irq_data->irqs_enabled |= ((u64) 0x1 << irq_no);
 	reg = irq_no / AXP_REG_WIDTH;
 	reg += irq_data->chip->enable_base;
 	mask = 1 << (irq_no % AXP_REG_WIDTH);
@@ -841,7 +844,7 @@ int axp_free_irq(struct axp_dev *adev, int irq_no)
 EXPORT_SYMBOL_GPL(axp_free_irq);
 
 int axp_gpio_irq_register(struct axp_dev *adev, int irq_no,
-				irq_handler_t handler, void *data)
+			  irq_handler_t handler, void *data)
 {
 	struct axp_irq_chip_data *irq_data = adev->irq_data;
 	struct axp_regmap_irq *irqs = irq_data->irqs;
@@ -850,7 +853,7 @@ int axp_gpio_irq_register(struct axp_dev *adev, int irq_no,
 		return -1;
 
 	mutex_lock(&irq_data->lock);
-	irq_data->irqs_enabled |= ((u64)0x1 << irq_no);
+	irq_data->irqs_enabled |= ((u64) 0x1 << irq_no);
 	irqs[irq_no].handler = handler;
 	irqs[irq_no].data = data;
 	mutex_unlock(&irq_data->lock);
@@ -862,22 +865,18 @@ int axp_mfd_add_devices(struct axp_dev *axp_dev)
 {
 	int ret;
 	unsigned long irqflags;
-	  printk("==%s==line:%d==file:%s==\n",__func__,__LINE__,__FILE__);
 
 	ret = mfd_add_devices(axp_dev->dev, -1,
-		axp_dev->cells, axp_dev->nr_cells, NULL, 0, NULL);
+			      axp_dev->cells, axp_dev->nr_cells, NULL, 0, NULL);
 	if (ret)
 		goto fail;
-    printk("==%s==line:%d==file:%s==\n",__func__,__LINE__,__FILE__);
 
 	dev_set_drvdata(axp_dev->dev, axp_dev);
-    printk("==%s==line:%d==file:%s==\n",__func__,__LINE__,__FILE__);
 
 	spin_lock_irqsave(&axp_list_lock, irqflags);
 	list_add(&axp_dev->list, &axp_dev_list);
 	axp_dev_register_count++;
 	spin_unlock_irqrestore(&axp_list_lock, irqflags);
-	  printk("==%s==line:%d==file:%s==\n",__func__,__LINE__,__FILE__);
 
 	return 0;
 
@@ -895,7 +894,7 @@ int axp_mfd_remove_devices(struct axp_dev *axp_dev)
 EXPORT_SYMBOL_GPL(axp_mfd_remove_devices);
 
 int axp_dt_parse(struct device_node *node, int pmu_num,
-			struct axp_config_info *axp_config)
+		 struct axp_config_info *axp_config)
 {
 	if (!of_device_is_available(node)) {
 		pr_err("%s: failed\n", __func__);
@@ -913,36 +912,35 @@ int axp_dt_parse(struct device_node *node, int pmu_num,
 	}
 
 	if (of_property_read_u32(node, "pmu_vbusen_func",
-		&axp_config->pmu_vbusen_func))
+				 &axp_config->pmu_vbusen_func))
 		axp_config->pmu_vbusen_func = 1;
 
-	if (of_property_read_u32(node, "pmu_reset",
-		&axp_config->pmu_reset))
+	if (of_property_read_u32(node, "pmu_reset", &axp_config->pmu_reset))
 		axp_config->pmu_reset = 0;
 
 	if (of_property_read_u32(node, "pmu_irq_wakeup",
-			&axp_config->pmu_irq_wakeup))
+				 &axp_config->pmu_irq_wakeup))
 		axp_config->pmu_irq_wakeup = 0;
 
 	if (of_property_read_u32(node, "pmu_hot_shutdown",
-		&axp_config->pmu_hot_shutdown))
+				 &axp_config->pmu_hot_shutdown))
 		axp_config->pmu_hot_shutdown = 1;
 
-	if (of_property_read_u32(node, "pmu_inshort",
-		&axp_config->pmu_inshort))
+	if (of_property_read_u32(node, "pmu_inshort", &axp_config->pmu_inshort))
 		axp_config->pmu_inshort = 0;
 
 	if (of_property_read_u32(node, "pmu_reset_shutdown_en",
-		&axp_config->pmu_reset_shutdown_en))
+				 &axp_config->pmu_reset_shutdown_en))
 		axp_config->pmu_reset_shutdown_en = 0;
 
 	if (of_property_read_u32(node, "pmu_as_slave",
-		&axp_config->pmu_as_slave))
+				 &axp_config->pmu_as_slave))
 		axp_config->pmu_as_slave = 0;
 
 	return 0;
 }
 EXPORT_SYMBOL_GPL(axp_dt_parse);
+
 #if 0
 unsigned int axp_get_sys_pwr_dm_mask(void)
 {
@@ -985,6 +983,7 @@ void axp_get_pwr_regu_tree(unsigned int *p)
 {
 	memcpy((void *)p, (void *)axp_power_tree, sizeof(axp_power_tree));
 }
+
 EXPORT_SYMBOL_GPL(axp_get_pwr_regu_tree);
 
 s32 axp_check_sys_id(const char *supply_id)
@@ -993,7 +992,7 @@ s32 axp_check_sys_id(const char *supply_id)
 
 	for (i = 0; i < VCC_MAX_INDEX; i++) {
 		if (strcmp(pwr_dm_bitmap_name_mapping[i].id_name, supply_id)
-				== 0)
+		    == 0)
 			return i;
 	}
 
@@ -1009,11 +1008,11 @@ char *axp_get_sys_id(u32 bitmap)
 }
 
 s32 axp_get_ldo_dependence(const char *ldo_name, s32 index,
-				s32 (*get_dep_cb)(const char *))
+			   s32 (*get_dep_cb)(const char *))
 {
 	s32 ret;
 
-	ret = (*get_dep_cb)(ldo_name);
+	ret = (*get_dep_cb) (ldo_name);
 	if (ret < 0) {
 		pr_err("%s: get regu dependence failed\n", __func__);
 		return -1;
@@ -1078,7 +1077,7 @@ int axp_is_sys_pwr_dm_active(u32 bitmap)
 int axp_add_sys_pwr_dm(const char *id)
 {
 	s32 ret = 0, sys_id_conut = 0;
-	char ldo_name[20] = {0};
+	char ldo_name[20] = { 0 };
 	u32 sys_pwr_mask = 0;
 
 	sys_id_conut = axp_check_sys_id(id);
@@ -1104,7 +1103,7 @@ int axp_add_sys_pwr_dm(const char *id)
 	if (ret == 0) {
 		if (axp_set_ldo_alwayson((const char *)&ldo_name, 1)) {
 			pr_err("%s: %s axp_set_ldo_alwayson failed\n",
-				__func__, ldo_name);
+			       __func__, ldo_name);
 			return -1;
 		}
 	} else if (ret == 1) {
@@ -1123,8 +1122,8 @@ EXPORT_SYMBOL_GPL(axp_add_sys_pwr_dm);
 int axp_del_sys_pwr_dm(const char *id)
 {
 	s32 ret = 0, sys_id_conut = 0, i = 0;
-	char ldo_name[20] = {0};
-	char sys_ldo_name[20] = {0};
+	char ldo_name[20] = { 0 };
+	char sys_ldo_name[20] = { 0 };
 	u32 sys_pwr_mask = 0;
 	char *sys_id;
 
@@ -1147,7 +1146,7 @@ int axp_del_sys_pwr_dm(const char *id)
 	ret = axp_check_ldo_alwayson((const char *)&ldo_name);
 	if (ret == 0) {
 		pr_err("%s: %s ldo is already not alwayson\n",
-				__func__, ldo_name);
+		       __func__, ldo_name);
 	} else if (ret == 1) {
 		for (i = 0; i < VCC_MAX_INDEX; i++) {
 			if (sys_id_conut == i)
@@ -1155,16 +1154,16 @@ int axp_del_sys_pwr_dm(const char *id)
 			if (axp_is_sys_pwr_dm_active(i)) {
 				sys_id = axp_get_sys_pwr_dm_id(i);
 				ret = axp_get_ldo_name(sys_id,
-						(char *)&sys_ldo_name);
+						       (char *)&sys_ldo_name);
 				if (ret < 0) {
 					pr_err("%s: get sys_ldo_name failed\n",
-							__func__);
+					       __func__);
 					return -1;
 				}
 
 				if (strcmp(sys_ldo_name, ldo_name) == 0) {
 					axp_set_sys_pwr_dm_mask(sys_id_conut,
-							0);
+								0);
 					return 0;
 				}
 			}
@@ -1172,7 +1171,7 @@ int axp_del_sys_pwr_dm(const char *id)
 
 		if (axp_set_ldo_alwayson((const char *)&ldo_name, 0)) {
 			pr_err("%s: %s axp_set_ldo_alwayson failed\n",
-				__func__, ldo_name);
+			       __func__, ldo_name);
 			return -1;
 		}
 	} else {
@@ -1208,7 +1207,6 @@ int init_sys_pwr_dm(void)
 
 	return 0;
 }
-
 EXPORT_SYMBOL_GPL(init_sys_pwr_dm);
 #endif
 MODULE_DESCRIPTION("ALLWINNERTECH axp core");

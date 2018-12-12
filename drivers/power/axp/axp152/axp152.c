@@ -19,60 +19,61 @@ struct wakeup_source *axp152_ws;
 static int axp152_pmu_num;
 
 static struct axp_regmap_irq_chip axp152_regmap_irq_chip = {
-	.name        = "axp152_irq_chip",
+	.name = "axp152_irq_chip",
 	.status_base = AXP152_INTSTS1,
 	.enable_base = AXP152_INTEN1,
-	.num_regs    = 3,
+	.num_regs = 3,
 
 };
+
 static const struct axp_compatible_name_mapping axp152_cn_mapping[] = {
-    {
-        .device_name = "axp152",
-        .mfd_name = {
-            .powerkey_name  = "axp152-powerkey",
-            .regulator_name = "axp152-regulator",
-            .gpio_name      = "axp152-gpio",
-        },
-    },
+	{
+	 .device_name = "axp152",
+	 .mfd_name = {
+		      .powerkey_name = "axp152-powerkey",
+		      .regulator_name = "axp152-regulator",
+		      .gpio_name = "axp152-gpio",
+		      },
+	 },
 };
+
 static struct resource axp152_pek_resources[] = {
 //{AXP152_IRQ_PEKRE, AXP152_IRQ_PEKRE, "PEK_DBR",   IORESOURCE_IRQ,},
 	//{AXP152_IRQ_PEKFE, AXP152_IRQ_PEKFE, "PEK_DBF",   IORESOURCE_IRQ,},
-	{AXP152_IRQ_PEKLO, AXP152_IRQ_PEKLO, "PEK_LONG",   IORESOURCE_IRQ,},
-	{AXP152_IRQ_PEKSH, AXP152_IRQ_PEKSH, "PEK_SHORT",   IORESOURCE_IRQ,}
+	{AXP152_IRQ_PEKLO, AXP152_IRQ_PEKLO, "PEK_LONG", IORESOURCE_IRQ,},
+	{AXP152_IRQ_PEKSH, AXP152_IRQ_PEKSH, "PEK_SHORT", IORESOURCE_IRQ,}
 };
 
 static struct resource axp152_gpio_resources[] = {
-	{AXP152_IRQ_GPIO0, AXP152_IRQ_GPIO0, "gpio0",     IORESOURCE_IRQ,},
-	{AXP152_IRQ_GPIO1, AXP152_IRQ_GPIO1, "gpio1",     IORESOURCE_IRQ,},
-	{AXP152_IRQ_GPIO2, AXP152_IRQ_GPIO2, "gpio2",     IORESOURCE_IRQ,},
-	{AXP152_IRQ_GPIO3, AXP152_IRQ_GPIO3, "gpio3",     IORESOURCE_IRQ,},
+	{AXP152_IRQ_GPIO0, AXP152_IRQ_GPIO0, "gpio0", IORESOURCE_IRQ,},
+	{AXP152_IRQ_GPIO1, AXP152_IRQ_GPIO1, "gpio1", IORESOURCE_IRQ,},
+	{AXP152_IRQ_GPIO2, AXP152_IRQ_GPIO2, "gpio2", IORESOURCE_IRQ,},
+	{AXP152_IRQ_GPIO3, AXP152_IRQ_GPIO3, "gpio3", IORESOURCE_IRQ,},
 };
 
 static struct mfd_cell axp152_cells[] = {
 	{
-		.name          = "axp152-powerkey",
-		.num_resources = ARRAY_SIZE(axp152_pek_resources),
-		.resources     = axp152_pek_resources,
-		.of_compatible="axp152-powerkey",
-	},
+	 .name = "axp152-powerkey",
+	 .num_resources = ARRAY_SIZE(axp152_pek_resources),
+	 .resources = axp152_pek_resources,
+	 .of_compatible = "axp152-powerkey",
+	 },
 	{
-		.name          = "axp152-regulator",
-		.of_compatible  = "axp152-regulator",
-	},
+	 .name = "axp152-regulator",
+	 .of_compatible = "axp152-regulator",
+	 },
 	{
-		.name          = "axp152-gpio",
-		.num_resources = ARRAY_SIZE(axp152_gpio_resources),
-		.resources     = axp152_gpio_resources,
-		.of_compatible= "axp152-gpio",
-	},
+	 .name = "axp152-gpio",
+	 .num_resources = ARRAY_SIZE(axp152_gpio_resources),
+	 .resources = axp152_gpio_resources,
+	 .of_compatible = "axp152-gpio",
+	 },
 };
 
 void axp152_power_off(void)
 {
 	pr_info("[axp] send power-off command!\n");
-	axp_regmap_write(axp152_pm_power->regmap, AXP152_OFF_CTL,
-					 0x80);
+	axp_regmap_write(axp152_pm_power->regmap, AXP152_OFF_CTL, 0x80);
 }
 
 static int axp152_init_chip(struct axp_dev *axp152)
@@ -83,36 +84,35 @@ static int axp152_init_chip(struct axp_dev *axp152)
 	err = axp_regmap_read(axp152->regmap, AXP152_IC_TYPE, &chip_id);
 	if (err) {
 		pr_err("[%s] try to read chip id failed!\n",
-				axp_name[axp152_pmu_num]);
+		       axp_name[axp152_pmu_num]);
 		return err;
 	}
 
 	if ((chip_id & 0xff) == 0x5)
 		pr_info("[%s] chip id detect 0x%x !\n",
-				axp_name[axp152_pmu_num], chip_id);
+			axp_name[axp152_pmu_num], chip_id);
 	else
 		pr_info("[%s] chip id not detect 0x%x !\n",
-				axp_name[axp152_pmu_num], chip_id);
+			axp_name[axp152_pmu_num], chip_id);
 
 	/* enable dcdc2 dvm */
 	err = axp_regmap_update(axp152->regmap, AXP152_DCDC2_DVM_CTRL,
 				0x4, 0x4);
 	if (err) {
 		pr_err("[%s] enable dcdc2 dvm failed!\n",
-				axp_name[axp152_pmu_num]);
+		       axp_name[axp152_pmu_num]);
 		return err;
 	} else {
-		pr_info("[%s] enable dcdc2 dvm.\n",
-				axp_name[axp152_pmu_num]);
+		pr_info("[%s] enable dcdc2 dvm.\n", axp_name[axp152_pmu_num]);
 	}
 
-	/*init irq wakeup en*/
+	/*init irq wakeup en */
 	if (axp152_config.pmu_irq_wakeup)
 		axp_regmap_set_bits(axp152->regmap, AXP152_HOTOVER_CTL, 0x80);
 	else
 		axp_regmap_clr_bits(axp152->regmap, AXP152_HOTOVER_CTL, 0x80);
 
-	/*init pmu over temperature protection*/
+	/*init pmu over temperature protection */
 	if (axp152_config.pmu_hot_shutdown)
 		axp_regmap_set_bits(axp152->regmap, AXP152_HOTOVER_CTL, 0x04);
 	else
@@ -137,10 +137,10 @@ static s32 axp152_usb_vbus_output(int high)
 #if 0
 	if (high)
 		ret = axp_regmap_update_sync(axp152_pm_power->regmap,
-					AXP152_GPIO1_CTL, 0x1, 0x7);
+					     AXP152_GPIO1_CTL, 0x1, 0x7);
 	else
 		ret = axp_regmap_update_sync(axp152_pm_power->regmap,
-					AXP152_GPIO1_CTL, 0x0, 0x7);
+					     AXP152_GPIO1_CTL, 0x0, 0x7);
 #endif
 	return ret;
 }
@@ -180,48 +180,49 @@ static struct axp_dev *axp152_get_pmu_dev(void)
 struct axp_platform_ops axp152_platform_ops = {
 	.usb_det = axp152_usb_det,
 	.usb_vbus_output = axp152_usb_vbus_output,
-//	.cfg_pmux_para = axp152_cfg_pmux_para,
+//      .cfg_pmux_para = axp152_cfg_pmux_para,
 	.get_pmu_name = axp152_get_pmu_name,
-	.get_pmu_dev  = axp152_get_pmu_dev,
+	.get_pmu_dev = axp152_get_pmu_dev,
 
 };
 
 static const struct i2c_device_id axp152_id_table[] = {
-	{ "axp152", 0 },
+	{"axp152", 0},
 	{}
 };
 
 static const struct of_device_id axp152_dt_ids[] = {
-	{ .compatible = "axp152", },
+	{.compatible = "axp152",},
 	{},
 };
+
 MODULE_DEVICE_TABLE(of, axp152_dt_ids);
 
 static int axp152_probe(struct i2c_client *client,
-				const struct i2c_device_id *id)
+			const struct i2c_device_id *id)
 {
 	int ret;
 	struct axp_dev *axp152;
 	struct device_node *node = client->dev.of_node;
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
-	axp152_pmu_num = axp_get_pmu_num(axp152_cn_mapping, ARRAY_SIZE(axp152_cn_mapping));
+	axp152_pmu_num =
+	    axp_get_pmu_num(axp152_cn_mapping, ARRAY_SIZE(axp152_cn_mapping));
 	if (axp152_pmu_num < 0) {
 		pr_err("%s: get pmu num failed\n", __func__);
 		return axp152_pmu_num;
 	}
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	if (node) {
 		/* get dt and sysconfig */
 		if (!of_device_is_available(node)) {
 			axp152_config.pmu_used = 0;
 			pr_err("%s: pmu_used = %u\n", __func__,
-					axp152_config.pmu_used);
+			       axp152_config.pmu_used);
 			return -EPERM;
 		} else {
 			axp152_config.pmu_used = 1;
-			ret = axp_dt_parse(node, axp152_pmu_num, &axp152_config);
+			ret =
+			    axp_dt_parse(node, axp152_pmu_num, &axp152_config);
 			if (ret) {
 				pr_err("%s parse device tree err\n", __func__);
 				return -EINVAL;
@@ -231,7 +232,6 @@ static int axp152_probe(struct i2c_client *client,
 		pr_err("AXP15 device tree err!\n");
 		return -EBUSY;
 	}
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	axp152 = devm_kzalloc(&client->dev, sizeof(*axp152), GFP_KERNEL);
 	if (!axp152)
@@ -244,8 +244,8 @@ static int axp152_probe(struct i2c_client *client,
 	axp152->is_slave = axp152_config.pmu_as_slave;
 #if 0
 	ret = axp_mfd_cell_name_init(&axp152_platform_ops,
-				ARRAY_SIZE(axp152_dt_ids), axp152->pmu_num,
-				axp152->nr_cells, axp152->cells);
+				     ARRAY_SIZE(axp152_dt_ids), axp152->pmu_num,
+				     axp152->nr_cells, axp152->cells);
 	if (ret)
 		return ret;
 #endif
@@ -256,31 +256,26 @@ static int axp152_probe(struct i2c_client *client,
 		dev_err(&client->dev, "regmap init failed: %d\n", ret);
 		return ret;
 	}
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
-    i2c_set_clientdata(client, axp152);
+	i2c_set_clientdata(client, axp152);
 
-		ret = axp_mfd_add_devices(axp152);
+	ret = axp_mfd_add_devices(axp152);
 	if (ret) {
 		dev_err(axp152->dev, "failed to add MFD devices: %d\n", ret);
 		return ret;
 	}
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
-    printk("[axp152] client->irq=%d in line:%d of %s\n",client->irq,__LINE__,__func__);
 
 	if (axp152->is_slave) {
 		axp152->irq_data = axp_irq_chip_register(axp152->regmap,
-				client->irq,
-				IRQF_SHARED
-				| IRQF_NO_SUSPEND,
-				&axp152_regmap_irq_chip,
-				NULL);
+					client->irq,
+					IRQF_SHARED | IRQF_NO_SUSPEND,
+					&axp152_regmap_irq_chip,
+					NULL);
 	} else {
 		axp152->irq_data = axp_irq_chip_register(axp152->regmap,
-				client->irq,
-				IRQF_SHARED
-				| IRQF_NO_SUSPEND,
-				&axp152_regmap_irq_chip,
-				axp152_wakeup_event);
+					client->irq,
+					IRQF_SHARED | IRQF_NO_SUSPEND,
+					&axp152_regmap_irq_chip,
+					axp152_wakeup_event);
 	}
 
 	if (IS_ERR(axp152->irq_data)) {
@@ -288,7 +283,6 @@ static int axp152_probe(struct i2c_client *client,
 		dev_err(&client->dev, "axp init irq failed: %d\n", ret);
 		return ret;
 	}
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	axp152_pm_power = axp152;
 
@@ -298,15 +292,13 @@ static int axp152_probe(struct i2c_client *client,
 	}
 
 	axp_platform_ops_set(axp152->pmu_num, &axp152_platform_ops);
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	if (!axp152->is_slave)
 		axp152_ws = wakeup_source_register("axp152_wakeup_source");
 
-    ret = axp152_init_chip(axp152);
-        if (ret)
-            return ret;
-        printk("[axp152]Quit %s line:%d\n",__func__,__LINE__);
+	ret = axp152_init_chip(axp152);
+	if (ret)
+		return ret;
 
 	return 0;
 }
@@ -328,13 +320,13 @@ static int axp152_remove(struct i2c_client *client)
 
 static struct i2c_driver axp152_driver = {
 	.driver = {
-		.name   = "axp152",
-		.owner  = THIS_MODULE,
-		.of_match_table = axp152_dt_ids,
-	},
-	.probe      = axp152_probe,
-	.remove     = axp152_remove,
-	.id_table   = axp152_id_table,
+		   .name = "axp152",
+		   .owner = THIS_MODULE,
+		   .of_match_table = axp152_dt_ids,
+		   },
+	.probe = axp152_probe,
+	.remove = axp152_remove,
+	.id_table = axp152_id_table,
 };
 
 static int __init axp152_i2c_init(void)
@@ -345,12 +337,14 @@ static int __init axp152_i2c_init(void)
 		pr_err("Failed to register axp152 I2C driver: %d\n", ret);
 	return ret;
 }
+
 arch_initcall(axp152_i2c_init);
 
 static void __exit axp152_i2c_exit(void)
 {
 	i2c_del_driver(&axp152_driver);
 }
+
 module_exit(axp152_i2c_exit);
 
 MODULE_DESCRIPTION("PMIC Driver for AXP15");

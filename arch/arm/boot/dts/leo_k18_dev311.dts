@@ -20,6 +20,7 @@
 /* /memreserve/ 0x00000000 0x0001000; */
 
 #include "leo.dtsi"
+#include "axp2585.dtsi"
 
 / {
 	model = "nationalchip leo_k18_universal SoC";

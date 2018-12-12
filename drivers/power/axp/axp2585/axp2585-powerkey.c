@@ -32,7 +32,6 @@
 
 static int axp2585_powerkey_probe(struct platform_device *pdev)
 {
-    printk("[axp2585]Entering %s\n",__func__);
 	struct axp_dev *axp_dev = dev_get_drvdata(pdev->dev.parent);
 	struct axp_powerkey_info *info;
 	struct input_dev *powerkey_dev;
@@ -43,8 +42,7 @@ static int axp2585_powerkey_probe(struct platform_device *pdev)
 
 	if (axp_dev->is_slave)
 		return -EPERM;
-    printk("[axp2585] pointer to of_node is %p in line:%d in %s\n",
-                       pdev->dev.of_node,__LINE__,__func__);
+
 	if (pdev->dev.of_node) {
 		/* get dt and sysconfig */
 		ret = axp_powerkey_dt_parse(pdev->dev.of_node, &axp2585_config);
@@ -232,7 +230,7 @@ static int __init axp2585_powerkey_initcall(void)
     int ret;
 
     ret = platform_driver_register(&axp2585_powerkey_driver);
-    if (IS_ERR_VALUE(ret)) {
+    if (ret < 0) {
         pr_err("%s: failed, errno %d\n", __func__, ret);
         return -EINVAL;
     }

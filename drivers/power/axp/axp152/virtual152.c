@@ -19,7 +19,6 @@
 #include <linux/module.h>
 #include "../axp-virtual.h"
 
-
 static int regulator_virtual_consumer_probe(struct platform_device *pdev)
 {
 	char *reg_id = pdev->dev.platform_data;
@@ -52,7 +51,6 @@ static int regulator_virtual_consumer_probe(struct platform_device *pdev)
 
 	for (i = 0; i < ARRAY_SIZE(attributes_virtual); i++) {
 		ret = device_create_file(&pdev->dev, attributes_virtual[i]);
-		printk("[axp152]create sysfs with ret=%d in line: %d func:%s\n",ret,__LINE__,__func__);
 		if (ret != 0)
 			goto err;
 	}
@@ -62,7 +60,6 @@ static int regulator_virtual_consumer_probe(struct platform_device *pdev)
 	return 0;
 
 err:
-  printk("[axp152] Fail register virtual comsumer %d %s \n",__LINE__,__func__);
 	for (i = 0; i < ARRAY_SIZE(attributes_virtual); i++)
 		device_remove_file(&pdev->dev, attributes_virtual[i]);
 	kfree(drvdata);
@@ -84,87 +81,85 @@ static int regulator_virtual_consumer_remove(struct platform_device *pdev)
 
 static struct platform_driver regulator_virtual_consumer_driver[] = {
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-ldo0",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-ldo0",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-aldo1",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-aldo1",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-aldo2",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-aldo2",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-dldo1",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-dldo1",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-dldo2",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-dldo2",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-ldoio0",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-ldoio0",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-dcdc1",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-dcdc1",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-dcdc2",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-dcdc2",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-dcdc3",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-dcdc3",
+		    },
+	 },
 	{
-		.probe		= regulator_virtual_consumer_probe,
-		.remove		= regulator_virtual_consumer_remove,
-		.driver		= {
-			.name		= "reg-152-cs-dcdc4",
-		},
-	},
+	 .probe = regulator_virtual_consumer_probe,
+	 .remove = regulator_virtual_consumer_remove,
+	 .driver = {
+		    .name = "reg-152-cs-dcdc4",
+		    },
+	 },
 };
-
 
 static int __init regulator_virtual_consumer_init(void)
 {
 	int j, ret;
 
-	for (j = 0;
-		j < ARRAY_SIZE(regulator_virtual_consumer_driver);
-		j++) {
-		ret =  platform_driver_register(
-					&regulator_virtual_consumer_driver[j]);
+	for (j = 0; j < ARRAY_SIZE(regulator_virtual_consumer_driver); j++) {
+		ret =
+		    platform_driver_register(&regulator_virtual_consumer_driver
+					     [j]);
 		if (ret)
 			goto create_drivers_failed;
 	}
@@ -173,22 +168,23 @@ static int __init regulator_virtual_consumer_init(void)
 
 create_drivers_failed:
 	while (j--)
-		platform_driver_unregister(
-				&regulator_virtual_consumer_driver[j]);
+		platform_driver_unregister(&regulator_virtual_consumer_driver
+					   [j]);
 
 	return ret;
 }
+
 module_init(regulator_virtual_consumer_init);
 
 static void __exit regulator_virtual_consumer_exit(void)
 {
 	int j;
 
-	for (j = ARRAY_SIZE(regulator_virtual_consumer_driver) - 1;
-		j >= 0; j--)
-			platform_driver_unregister(
-				&regulator_virtual_consumer_driver[j]);
+	for (j = ARRAY_SIZE(regulator_virtual_consumer_driver) - 1; j >= 0; j--)
+		platform_driver_unregister(&regulator_virtual_consumer_driver
+					   [j]);
 }
+
 module_exit(regulator_virtual_consumer_exit);
 
 MODULE_AUTHOR("Kyle Cheung");
