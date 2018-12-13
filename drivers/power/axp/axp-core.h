@@ -39,12 +39,12 @@ enum AXP_REGMAP_TYPE {
 
 struct axp_regmap {
 	enum AXP_REGMAP_TYPE type;
-	struct i2c_client    *client;
-	struct mutex         lock;
+	struct i2c_client *client;
+	struct mutex lock;
 #ifndef CONFIG_AXP_TWI_USED
-	spinlock_t           spinlock;
+	spinlock_t spinlock;
 #endif
-	u8                   rsbaddr;
+	u8 rsbaddr;
 };
 
 struct axp_regmap_irq {
@@ -65,29 +65,30 @@ struct axp_irq_chip_data {
 	struct axp_regmap_irq_chip *chip;
 	struct axp_regmap_irq *irqs;
 	int num_irqs;
-    u64 irqs_enabled;
+	u64 irqs_enabled;
 	void (*wakeup_event)(void);
 };
 
 struct axp_dev {
-	struct device            *dev;
-	struct axp_regmap        *regmap;
-	int                      nr_cells;
-	struct mfd_cell          *cells;
+	struct device *dev;
+	struct axp_regmap *regmap;
+	int nr_cells;
+	struct mfd_cell *cells;
 	struct axp_irq_chip_data *irq_data;
-	int                      irq;
-	bool                     is_dummy;
-	bool                     is_slave;
-	struct list_head         list;
-	int                      pmu_num;
+	struct gpio_desc *irqgpio_desc;
+	int irq;
+	bool is_dummy;
+	bool is_slave;
+	struct list_head list;
+	int pmu_num;
 };
 
 struct axp_platform_ops {
 	s32 (*usb_det)(void);
 	s32 (*usb_vbus_output)(int);
 	//int (*cfg_pmux_para)(int, struct aw_pm_info *, int *);
-	const char * (*get_pmu_name)(void);
-	struct axp_dev * (*get_pmu_dev)(void);
+	const char *(*get_pmu_name)(void);
+	struct axp_dev *(*get_pmu_dev)(void);
 	int (*pmu_regulator_save)(void);
 	void (*pmu_regulator_restore)(void);
 };
@@ -119,8 +120,8 @@ struct axp_compatible_name_mapping {
 enum {
 	AXP_SPLY = 1U << 0,
 	AXP_REGU = 1U << 1,
-	AXP_INT  = 1U << 2,
-	AXP_CHG  = 1U << 3,
+	AXP_INT = 1U << 2,
+	AXP_CHG = 1U << 3,
 	AXP_MISC = 1U << 4,
 };
 
@@ -139,8 +140,10 @@ enum {
 
 struct axp_regmap *axp_regmap_init_i2c(struct device *dev);
 struct axp_irq_chip_data *axp_irq_chip_register(struct axp_regmap *map,
-	int irq, int irq_flags, struct axp_regmap_irq_chip *irq_chip,
-	void (*wakeup_event)(void));
+						int irq, int irq_flags,
+						struct axp_regmap_irq_chip
+						*irq_chip,
+						void (*wakeup_event)(void));
 void axp_irq_chip_unregister(int irq, struct axp_irq_chip_data *irq_data);
 
 int axp_regmap_write(struct axp_regmap *map, s32 reg, u8 val);
@@ -156,20 +159,20 @@ int axp_regmap_clr_bits_sync(struct axp_regmap *map, s32 reg, u8 bit_mask);
 int axp_mfd_add_devices(struct axp_dev *axp_dev);
 int axp_mfd_remove_devices(struct axp_dev *axp_dev);
 int axp_request_irq(struct axp_dev *adev, int irq_no,
-				irq_handler_t handler, void *data);
+		    irq_handler_t handler, void *data);
 int axp_free_irq(struct axp_dev *adev, int irq_no);
 int axp_dt_parse(struct device_node *node, int pmu_num,
-				struct axp_config_info *axp_config);
+		 struct axp_config_info *axp_config);
 void axp_platform_ops_set(int pmu_num, struct axp_platform_ops *ops);
 void axp_dev_set(struct axp_dev *axpdev);
 int axp_gpio_irq_register(struct axp_dev *adev, int irq_no,
-				irq_handler_t handler, void *data);
+			  irq_handler_t handler, void *data);
 struct axp_dev *get_pmu_cur_dev(int pmu_num);
 int axp_mfd_cell_name_init(const struct axp_compatible_name_mapping *mapping,
-				int count,  int pmu_num,
-				int size, struct mfd_cell *cells);
+			   int count, int pmu_num,
+			   int size, struct mfd_cell *cells);
 int axp_get_pmu_num(const struct axp_compatible_name_mapping *mapping,
-				int size);
+		    int size);
 
 extern int axp_suspend_flag;
 extern int axp_debug_mask;

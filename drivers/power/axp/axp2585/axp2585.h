@@ -15,7 +15,9 @@
 
 /* For AXP2585 */
 #define AXP2585_STATUS              (0x00)
+#define AXP2585_STATUS2             (0x01)
 #define AXP2585_IC_TYPE             (0x03)
+#define AXP2585_INPUT_CURRENTLIMIT  (0x10)
 #define AXP2585_GPIO1_CTL           (0x18)
 #define AXP2585_GPIO2_CTL           (0x19)
 #define AXP2585_GPIO1_SIGNAL        (0x1A)
@@ -35,9 +37,11 @@
 #define AXP2585_INTSTS4             (0x4B)
 #define AXP2585_INTSTS5             (0x4C)
 #define AXP2585_INTSTS6             (0x4D)
+#define AXP2585_CHARGER_CONTROL2    (0x8B)
+#define AXP2585_DPDMOTGCC_CTRL      (0x23)
+
 #define AXP2585_WARNING_LEVEL       (0xE6)
 #define AXP2585_ADDR_EXTENSION      (0xFF)
-
 
 /* bit definitions for AXP events ,irq event */
 /* AXP2585 */
@@ -49,8 +53,8 @@
 #define AXP2585_IRQ_ACIN          (23)
 #define AXP2585_IRQ_ACOV          (6)
 #define AXP2585_IRQ_VACIN         (7)
-#define AXP2585_IRQ_LOWN2         (7)//
-#define AXP2585_IRQ_LOWN1         (6)//
+#define AXP2585_IRQ_LOWN2         (7)	//
+#define AXP2585_IRQ_LOWN1         (6)	//
 #define AXP2585_IRQ_CHAOV         (38)
 #define AXP2585_IRQ_CHAST         (39)
 #define AXP2585_IRQ_BATSAFE_QUIT  (12)
@@ -66,7 +70,7 @@
 #define AXP2585_IRQ_QBCOT         (22)
 #define AXP2585_IRQ_BCOT          (23)
 #define AXP2585_IRQ_GPIO0         (24)
-#define AXP2585_IRQ_BATCHG        (5)//
+#define AXP2585_IRQ_BATCHG        (5)	//
 #define AXP2585_IRQ_POKOFF        (26)
 #define AXP2585_IRQ_POKLO         (27)
 #define AXP2585_IRQ_POKSH         (28)
@@ -76,6 +80,7 @@
 
 #define AXP2585_IRQ_TCIN		  (46)
 #define AXP2585_IRQ_TCRE         (47)
+#define AXP2585_IRQ_BDFINISH     (37)
 
 extern int axp_debug;
 extern struct axp_config_info axp2585_config;

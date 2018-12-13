@@ -16,59 +16,71 @@
 
 #include <linux/power_supply.h>
 
-#ifdef CONFIG_ARCH_SUN8IW15P1
 /*#define TYPE_C*/
 #define AXP2585
-#endif
 
 #define BATRDC          100
-#define INTCHGCUR       300000      /* set initial charging current limite */
-#define SUSCHGCUR       1000000     /* set suspend charging current limite */
-#define RESCHGCUR       INTCHGCUR   /* set resume charging current limite */
-#define CLSCHGCUR       SUSCHGCUR   /* set shutdown charging current limite */
-#define INTCHGVOL       4200000     /* set initial charing target voltage */
-#define INTCHGENDRATE   10          /* set initial charing end current rate */
-#define INTCHGENABLED   1           /* set initial charing enabled */
-#define INTADCFREQ      25          /* set initial adc frequency */
-#define INTADCFREQC     100         /* set initial coulomb adc coufrequency */
-#define INTCHGPRETIME   50          /* set initial pre-charging time */
-#define INTCHGCSTTIME   480         /* set initial pre-charging time */
-#define BATMAXVOL       4200000     /* set battery max design volatge */
-#define BATMINVOL       3500000     /* set battery min design volatge */
-#define UPDATEMINTIME   30          /* set bat percent update min time */
+#define INTCHGCUR       300000	/* set initial charging current limite */
+#define SUSCHGCUR       1000000	/* set suspend charging current limite */
+#define RESCHGCUR       INTCHGCUR /* set resume charging current limite */
+#define CLSCHGCUR       SUSCHGCUR /* set shutdown charging current limite */
+#define INTCHGVOL       4200000	/* set initial charing target voltage */
+#define INTCHGENDRATE   10	/* set initial charing end current rate */
+#define INTCHGENABLED   1	/* set initial charing enabled */
+#define INTADCFREQ      25	/* set initial adc frequency */
+#define INTADCFREQC     100	/* set initial coulomb adc coufrequency */
+#define INTCHGPRETIME   50	/* set initial pre-charging time */
+#define INTCHGCSTTIME   480	/* set initial pre-charging time */
+#define BATMAXVOL       4200000	/* set battery max design volatge */
+#define BATMINVOL       3500000	/* set battery min design volatge */
+#define UPDATEMINTIME   30	/* set bat percent update min time */
 
-#define OCVREG0         0x00        /* 2.99V */
-#define OCVREG1         0x00        /* 3.13V */
-#define OCVREG2         0x00        /* 3.27V */
-#define OCVREG3         0x00        /* 3.34V */
-#define OCVREG4         0x00        /* 3.41V */
-#define OCVREG5         0x00        /* 3.48V */
-#define OCVREG6         0x00        /* 3.52V */
-#define OCVREG7         0x00        /* 3.55V */
-#define OCVREG8         0x04        /* 3.57V */
-#define OCVREG9         0x05        /* 3.59V */
-#define OCVREGA         0x06        /* 3.61V */
-#define OCVREGB         0x07        /* 3.63V */
-#define OCVREGC         0x0a        /* 3.64V */
-#define OCVREGD         0x0d        /* 3.66V */
-#define OCVREGE         0x1a        /* 3.70V */
-#define OCVREGF         0x24        /* 3.73V */
-#define OCVREG10        0x29        /* 3.77V */
-#define OCVREG11        0x2e        /* 3.78V */
-#define OCVREG12        0x32        /* 3.80V */
-#define OCVREG13        0x35        /* 3.84V */
-#define OCVREG14        0x39        /* 3.85V */
-#define OCVREG15        0x3d        /* 3.87V */
-#define OCVREG16        0x43        /* 3.91V */
-#define OCVREG17        0x49        /* 3.94V */
-#define OCVREG18        0x4f        /* 3.98V */
-#define OCVREG19        0x54        /* 4.01V */
-#define OCVREG1A        0x58        /* 4.05V */
-#define OCVREG1B        0x5c        /* 4.08V */
-#define OCVREG1C        0x5e        /* 4.10V */
-#define OCVREG1D        0x60        /* 4.12V */
-#define OCVREG1E        0x62        /* 4.14V */
-#define OCVREG1F        0x64        /* 4.15V */
+#define OCVREG0         0x00	/* 2.99V */
+#define OCVREG1         0x00	/* 3.13V */
+#define OCVREG2         0x00	/* 3.27V */
+#define OCVREG3         0x00	/* 3.34V */
+#define OCVREG4         0x00	/* 3.41V */
+#define OCVREG5         0x00	/* 3.48V */
+#define OCVREG6         0x00	/* 3.52V */
+#define OCVREG7         0x00	/* 3.55V */
+#define OCVREG8         0x04	/* 3.57V */
+#define OCVREG9         0x05	/* 3.59V */
+#define OCVREGA         0x06	/* 3.61V */
+#define OCVREGB         0x07	/* 3.63V */
+#define OCVREGC         0x0a	/* 3.64V */
+#define OCVREGD         0x0d	/* 3.66V */
+#define OCVREGE         0x1a	/* 3.70V */
+#define OCVREGF         0x24	/* 3.73V */
+#define OCVREG10        0x29	/* 3.77V */
+#define OCVREG11        0x2e	/* 3.78V */
+#define OCVREG12        0x32	/* 3.80V */
+#define OCVREG13        0x35	/* 3.84V */
+#define OCVREG14        0x39	/* 3.85V */
+#define OCVREG15        0x3d	/* 3.87V */
+#define OCVREG16        0x43	/* 3.91V */
+#define OCVREG17        0x49	/* 3.94V */
+#define OCVREG18        0x4f	/* 3.98V */
+#define OCVREG19        0x54	/* 4.01V */
+#define OCVREG1A        0x58	/* 4.05V */
+#define OCVREG1B        0x5c	/* 4.08V */
+#define OCVREG1C        0x5e	/* 4.10V */
+#define OCVREG1D        0x60	/* 4.12V */
+#define OCVREG1E        0x62	/* 4.14V */
+#define OCVREG1F        0x64	/* 4.15V */
+
+#define BC_RESULT_SDP    0x01
+#define BC_RESULT_CDP    0x02
+#define BC_RESULT_DCP    0x03
+
+enum {
+	BC_SDP = 1,
+	BC_CDP,
+	BC_DCP,			//AXP2881 BC 1.2 only support SDP/CDP/DCP
+	BC_ACA_DOCK,
+	BC_ACA_A,
+	BC_ACA_B,
+	BC_ACA_C
+};
 
 #define AXP_OF_PROP_READ(name, def_value)\
 do {\
@@ -79,6 +91,14 @@ do {\
 struct axp_charger_dev;
 
 struct axp_config_info {
+
+	u32 pmu_SDP_vbus_currentlimit;
+	u32 pmu_SDP_Cbat_currentlimit;
+	u32 pmu_CDP_vbus_currentlimit;
+	u32 pmu_CDP_Cbat_currentlimit;
+	u32 pmu_DCP_vbus_currentlimit;
+	u32 pmu_DCP_Cbat_currentlimit;
+
 	u32 pmu_used;
 	u32 pmu_id;
 	u32 pmu_battery_rdc;
@@ -190,9 +210,9 @@ struct axp_config_info {
 };
 
 struct axp_ac_info {
-	int det_bit;    /* ac detect */
+	int det_bit;		/* ac detect */
 	int det_offset;
-	int valid_bit;  /* ac vali */
+	int valid_bit;		/* ac vali */
 	int valid_offset;
 	int in_short_bit;
 	int in_short_offset;
@@ -255,19 +275,19 @@ struct axp_battery_info {
 
 #ifdef TYPE_C
 struct axp_tc_info {
-int det_bit;
-int det_offset;
-int valid_bit;
-int valid_offset;
-int det_unused;
-int tc_vol;
-int tc_cur;
-int (*get_tc_vol)(struct axp_charger_dev *cdev);
-int (*get_tc_cur)(struct axp_charger_dev *cdev);
-int (*set_tc_vhold)(struct axp_charger_dev *cdev, int vol);
-int (*get_tc_vhold)(struct axp_charger_dev *cdev);
-int (*set_tc_ihold)(struct axp_charger_dev *cdev, int cur);
-int (*get_tc_ihold)(struct axp_charger_dev *cdev);
+	int det_bit;
+	int det_offset;
+	int valid_bit;
+	int valid_offset;
+	int det_unused;
+	int tc_vol;
+	int tc_cur;
+	int (*get_tc_vol)(struct axp_charger_dev *cdev);
+	int (*get_tc_cur)(struct axp_charger_dev *cdev);
+	int (*set_tc_vhold)(struct axp_charger_dev *cdev, int vol);
+	int (*get_tc_vhold)(struct axp_charger_dev *cdev);
+	int (*set_tc_ihold)(struct axp_charger_dev *cdev, int cur);
+	int (*get_tc_ihold)(struct axp_charger_dev *cdev);
 
 };
 #endif
@@ -328,8 +348,15 @@ struct axp_charger_dev {
 	bool bat_current_direction;
 
 	int pmic_temp_offset;
+	u8 bc_result;
 
-	/*ic temperature*/
+	u16 rdc_value;
+	u8  reg_b8;
+	u16  vbus_curlimit;
+	u8  battfet_turnon;
+	u16  charging_curlimit;
+
+	/*ic temperature */
 	s32 ic_temp;
 	s32 bat_temp;
 
@@ -352,31 +379,34 @@ struct axp_adc_res {
 };
 
 struct axp_charger_dev *axp_power_supply_register(struct device *dev,
-					struct axp_dev *axp_dev,
-					struct power_supply_info *battery_info,
-					struct axp_supply_info *info);
+						  struct axp_dev *axp_dev,
+						  struct power_supply_info
+						  *battery_info,
+						  struct axp_supply_info *info);
 void axp_power_supply_unregister(struct axp_charger_dev *chg_dev);
 void axp_change(struct axp_charger_dev *chg_dev);
-void axp_usbac_in(struct axp_charger_dev *chg_dev);
+void axp_usbac_in(struct axp_charger_dev *chg_dev, int chargerinf);
 void axp_usbac_out(struct axp_charger_dev *chg_dev);
 void axp_capchange(struct axp_charger_dev *chg_dev);
 void axp_charger_suspend(struct axp_charger_dev *chg_dev);
 void axp_charger_resume(struct axp_charger_dev *chg_dev);
 void axp_charger_shutdown(struct axp_charger_dev *chg_dev);
 int axp_charger_dt_parse(struct device_node *node,
-					struct axp_config_info *axp_config);
+			 struct axp_config_info *axp_config);
 extern irqreturn_t axp_usb_in_isr(int irq, void *data);
 extern irqreturn_t axp_usb_out_isr(int irq, void *data);
 extern irqreturn_t axp_ac_in_isr(int irq, void *data);
 extern irqreturn_t axp_ac_out_isr(int irq, void *data);
 extern irqreturn_t axp_capchange_isr(int irq, void *data);
 extern irqreturn_t axp_change_isr(int irq, void *data);
+extern irqreturn_t axp_bc_detect_isr(int irq, void *data);
 extern irqreturn_t axp_low_warning1_isr(int irq, void *data);
 extern irqreturn_t axp_low_warning2_isr(int irq, void *data);
+
+extern int aml_get_usb_conn_state(void);
 #ifdef TYPE_C
 extern irqreturn_t axp_tc_in_isr(int irq, void *data);
 extern irqreturn_t axp_tc_out_isr(int irq, void *data);
 #endif
-
 
 #endif /* AXP_ChARGER_H */

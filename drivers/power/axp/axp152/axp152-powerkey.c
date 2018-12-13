@@ -18,21 +18,16 @@
 
 static int axp152_powerkey_probe(struct platform_device *pdev)
 {
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 	struct axp_dev *axp_dev = dev_get_drvdata(pdev->dev.parent);
 	struct axp_powerkey_info *info;
 	struct input_dev *powerkey_dev;
 	int err = 0, i, irq, ret;
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	struct axp_regmap *map = axp_dev->regmap;
 	u8 val;
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	if (axp_dev->is_slave)
 		return -ENODEV;
-	printk("[axp152] pointer to of_node is %p in line:%d in %s\n",
-	                   pdev->dev.of_node,__LINE__,__func__);
 	if (pdev->dev.of_node) {
 		/* get dt and sysconfig */
 		ret = axp_powerkey_dt_parse(pdev->dev.of_node, &axp152_config);
@@ -45,14 +40,12 @@ static int axp152_powerkey_probe(struct platform_device *pdev)
 		pr_err("axp152 powerkey device tree err!\n");
 		return -EBUSY;
 	}
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	info = kzalloc(sizeof(struct axp_powerkey_info), GFP_KERNEL);
 	if (!info)
 		return -ENOMEM;
 
 	info->chip = axp_dev;
-    printk("[axp152]Entering %s line:%d\n",__func__,__LINE__);
 
 	/* register input device */
 	powerkey_dev = input_allocate_device();
@@ -88,15 +81,16 @@ static int axp152_powerkey_probe(struct platform_device *pdev)
 			continue;
 
 		err = axp_request_irq(axp_dev, irq,
-				axp_powerkey_irq[i].isr, info);
+				      axp_powerkey_irq[i].isr, info);
 		if (err != 0) {
-			dev_err(&pdev->dev, "[axp152]failed to request %s IRQ %d: %d\n"
-					, axp_powerkey_irq[i].name, irq, err);
+			dev_err(&pdev->dev,
+				"[axp152]failed to request %s IRQ %d: %d\n",
+				axp_powerkey_irq[i].name, irq, err);
 			goto out_irq;
 		}
 
 		dev_dbg(&pdev->dev, "[axp152]Requested %s IRQ %d: %d\n",
-				axp_powerkey_irq[i].name, irq, err);
+			axp_powerkey_irq[i].name, irq, err);
 	}
 
 	platform_set_drvdata(pdev, info);
@@ -117,7 +111,7 @@ static int axp152_powerkey_probe(struct platform_device *pdev)
 	}
 	axp_regmap_write(map, AXP152_POK_SET, val);
 
-	/* pok long time set*/
+	/* pok long time set */
 	if (axp152_config.pmu_powkey_long_time < 1000)
 		axp152_config.pmu_powkey_long_time = 1000;
 
@@ -129,7 +123,7 @@ static int axp152_powerkey_probe(struct platform_device *pdev)
 	val |= (((axp152_config.pmu_powkey_long_time - 1000) / 500) << 4);
 	axp_regmap_write(map, AXP152_POK_SET, val);
 
-	/* pek offlevel poweroff en set*/
+	/* pek offlevel poweroff en set */
 	if (axp152_config.pmu_powkey_off_en)
 		axp152_config.pmu_powkey_off_en = 1;
 	else
@@ -188,33 +182,35 @@ static int axp152_powerkey_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id axp152_powerkey_dt_ids[] = {
-	{ .compatible = "axp152-powerkey", },
+	{.compatible = "axp, axp152-powerkey",},
 	{},
 };
+
 MODULE_DEVICE_TABLE(of, axp152_powerkey_dt_ids);
 
 static struct platform_driver axp152_powerkey_driver = {
 	.driver = {
-		.name = "axp152-powerkey",
-		.of_match_table = axp152_powerkey_dt_ids,
-	},
-	.probe  = axp152_powerkey_probe,
+		   .name = "axp152-powerkey",
+		   .of_match_table = axp152_powerkey_dt_ids,
+		   },
+	.probe = axp152_powerkey_probe,
 	.remove = axp152_powerkey_remove,
 };
 
 //module_platform_driver(axp152_powerkey_driver);
 static int __init axp152_powerkey_initcall(void)
 {
-    int ret;
+	int ret;
 
-    ret = platform_driver_register(&axp152_powerkey_driver);
-    if (IS_ERR_VALUE(ret)) {
-        pr_err("%s: failed, errno %d\n", __func__, ret);
-        return -EINVAL;
-    }
+	ret = platform_driver_register(&axp152_powerkey_driver);
+	if (IS_ERR_VALUE(ret)) {
+		pr_err("%s: failed, errno %d\n", __func__, ret);
+		return -EINVAL;
+	}
 
-    return 0;
+	return 0;
 }
+
 late_initcall(axp152_powerkey_initcall);
 
 MODULE_LICENSE("GPL");

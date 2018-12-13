@@ -26,7 +26,7 @@
 #define AXP2585_VHTF_CHARGE              (0x85)
 #define AXP2585_VLTF_WORK                (0x86)
 #define AXP2585_VHTF_WORK		 (0x87)
-#define AXP2585_CHARGE_CONTROL2		 (0x8c)
+#define AXP2585_CHARGE_CONTROL3		 (0x8c)
 
 #define AXP2585_ADC_CONTROL              (0x80)
 #define AXP2585_ADC_BATVOL_ENABLE        (1 << 4)
