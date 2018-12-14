@@ -1072,6 +1072,33 @@ static int acm_write_buffers_alloc(struct acm *acm)
 	}
 	return 0;
 }
+/*
+ *  * Functions for ACM control messages.
+ *   */
+#if 1   /*Added by Neoway*/
+#define true      1
+#define false     0
+#define NEOWAY_VENDOR_ID 0x2949
+#define QUALCOMM_VENDOR_ID 0x05c6
+#define NEOWAY_PRODUCT_N720DL 0x9091
+#define NEOWAY_PRODUCT_N720BZ_8241 0x8241
+#define NEOWAY_PRODUCT_N720BZ_8243 0x8243
+#define NEOWAY_PRODUCT_N720BZ_8247 0x8700
+
+bool detected_neoway_product(struct usb_device *dev)
+{
+    if (NULL == dev)
+        return false;
+
+    if ((le16_to_cpu(dev->descriptor.idVendor) == QUALCOMM_VENDOR_ID && (le16_to_cpu(dev->descriptor.idProduct) == NEOWAY_PRODUCT_N720DL || le16_to_cpu(dev->descriptor.idProduct) == NEOWAY_PRODUCT_N720BZ_8241)) \
+    ||(le16_to_cpu(dev->descriptor.idVendor) == NEOWAY_VENDOR_ID && (le16_to_cpu(dev->descriptor.idProduct) == NEOWAY_PRODUCT_N720BZ_8241 || le16_to_cpu(dev->descriptor.idProduct) == NEOWAY_PRODUCT_N720BZ_8243\
+    || le16_to_cpu(dev->descriptor.idProduct) == NEOWAY_PRODUCT_N720BZ_8247 ))) {
+        return true;
+    }
+
+    return false;
+}
+#endif
 
 static int acm_probe(struct usb_interface *intf,
 		     const struct usb_device_id *id)
@@ -1102,6 +1129,14 @@ static int acm_probe(struct usb_interface *intf,
 	struct device *tty_dev;
 	int rv = -ENOMEM;
 
+#if 1   /*Added by Neoway*/
+    struct usb_interface_descriptor *desc = &intf->cur_altsetting->desc;
+    if (detected_neoway_product(usb_dev) && (desc->bInterfaceNumber == 0 || desc->bInterfaceNumber == 1)) {
+        dev_err(&intf->dev, "Neoway quirk, skipping interface 0x%x\n",
+                desc->bInterfaceNumber);
+        return -ENODEV;
+    }
+#endif
 	/* normal quirks */
 	quirks = (unsigned long)id->driver_info;
 
