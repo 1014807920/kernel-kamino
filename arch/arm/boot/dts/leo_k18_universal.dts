@@ -228,6 +228,22 @@
     wlan_on-gpio = <&gpa1 13 GPIO_ACTIVE_HIGH>;
 };
 
+#if 0
+&ck_i2c1{
+	aw_9163_ts@2c{
+		compatible = "awinic,aw9163_ts";
+		reg = <0x2c>;
+		irq-gpio = <&gpa1 11 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+		aw9163,led{
+			aw9163,name = "aw9163_led";
+			aw9163,imax = <1>;
+			aw9163,brightness = <128>;
+			aw9163,max_brightness = <255>;
+			};
+		};
+};
+#endif
 &ck_i2c0{
 	sma1301@1e {
 		compatible = "siliconmitus,sma1301";
