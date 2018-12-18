@@ -158,6 +158,23 @@
 
 };
 
+#if 0
+&spi1{
+	lcd0:sh1106@0{
+		compatible = "sinowealth,sh1106";
+		reg = <0>;
+		status ="okay";
+		spi-max-frequency = <15000000>;
+		width = <128>;
+		height = <64>;
+		buswidth = <8>;
+		dc-gpios = <&gpa1 1 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpa0 29 GPIO_ACTIVE_HIGH>;
+		     };
+};
+
+#endif
+
 &mmc0{
 	status = "disabled";
 };
