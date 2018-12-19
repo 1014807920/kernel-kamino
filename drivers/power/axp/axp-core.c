@@ -39,6 +39,7 @@ struct work_struct axp_irq_work;
 //static u32 axp_power_tree[VCC_MAX_INDEX] = {0};
 //static DEFINE_SPINLOCK(axp_pwr_data_lock);
 int axp_usb_connect;
+int charger_det_debounce;
 
 void axp_platform_ops_set(int pmu_num, struct axp_platform_ops *ops)
 {
