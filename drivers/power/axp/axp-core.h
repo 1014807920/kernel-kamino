@@ -177,7 +177,8 @@ int axp_get_pmu_num(const struct axp_compatible_name_mapping *mapping,
 extern int axp_suspend_flag;
 extern int axp_debug_mask;
 extern int axp_usb_connect;
+extern int charger_det_debounce;
 extern const char *axp_name[AXP_ONLINE_SUM];
 extern const char *get_pmu_cur_name(int pmu_num);
-
+extern struct work_struct axp_irq_work;
 #endif /* AXP_CORE_H_ */

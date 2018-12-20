@@ -341,7 +341,7 @@ void axp_charger_update_state(struct axp_charger_dev *chg_dev)
 
 	axp_regmap_read(map, 0x10, &val);
 	chg_dev->battfet_turnon = ((val & 0x80) == 1)? 1 : 0;
-	chg_dev->vbus_curlimit = ((val & 0x7F) * 50) + 100;
+	chg_dev->vbus_curlimit = ((val & 0x3F) * 50) + 100;
 
 	axp_regmap_read(map, 0x8b, &val);
 	chg_dev->charging_curlimit = ((val & 0x3F) * 64);
@@ -856,6 +856,7 @@ static void axp_charging_monitor(struct work_struct *work)
 	static s32 pre_rest_vol;
 	static bool pre_bat_curr_dir;
 
+	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num, "############\n");
 	axp_charger_update_state(chg_dev);
 
 	/* if no battery exist, then return */
@@ -903,15 +904,15 @@ static void axp_charging_monitor(struct work_struct *work)
 		  "[axp]charger->usb_det = %d\n\n", chg_dev->usb_det);
 
 	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num,
-			"[axp]charger->rdc = %d\n", chg_dev->rdc_value);
+		"[axp]charger->rdc = %d\n", chg_dev->rdc_value);
 	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num,
-			"[axp]charger->reg_b8 = %x\n", chg_dev->reg_b8);
+		"[axp]charger->reg_b8 = %x\n", chg_dev->reg_b8);
 	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num,
-			"[axp]charger->battfet_turnon = %d\n", chg_dev->battfet_turnon);
+		"[axp]charger->battfet_turnon = %d\n", chg_dev->battfet_turnon);
 	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num,
-			"[axp]charger->vbus_curlimit = %d\n", chg_dev->vbus_curlimit);
+		"[axp]charger->vbus_curlimit = %d\n", chg_dev->vbus_curlimit);
 	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num,
-			"[axp]charger->charging_curlimit = %d\n", chg_dev->charging_curlimit);
+		"[axp]charger->charging_curlimit = %d\n", chg_dev->charging_curlimit);
 
 	chg_dev->private_debug(chg_dev);
 	if (!plug_debounce) {
@@ -1039,8 +1040,8 @@ irqreturn_t axp_usb_in_isr(int irq, void *data)
 {
 	struct axp_charger_dev *chg_dev = data;
 	//struct axp_regmap *map = chg_dev->chip->regmap;
-	/*fix for apple adapter */
-	if (axp_usb_connect)
+	/*fix for apple adapter, debounce for 5 times  */
+	if (axp_usb_connect && (++charger_det_debounce > 5))
 		return IRQ_HANDLED;
 	chg_dev->bc_result = 0;
 	// axp_regmap_set_bits(map, 0x23, 0x80);     /* enable bc1.2 detect */
@@ -1078,6 +1079,7 @@ irqreturn_t axp_usb_out_isr(int irq, void *data)
 	struct axp_charger_dev *chg_dev = data;
 
 	axp_usb_connect = 0;
+	charger_det_debounce = 0;
 	chg_dev->ac_det = 0;
 	chg_dev->usb_det = 0;
 
@@ -1195,6 +1197,10 @@ void axp_charger_resume(struct axp_charger_dev *chg_dev)
 {
 	struct axp_battery_info *batt = chg_dev->spy_info->batt;
 
+	/* avoid irq failure after resume*/
+	schedule_work(&axp_irq_work);
+
+	pr_info("enter %s\n", __func__);
 	axp_charger_update_state(chg_dev);
 	axp_charger_update_value(chg_dev);
 	axp_battery_update_vol(chg_dev);
