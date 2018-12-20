@@ -94,8 +94,12 @@ static ssize_t light_pixel_show(struct device *dev, struct device_attribute *att
 
 static ssize_t light_busy_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-    int ret = (*yodabase_is_led_busy)();
-    return snprintf(buf, 16, "%u\n", (ret) ? 1 : 0);
+	int ret;
+
+	if (!yodabase_is_led_busy)
+		return -1;
+	ret = (*yodabase_is_led_busy)();
+	return snprintf(buf, 16, "%u\n", (ret) ? 1 : 0);
 }
 
 static ssize_t light_brightness_show(struct device *dev, struct device_attribute *attr, char *buf)
