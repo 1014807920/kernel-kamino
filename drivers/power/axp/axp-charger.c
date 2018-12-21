@@ -914,6 +914,10 @@ static void axp_charging_monitor(struct work_struct *work)
 	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num,
 		"[axp]charger->charging_curlimit = %d\n", chg_dev->charging_curlimit);
 
+	if (gpiodesc)
+		AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num,"[axp]irqval = %d\n",
+			  gpiod_get_value(gpiodesc));
+
 	chg_dev->private_debug(chg_dev);
 	if (!plug_debounce) {
 		if (chg_dev->private_debug)
@@ -1328,11 +1332,11 @@ struct axp_charger_dev *axp_power_supply_register(struct device *dev,
 	chg_dev->interval = msecs_to_jiffies(10 * 1000);
 	INIT_DELAYED_WORK(&chg_dev->work, axp_charging_monitor);
 
-	schedule_delayed_work(&chg_dev->work, msecs_to_jiffies(5 * 1000));
+	schedule_delayed_work(&chg_dev->work, msecs_to_jiffies(2 * 1000));
 	if (timer_pending(&chg_dev->usb_status_timer))
 		del_timer_sync(&chg_dev->usb_status_timer);
 	mod_timer(&chg_dev->usb_status_timer,
-		  jiffies + msecs_to_jiffies(13 * 1000));
+		  jiffies + msecs_to_jiffies(1 * 1000));
 
 	return chg_dev;
 
