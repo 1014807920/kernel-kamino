@@ -400,6 +400,13 @@ config LEDS_PWM
 	help
 	  This option enables support for pwm driven LEDs
 
+config LEDS_YODASTAGE_PWM
+        tristate "PWM driven LED Support for YODASTAGE"
+        depends on LEDS_CLASS
+        depends on PWM
+        help
+          This option enables support for pwm driven LEDs according to yodastage request
+
 config LEDS_OTA
 	tristate "Support OTA recovery lights"
 	depends on LEDS_PWM

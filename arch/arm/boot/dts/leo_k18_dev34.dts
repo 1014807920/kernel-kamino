@@ -99,6 +99,71 @@
 		reset-gpio = <&ck_gpa0 31 GPIO_ACTIVE_HIGH>;
 	};
 
+    pwm_leds {
+            compatible = "pwm-leds";
+            default-keep-ms = <6000>; /*ms*/
+            pwm13_white {
+                label = "pwm:blue:pwm13";
+                pwms = <&pwm0 13 50000>;
+                max-brightness = <255>;
+                linux,default-trigger = "default-on";
+            };
+
+            pwm14_white {
+                label = "pwm:green:pwm14";
+                pwms = <&pwm0 14 50000>;
+                max-brightness = <255>;
+                linux,default-trigger = "default-on";
+            };
+
+            pwm15_white {
+                label = "pwm:red:pwm15";
+                pwms = <&pwm0 15 50000>;
+                max-brightness = <255>;
+                linux,default-trigger = "default-on";
+            };
+    };
+
+    led-stage{
+		compatible = "rokid, led-stage";
+		led_num = <3>;		      //1(led)*3(RGB)
+		status = "okay";
+
+		enable_init_light = <2>;   //0:disable,1:enable init_pattern,2:enable init_raw_data
+	#if 0
+		init_pattern_type = <1>;
+		init_pattern_inter_timems = <30>;
+	#else
+		init_raw_data_length = <60>;   //3*5*4
+		init_raw_data_inter_timems = <300>;
+		init_raw_data_u8 = /bits/ 8
+			<0xFF 0x0  0x0 0x7F 0x0  0x0  0x3F 0x0  0x0  0x1F 0x0  0x0  0x0F 0x0  0x0
+			 0x0  0xFF 0x0  0x0  0x7F 0x0  0x0  0x3F 0x0  0x0  0x1F 0x0  0x0  0x0F 0x0
+			 0x0  0x0  0xFF 0x0  0x0  0x7F 0x0  0x0  0x3F 0x0  0x0  0x1F 0x0  0x0  0x0F
+			 0xFF 0xFF 0xFF 0x7F 0x7F 0x7F 0x3F 0x3F 0x3F 0x1F 0x1F 0x1F 0x0F 0x0F 0x0F>;
+		//raw_data explain:
+		//t0:led1b led1g led1r led2b led2g ...
+		//t1:led1b led1g ...
+		//..
+	#endif
+
+		enable_ota_light = <2>;
+		//0:disable,1:enable init_pattern,2:enable init_raw_data
+	#if 0
+		ota_pattern_type = <1>;
+		ota_pattern_inter_timems = <30>;
+	#else
+		ota_raw_data_length = <9>;   //3*3
+		ota_raw_data_inter_timems = <300>;
+		ota_raw_data_u8 = /bits/ 8
+			<0xFF 0x0  0x0  0x0 0xFF  0x0  0x0 0x0  0xFF>;
+		//raw_data explain:
+		//t0:led1b led1g led1r led2b led2g ...
+		//t1:led1b led1g ...
+		//..
+	#endif
+	};
+
 };
 
 &gxasoc_codec{
