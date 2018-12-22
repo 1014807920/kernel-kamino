@@ -404,6 +404,7 @@ config LEDS_YODASTAGE_PWM
         tristate "PWM driven LED Support for YODASTAGE"
         depends on LEDS_CLASS
         depends on PWM
+        default n
         help
           This option enables support for pwm driven LEDs according to yodastage request
 
