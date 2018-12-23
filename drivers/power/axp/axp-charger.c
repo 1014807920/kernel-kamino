@@ -22,6 +22,7 @@
 #include <linux/workqueue.h>
 #include <linux/types.h>
 #include <linux/slab.h>
+#include <linux/gpio.h>
 #include <linux/power_supply.h>
 #include <linux/of_device.h>
 #include <linux/interrupt.h>
@@ -855,6 +856,7 @@ static void axp_charging_monitor(struct work_struct *work)
 	struct power_supply_config psy_cfg = { };
 	static s32 pre_rest_vol;
 	static bool pre_bat_curr_dir;
+	struct gpio_desc *gpiodesc = chg_dev->chip->irqgpio_desc;
 
 	AXP_DEBUG(AXP_SPLY, chg_dev->chip->pmu_num, "############\n");
 	axp_charger_update_state(chg_dev);
