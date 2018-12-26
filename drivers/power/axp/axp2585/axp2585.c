@@ -81,9 +81,15 @@ static struct mfd_cell axp2585_cells[] = {
 
 void axp2585_power_off(void)
 {
+	u8 val;
 	pr_info("[%s] send power-off command!\n", axp_name[axp2585_pmu_num]);
-	axp_regmap_set_bits(axp2585_pm_power->regmap, 0x10, 0x80); /* enable */
-	axp_regmap_set_bits(axp2585_pm_power->regmap, 0x17, 0x01);
+	axp_regmap_read(axp2585_pm_power->regmap, 0x10, &val);
+	pr_info("[%s] REG10 = 0x%x!\n", axp_name[axp2585_pmu_num], val);
+
+	/* force BATFET off */
+	axp_regmap_write(axp2585_pm_power->regmap, 0x10, 0x80);
+	//axp_regmap_set_bits(axp2585_pm_power->regmap, 0x10, 0x80); /* enable */
+	//axp_regmap_set_bits(axp2585_pm_power->regmap, 0x17, 0x01);
 	mdelay(20);
 	pr_warn("[%s] warning!!! axp can't power-off,\"\
 		\" maybe some error happened!\n", axp_name[axp2585_pmu_num]);
@@ -354,11 +360,15 @@ static int axp2585_probe(struct i2c_client *client,
 		enable_irq_wake(axp2585->irq);
 
 	axp2585_pm_power = axp2585;
-	/*
-	   if (!pm_power_off)
-	   pm_power_off = axp2585_power_off;
-	 */
 
+	/* register system level pm_power_off function
+	 * BUT it could be not used, becasue device shutdown before
+	 * pm_power_off,I2C transfer is not available
+	 */
+#if 0
+	if (!pm_power_off)
+		pm_power_off = axp2585_power_off;
+#endif
 	axp_platform_ops_set(axp2585->pmu_num, &axp2585_platform_ops);
 
 	axp2585_ws = wakeup_source_register("axp2585_wakeup_source");
@@ -386,6 +396,10 @@ static int axp2585_remove(struct i2c_client *client)
 static void axp2585_shutdown(struct i2c_client *client)
 {
 	axp_regmap_set_bits(axp2585_pm_power->regmap, 0x14, 0x40);
+
+	if (system_state == SYSTEM_POWER_OFF) {
+		axp2585_power_off();
+	}
 }
 
 static struct i2c_driver axp2585_driver = {
