@@ -279,7 +279,7 @@ static int cap1xxx_touchkey_thread(void *data)
                 key_val = cap1xxx->keyMap[key_num];
                 input_report_key(input, key_val, pressed);
                 input_sync(input);
-                printk("[TOUCHKEY]%s CS%d KEY:%d %s\n",  __func__, key_num + 1, key_val, pressed ? "pressed" : "released");
+               // printk("[TOUCHKEY]%s CS%d KEY:%d %s\n",  __func__, key_num + 1, key_val, pressed ? "pressed" : "released");
             }
         }
         cap1xxx->statusbits = statusVal;
@@ -455,6 +455,8 @@ static int cap1xxx_dt_parse(struct platform_device *pdev)
 
     TOUCHKEY_DEBUG("[TOUCHKEY]%s\n", __func__);
 
+
+
     err = of_property_read_string(cap1xxx_node, "status", &str);
     if (err) {
         pr_info("get touchkey 'status' failed, ret:%d\n", err);
@@ -476,6 +478,10 @@ static int cap1xxx_dt_parse(struct platform_device *pdev)
         /*pr_debug("touch_gpio_en gpio is %d\n", touch_gpio_en);*/
     /*}*/
 
+	int irq_gpio_id = of_get_named_gpio(cap1xxx_node,"irq-gpio",0);
+	irq = gpio_to_irq(irq_gpio_id);	
+	printk("TOUCH IRQ = %d\n",irq);
+	
     for_each_child_of_node(cap1xxx_node, child) {
         pr_info("%s, child name:%s\n", __func__, child->name);
 
@@ -515,14 +521,14 @@ static int cap1xxx_dt_parse(struct platform_device *pdev)
             pr_info("get 'compatible' failed, ret:%d\n", err);
             continue;
         }
-
+/*
         err = of_property_read_u32(child, "interrupt", &irq);
         if (err)
         {
             pr_info("get 'interrupt' failed, ret:%d\n", err);
             continue;
         }
-
+*/
         strncpy(board_info.type, str, I2C_NAME_SIZE);
         board_info.addr = addr;
         board_info.of_node = child;     /* for device driver */

@@ -143,7 +143,22 @@
 			thermal-sensors = <&tmp103 0>;
 		};
 	};
-
+#if 0
+	touchkey{
+		compatible = "nationalchip,LEO-touchkey";
+		status = "okay";
+		ck-gpio = <&ck_gpa0 6  GPIO_ACTIVE_HIGH>;
+		irq-gpio = <&gpa1 11 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cap_i2c{
+			compatible = "nationalchip,cap1xxx_i2c";
+			i2c_bus=<0>;
+			reg=<0x28>;
+			status="okay";
+			};
+	};
+#endif
 };
 
 &gxasoc_codec{
@@ -201,7 +216,7 @@
 	};
 
 };
-
+#if 0
 &spi1{
        lcd0: ili9341@0{
                compatible = "ilitek,ili9341";
@@ -219,7 +234,24 @@
                debug = <0x1>;
        };
 };
-
+#endif
+#if 0
+&i2c0{
+	aw20108_led@3a{
+		compatible = "awinic,aw20108_led";
+		reg = <0x3a>;
+		status = "okay";
+		irq-gpio = <&gpa1 12 GPIO_ACTIVE_HIGH>;
+		reset-gpio = <&ck_gpa0 18 GPIO_ACTIVE_HIGH>;
+		aw20108,led {
+			aw20108,name = "aw20108_led";
+			aw20108,imax = <1>;
+			aw20108,brightness = <128>;
+			aw20108,max_brightness = <255>;
+		};
+	};
+};
+#endif
 &mmc0{
 	status = "disabled";
 };

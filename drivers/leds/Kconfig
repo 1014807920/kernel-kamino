@@ -106,6 +106,14 @@ config LEDS_AW9523
 	default n
 	help
 	  This option enables support for LEDs connected to AW9523.
+config LEDS_AW20108
+	tristate "LED Support for AW20108"
+	depends on LEDS_CLASS && I2C
+	depends on LIGHT_EFFECT
+	select REGMAP_I2C
+	default n
+	help
+		This option enables support for LEDs connected to AW9523.
 
 config LEDS_LOCOMO
 	tristate "LED Support for Locomo device"
