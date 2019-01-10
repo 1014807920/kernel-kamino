@@ -426,9 +426,16 @@ static ssize_t adb_write(struct file *fp, const char __user *buf,
 	return r;
 }
 
+int g_usb_conn_done = 0;
+int aml_get_usb_conn_state(void)
+{
+	return g_usb_conn_done;
+}
 static int adb_open(struct inode *ip, struct file *fp)
 {
-	pr_info("adb_open\n");
+	g_usb_conn_done = 1;
+	pr_info("adb_open: usb_conn=%d\n", g_usb_conn_done);
+
 	if (!_adb_dev)
 		return -ENODEV;
 
@@ -447,7 +454,8 @@ static int adb_open(struct inode *ip, struct file *fp)
 
 static int adb_release(struct inode *ip, struct file *fp)
 {
-	pr_info("adb_release\n");
+	g_usb_conn_done = 0;
+	pr_info("adb_release: usb_conn=%d\n", g_usb_conn_done);
 
 	adb_closed_callback();
 

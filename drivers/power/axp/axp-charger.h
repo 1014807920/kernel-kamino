@@ -404,6 +404,7 @@ extern irqreturn_t axp_low_warning1_isr(int irq, void *data);
 extern irqreturn_t axp_low_warning2_isr(int irq, void *data);
 
 extern int aml_get_usb_conn_state(void);
+extern int g_usb_conn_done;
 #ifdef TYPE_C
 extern irqreturn_t axp_tc_in_isr(int irq, void *data);
 extern irqreturn_t axp_tc_out_isr(int irq, void *data);

@@ -428,7 +428,7 @@ static void axp_usb(struct work_struct *work)
 	static int usb_recheck;
 
 	if (axp_usb_connect == 1) {
-		usb_conn_state = 1; //aml_get_usb_conn_state();
+		usb_conn_state = aml_get_usb_conn_state();
 		AXP_DEBUG(AXP_CHG, chg_dev->chip->pmu_num,
 			  "[axp_usb] aml_get_usb_conn_state = %d!\n",
 			  usb_conn_state);
@@ -1088,6 +1088,7 @@ irqreturn_t axp_usb_out_isr(int irq, void *data)
 	charger_det_debounce = 0;
 	chg_dev->ac_det = 0;
 	chg_dev->usb_det = 0;
+	g_usb_conn_done = 0;
 
 	axp_change(chg_dev);
 	axp_usbac_out(chg_dev);
