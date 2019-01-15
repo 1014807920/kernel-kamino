@@ -8,3 +8,8 @@ config LIGHT_EFFECT
 	help
 		Light on when drive start,and export universal port.
 
+config VAD_WAKELOCK
+	bool "Support VAD wakelock adding when system resume"
+	default n
+	help
+		Add wakelock timeout when system resume to give time for VAD
