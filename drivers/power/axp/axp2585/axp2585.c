@@ -88,6 +88,9 @@ void axp2585_power_off(void)
 
 	/* force BATFET off */
 	while(1) {
+		axp_regmap_write(axp2585_pm_power->regmap, 0x10, 0x48);
+		axp_regmap_read(axp2585_pm_power->regmap, 0x10, &val);
+		pr_info("[%s] REG10 = 0x%x!\n", axp_name[axp2585_pmu_num], val);
 		axp_regmap_write(axp2585_pm_power->regmap, 0x10, 0x80);
 		mdelay(100);
 	}
