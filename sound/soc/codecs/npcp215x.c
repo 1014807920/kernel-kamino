@@ -1279,7 +1279,7 @@ static unsigned char MaxxAudio_Cmd_Init_Alg[] = {
  	0x00, 0xF4, 0x01,  // Sub EQ - Active, No Reset
 };
 
-static unsigned char MaxxAudio_Cmd_Bypass_Alg[] = {
+static unsigned char MaxxAudio_Cmd_Noeq_Alg[] = {
  	//#  Start Algorithm Configuration
 	0x00, 0xF4, 0x00,  // Sub EQ - Bypass, No Reset
  	0x01, 0xF4, 0x01,  // Sub EQ - Active, Reset
@@ -1889,19 +1889,19 @@ static int npcp215x_set_alg(struct npcp215x_priv *npcp215x)
 
 	switch (npcp215x->alg_index) {
 	case 0:
-		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Standard_Alg, sizeof(MaxxAudio_Cmd_Standard_Alg), npcp215x->i2c);
-		break;
-	case 1:
-		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Resounding_Alg, sizeof(MaxxAudio_Cmd_Resounding_Alg), npcp215x->i2c);
-		break;
-	case 2:
-		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Relaxing_Alg, sizeof(MaxxAudio_Cmd_Relaxing_Alg), npcp215x->i2c);
-		break;
-	case 3:
 		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Init_Alg, sizeof(MaxxAudio_Cmd_Init_Alg), npcp215x->i2c);
 		break;
+	case 1:
+		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Standard_Alg, sizeof(MaxxAudio_Cmd_Standard_Alg), npcp215x->i2c);
+		break;
+	case 2:
+		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Resounding_Alg, sizeof(MaxxAudio_Cmd_Resounding_Alg), npcp215x->i2c);
+		break;
+	case 3:
+		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Relaxing_Alg, sizeof(MaxxAudio_Cmd_Relaxing_Alg), npcp215x->i2c);
+		break;
 	case 4:
-		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Bypass_Alg, sizeof(MaxxAudio_Cmd_Bypass_Alg), npcp215x->i2c);
+		ret = MaxxDSP_SendCmd(MaxxAudio_Cmd_Noeq_Alg, sizeof(MaxxAudio_Cmd_Noeq_Alg), npcp215x->i2c);
 		break;
 	default:
 		dev_warn(npcp215x->dev, "%s Not Support other's Algorithm\n", __func__);
@@ -2068,7 +2068,8 @@ static int npcp215x_playback_put(struct snd_kcontrol *kcontrol,
 #define NPCP215X_PLAYBACK(xname, xenum) \
 	SOC_ENUM_EXT(xname, xenum, npcp215x_playback_get, npcp215x_playback_put)
 
-static const char *npcp215x_alg_text[] = { "Standard", "Resounding", "Relaxing" , "Init_mode", "Bypass_mode"};
+//'init_mode';'noeq_mode';'loud_mode';'test';'dance_mode';'jazz_mode';'pop_mode';'rock_mode';'ballad_mode';'light_mode';'classic_mode';
+static const char *npcp215x_alg_text[] = { "init_mode", "dance_mode", "pop_mode" , "jazz_mode", "noeq_mode"};
 static SOC_ENUM_SINGLE_EXT_DECL(npcp215x_alg_enum, npcp215x_alg_text);
 
 static const char *npcp215x_vol_text[] = {
@@ -2088,7 +2089,7 @@ static const char *npcp215x_playback_text[] = {
 static SOC_ENUM_SINGLE_EXT_DECL(npcp215x_playback_sel, npcp215x_playback_text);
 
 static const struct snd_kcontrol_new npcp215x_snd_controls[] = {
-	NPCP215X_ALG("Npcp215x Algorithm Control", npcp215x_alg_enum),
+	NPCP215X_ALG("EQ Algorithm Control", npcp215x_alg_enum),
 	NPCP215X_VOL("Npcp215x MaxxVolume Control (DB)", npcp215x_vol_sel),
 	NPCP215X_MUTE("Npcp215x SoftMute Control (on/off)", npcp215x_mute_sel),
 	NPCP215X_PLAYBACK("Npcp215x Playback Control (on/off)", npcp215x_playback_sel),
