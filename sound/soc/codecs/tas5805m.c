@@ -8352,6 +8352,8 @@ static int tas5805m_eq_put(struct snd_kcontrol *kcontrol, struct snd_ctl_elem_va
 }
 
 static const char *mute_text[] = { "off", "on",};
+
+//'init_mode';'noeq_mode';'loud_mode';'test';'dance_mode';'jazz_mode';'pop_mode';'rock_mode';'ballad_mode';'light_mode';'classic_mode';
 static const char *eq_text[] = { "init_mode", "dance_mode", "jazz_mode", "pop_mode" , "rock_mode" , "ballad_mode" ,};
 static SOC_ENUM_SINGLE_EXT_DECL(mute_sel, mute_text);
 static SOC_ENUM_SINGLE_EXT_DECL(eq_sel, eq_text);
