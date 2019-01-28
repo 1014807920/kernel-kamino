@@ -80,10 +80,11 @@
 		status = "okay";
 		scan_period = <20>;
 
-		key_num = <3>;
-		key_name = "volup", "voldown" , "mute";
-		key_code = <115 114 113>;
+		key_num = <4>;
+		key_name = "power","volup", "voldown" , "mute";
+		key_code = <116 115 114 113>;
 
+		power-gpio =   <&ck_gpa0 31 GPIO_ACTIVE_LOW>;
 		volup-gpio =   <&ck_gpa0 8 GPIO_ACTIVE_LOW>;
 		voldown-gpio = <&ck_gpa0 21 GPIO_ACTIVE_LOW>;
 		mute-gpio =    <&ck_gpa0 7 GPIO_ACTIVE_LOW>;
