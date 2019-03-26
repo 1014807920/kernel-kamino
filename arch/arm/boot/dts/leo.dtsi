@@ -1154,5 +1154,11 @@
 			compatible = "nationalchip,leo_otp";
 			reg = <0x00a80000 0x11af>, <0x0030a018 0x04>, <0x011000c8 0x04>;
 		};
+
+		ir: ir-receiver {
+			compatible = "gpio-ir-receiver";
+			gpios = <&gpa1 3 GPIO_ACTIVE_LOW>; // 需要替换成arm域的gpio
+			status = "disable";
+		};
 	};
 };
